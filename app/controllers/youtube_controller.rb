@@ -24,6 +24,7 @@ class YoutubeController < ApplicationController
       # File.delete(mp3_path) 
 
       # Tạo đường dẫn tạm thời để lưu video
+      #
       tmp_file_path = "#{Rails.root}/tmp/#{SecureRandom.hex}.mp4"
 
       # Tải video về
