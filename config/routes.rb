@@ -19,4 +19,5 @@ Rails.application.routes.draw do
   post '/download_mp3', to: 'youtube#download_mp3'
   post 'youtube/download_mp3'
 
+  get '/youtube/download_mp3', to: 'youtube#download_mp3'
 end
