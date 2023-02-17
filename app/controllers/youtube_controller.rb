@@ -1,6 +1,5 @@
 
 
-require 'youtube-dl'
 require 'streamio-ffmpeg'
 
 class YoutubeController < ApplicationController
