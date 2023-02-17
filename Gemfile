@@ -15,7 +15,6 @@ gem 'coffee-rails'
 # gem 'therubyracer',  platforms: :ruby
 gem 'bootsnap', require: false
 gem 'listen'
-gem 'youtube-dl.rb'
 gem 'streamio-ffmpeg'
 
 # Use jquery as the JavaScript library
