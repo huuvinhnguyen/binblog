@@ -24,19 +24,18 @@ class YoutubeController < ApplicationController
       # File.delete(mp3_path) 
 
       # Tạo đường dẫn tạm thời để lưu video
-      #
-      tmp_file_path = "#{Rails.root}/tmp/#{SecureRandom.hex}.mp4"
+     # Lấy URL của video từ params
+    video_url = params[:video_url]
 
-      # Tải video về
-      movie = FFMPEG::Movie.new(video_url)
-      movie.transcode(tmp_file_path)
+    # Tạo đường dẫn tạm thời để lưu video
+    tmp_file_path = "#{Rails.root}/tmp/#{SecureRandom.hex}.mp4"
 
-      # Chuyển đổi video sang file audio mp3
-      output_path = "#{Rails.root}/tmp/#{SecureRandom.hex}.mp3"
-      movie.to_audio(output_path)
+    # Tải video về
+    movie = FFMPEG::Movie.new(video_url)
+    movie.transcode(tmp_file_path)
 
-      # Trả về file audio mp3 cho người dùng
-      send_file output_path, type: 'audio/mp3', disposition: 'attachment'  
+    # Trả về video cho người dùng
+    send_file tmp_file_path, type: 'video/mp4', disposition: 'attachment'
 
     end
 
