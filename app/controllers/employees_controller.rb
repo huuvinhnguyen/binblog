@@ -8,6 +8,7 @@ class EmployeesController < ApplicationController
 
   # GET /employees/1 or /employees/1.json
   def show
+  @attendance = Attendance.new
   end
 
   # GET /employees/new
@@ -55,6 +56,13 @@ class EmployeesController < ApplicationController
       format.html { redirect_to employees_url, notice: "Employee was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+  def destroy_attendance
+    # byebug
+    @employee = Employee.find(params[:employee_id])
+    @attendance = @employee.attendances.find(params[:id])
+    @attendance.destroy
+    redirect_to request.referer, notice: 'Attendance was successfully deleted.'
   end
 
   private

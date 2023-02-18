@@ -6,6 +6,15 @@ Rails.application.routes.draw do
   get 'resumes/create'
   get 'resumes/destroy'
   resources :widgets
+  resources :employees do
+    resources :attendances, only: [:create]
+  end
+  resources :employees do
+    member do
+      delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
+    end
+  end
+
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

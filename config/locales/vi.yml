@@ -2,8 +2,20 @@ vi:
   activerecord:
     models:
       employee: Nhân viên
+      attendance: Điểm danh
     attributes:
       employee:
         name: Tên
         email: Email
         phone: Điện thoại
+      attendance:
+        employee_id: Nhân viên
+        date: Ngày
+        weight: Trọng số
+        status: Trạng thái
+    enum:
+      attendance:
+        status:
+          present: Có mặt
+          absent: Vắng mặt
+          late: Đi trễ

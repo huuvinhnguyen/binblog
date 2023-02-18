@@ -17,6 +17,8 @@ gem 'bootsnap', require: false
 gem 'listen'
 gem 'youtube-dl.rb'
 gem 'streamio-ffmpeg'
+gem 'byebug', group: :development
+
 
 # Use jquery as the JavaScript library
 gem 'jquery-rails'
