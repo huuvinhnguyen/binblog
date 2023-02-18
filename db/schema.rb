@@ -10,9 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_17_125009) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_18_094436) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "attendances", force: :cascade do |t|
+    t.bigint "employee_id"
+    t.date "date"
+    t.float "weight"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["employee_id"], name: "index_attendances_on_employee_id"
+  end
+
+  create_table "employees", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.string "phone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "resumes", force: :cascade do |t|
     t.string "name"
@@ -29,4 +46,5 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_17_125009) do
     t.datetime "updated_at", precision: nil, null: false
   end
 
+  add_foreign_key "attendances", "employees"
 end

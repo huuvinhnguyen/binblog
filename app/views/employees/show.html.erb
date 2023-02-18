@@ -1,0 +1,26 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @employee %>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Weight</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @employee.attendances.each do |attendance| %>
+      <tr>
+        <td><%= attendance.date %></td>
+        <td><%= attendance.weight %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<div>
+  <%= link_to "Edit this employee", edit_employee_path(@employee) %> |
+  <%= link_to "Back to employees", employees_path %>
+
+  <%= button_to "Destroy this employee", @employee, method: :delete %>
+</div>

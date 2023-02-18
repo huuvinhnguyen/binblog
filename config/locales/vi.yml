@@ -1,0 +1,9 @@
+vi:
+  activerecord:
+    models:
+      employee: Nhân viên
+    attributes:
+      employee:
+        name: Tên
+        email: Email
+        phone: Điện thoại

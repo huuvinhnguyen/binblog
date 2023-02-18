@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :employees
   get 'youtube/download_mp3'
   get 'resumes/index'
   get 'resumes/new'
