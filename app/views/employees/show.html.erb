@@ -7,22 +7,36 @@
     <tr>
       <th>Ngày</th>
       <th>Trọng số</th>
+      <th>Đơn giá</th>
+      <th>Thành tiền</th>
       <th>Thao tác</th>
     </tr>
   </thead>
+  <% total = 0 %>
   <tbody>
     <% @employee.attendances.each do |attendance| %>
       <tr>
         <td><%= attendance.date %></td>
         <td><%= attendance.weight %></td>
+        <td><%= @employee.daily_salary %></td>
+        <% daily_salary = @employee.daily_salary ? @employee.daily_salary : 0.0 %>
+        <td><%= daily_salary ? (daily_salary.to_f * attendance.weight.to_f) : 0 %>
         <td>
           <%= button_to 'Delete', attendance_destroy_employee_path(employee_id: @employee.id, id: attendance.id), method: :delete, data: { confirm: 'Are you sure?' } %>
 
+        <% total += ( daily_salary.to_f * attendance.weight.to_f) %>
+        <td>
         </td>
       </tr>
     <% end %>
   </tbody>
+  <tfoot>
+    <tr>
+      <td>Tổng lương: <%= total %></td>
+    </tr>
+  </tfoot>
 </table>
+<h1>Thêm ngày công</h1>
 <%= form_with(model: [@employee, @attendance], local: true) do |form| %>
   <div class="form-group">
     <%= form.label :date %>
@@ -31,7 +45,7 @@
 
   <div class="form-group">
     <%= form.label :weight %>
-    <%= form.number_field :weight, class: "form-control" %>
+    <%= form.number_field :weight, class: "form-control", value: 1.0, step: 0.1, validate: false %>
   </div>
 
   <div class="form-group">

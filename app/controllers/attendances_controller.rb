@@ -2,6 +2,7 @@ class AttendancesController < ApplicationController
   def create
     # byebug
     @employee = Employee.find(params[:employee_id])
+   
     @attendance = @employee.attendances.build(attendance_params)
     @attendance.status = :present
 

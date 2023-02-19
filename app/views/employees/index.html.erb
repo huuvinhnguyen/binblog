@@ -1,14 +1,30 @@
 <p style="color: green"><%= notice %></p>
 
-<h1>Employees</h1>
+<h1>Danh sách Nhân viên</h1>
 
-<div id="employees">
+<%= link_to "Thêm nhân viên", new_employee_path %>
+<button type="button" class="btn btn-success">Xuất excel theo tháng</button>
+<button type="button" class="btn btn-success">Xuất excel theo quý</button>
+<button type="button" class="btn btn-success">Xuất excel theo năm</button>
+
+<table class = "table">
+  <thead>
+    <th>Tên</th>  
+    <th>Email</th>  
+    <th>Lương/Ngày</th>  
+    <th>Sđt</th>  
+  </thead>
+  
   <% @employees.each do |employee| %>
-    <%= render employee %>
-    <p>
-      <%= link_to "Show this employee", employee %>
-    </p>
+    <tr>
+      <td><%= link_to employee.name, employee %></td>
+      <td><%= employee.email%></td>
+      <td><%= employee.daily_salary %></td>
+      <td><%= employee.phone %></td>
+    </tr>
   <% end %>
-</div>
+  <tr>
 
-<%= link_to "New employee", new_employee_path %>
+  </tr>
+</table>
+
