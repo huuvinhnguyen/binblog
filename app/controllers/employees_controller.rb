@@ -23,7 +23,7 @@ class EmployeesController < ApplicationController
   # POST /employees or /employees.json
   def create
     @employee = Employee.new(employee_params)
-
+    # byebug
     respond_to do |format|
       if @employee.save
         format.html { redirect_to employee_url(@employee), notice: "Employee was successfully created." }
@@ -73,6 +73,6 @@ class EmployeesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def employee_params
-      params.require(:employee).permit(:name, :email, :phone)
+      params.require(:employee).permit(:name, :email, :phone, :daily_salary)
     end
 end
