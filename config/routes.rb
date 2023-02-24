@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   resources :employees do
     collection do
       get :export_xls
+      get :export_attendance_xls
     end
   end
   resources :employees do

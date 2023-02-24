@@ -1,9 +1,6 @@
 class EmployeesController < ApplicationController
   before_action :set_employee, only: %i[ show edit update destroy ]
 
-  # def export_xls
-  # end
-
   # GET /employees or /employees.json
   def index
     @employees = Employee.all
@@ -83,6 +80,28 @@ class EmployeesController < ApplicationController
 
     # Gửi file excel về cho người dùng
     send_data p.to_stream.read, filename: "nhan_cong.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  end
+
+  def export_attendance_xls
+    employee = Employee.find(params[:employee_id])
+    # Tạo file excel từ danh sách employees
+    p = Axlsx::Package.new
+    wb = p.workbook
+    wb.add_worksheet(name: "Bảng lương nhân viên") do |sheet|
+      sheet.add_row ["Tên:", employee.name ]
+      sheet.add_row ["Email", employee.email]
+      sheet.add_row ["Điện thoại", employee.phone]
+      sheet.add_row ["Lương / Ngày", employee.daily_salary]
+      sheet.add_row []
+      sheet.add_row ["Ngày", "Trọng số", "Thành tiền"]
+      employee.attendances.order(date: :desc).each do |attendance|
+        sheet.add_row [attendance.date, attendance.weight, attendance.weight.to_f * employee.daily_salary.to_f]
+      end
+      sheet.add_row ["Tổng lương:", "", employee.attendances.sum(:weight).to_f * employee.daily_salary.to_f]
+    end
+
+    # Gửi file excel về cho người dùng
+    send_data p.to_stream.read, filename: "bang_luong_nhan_vien.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
 
