@@ -14,7 +14,7 @@
     <th>Tên</th>  
     <th>Email</th>  
     <th>Lương/Ngày</th>  
-    <th>Sđt</th>  
+    <th>Tổng thu nhập</th>  
   </thead>
   
   <% @employees.each do |employee| %>
@@ -22,7 +22,7 @@
       <td><%= link_to employee.name, employee %></td>
       <td><%= employee.email%></td>
       <td><%= employee.daily_salary %></td>
-      <td><%= employee.phone %></td>
+      <td><%= employee.attendances.where.not(date: nil).sum(:weight).to_f * employee.daily_salary.to_f %></td>
     </tr>
   <% end %>
   <tr>

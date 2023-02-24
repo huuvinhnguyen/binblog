@@ -14,3 +14,10 @@
 //= require jquery_ujs
 //= require turbolinks
 //= require_tree .
+// app/assets/javascripts/application.js
+//= require bootstrap-datepicker
+// app/assets/javascripts/application.js
+//= require bootstrap-datepicker
+//= require bootstrap
+
+

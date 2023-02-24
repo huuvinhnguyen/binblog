@@ -20,6 +20,8 @@ gem 'streamio-ffmpeg'
 gem 'byebug', group: :development
 gem 'caxlsx'
 gem 'caxlsx_rails'
+gem 'bootstrap-datepicker-rails', '~> 1.6', '>= 1.6.1.1'
+
 
 
 
@@ -48,3 +50,5 @@ gem 'puma'
 
 gem 'carrierwave'
 gem 'bootstrap-sass'
+gem 'bootstrap'
+
