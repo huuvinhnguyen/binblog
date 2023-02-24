@@ -18,6 +18,9 @@ gem 'listen'
 gem 'youtube-dl.rb'
 gem 'streamio-ffmpeg'
 gem 'byebug', group: :development
+gem 'caxlsx'
+gem 'caxlsx_rails'
+
 
 
 # Use jquery as the JavaScript library

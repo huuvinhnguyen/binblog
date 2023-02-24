@@ -1,18 +1,11 @@
 Rails.application.routes.draw do
+  resources :employees
   get 'youtube/download_mp3'
   get 'resumes/index'
   get 'resumes/new'
   get 'resumes/create'
   get 'resumes/destroy'
   resources :widgets
-  # resources :employees do
-  #   get :export_xls, on: :collection
-  # end
-  resources :employees do
-    collection do
-      get :export_xls
-    end
-  end
   resources :employees do
     resources :attendances, only: [:create]
   end
@@ -21,9 +14,10 @@ Rails.application.routes.draw do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
     end
   end
-  
- 
 
+  resources :employees do
+    get :export, on: :collection
+  end
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
@@ -39,5 +33,4 @@ Rails.application.routes.draw do
   post 'youtube/download_mp3'
 
   get '/youtube/download_mp3', to: 'youtube#download_mp3'
-  # get '/employees/export_xls', to: 'employees#export_xls'
 end

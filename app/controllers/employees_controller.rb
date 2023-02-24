@@ -1,6 +1,9 @@
 class EmployeesController < ApplicationController
   before_action :set_employee, only: %i[ show edit update destroy ]
 
+  # def export_xls
+  # end
+
   # GET /employees or /employees.json
   def index
     @employees = Employee.all
@@ -64,6 +67,35 @@ class EmployeesController < ApplicationController
     @attendance.destroy
     redirect_to request.referer, notice: 'Attendance was successfully deleted.'
   end
+  
+  def export_xls
+    @employees = Employee.all
+
+    # Tạo file excel từ danh sách employees
+    p = Axlsx::Package.new
+    wb = p.workbook
+    wb.add_worksheet(name: "Employees") do |sheet|
+      sheet.add_row ["Tên", "Email", "Điện thoại", "Lương / ngày"]
+      @employees.each do |employee|
+        sheet.add_row [employee.name, employee.email, employee.phone, employee.daily_salary]
+      end
+    end
+
+    # Gửi file excel về cho người dùng
+    send_data p.to_stream.read, filename: "nhan_cong.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  end
+
+
+  def generate_csv
+    CSV.generate(headers: true) do |csv|
+      csv << ["Name", "Email", "Phone", "Daily Salary"]
+      @employees.each do |employee|
+        csv << [employee.name, employee.email, employee.phone, employee.daily_salary]
+      end
+    end
+  end
+
+
 
   private
     # Use callbacks to share common setup or constraints between actions.
@@ -76,3 +108,5 @@ class EmployeesController < ApplicationController
       params.require(:employee).permit(:name, :email, :phone, :daily_salary)
     end
 end
+
+

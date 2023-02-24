@@ -3,6 +3,8 @@
 <h1>Danh sách Nhân viên</h1>
 
 <%= link_to "Thêm nhân viên", new_employee_path %>
+<%= link_to 'Export to XLS', export_xls_employees_path(format: :xls), class: 'btn btn-primary' %>
+
 <button type="button" class="btn btn-success">Xuất excel theo tháng</button>
 <button type="button" class="btn btn-success">Xuất excel theo quý</button>
 <button type="button" class="btn btn-success">Xuất excel theo năm</button>
