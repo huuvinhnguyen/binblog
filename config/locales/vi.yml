@@ -8,6 +8,7 @@ vi:
         name: Tên
         email: Email
         phone: Điện thoại
+        daily_salary: Lường theo ngày
       attendance:
         employee_id: Nhân viên
         date: Ngày
