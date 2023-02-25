@@ -3,11 +3,62 @@
 <h1>Danh sách Nhân viên</h1>
 
 <%= link_to "Thêm nhân viên", new_employee_path %>
-<%= link_to 'Export to XLS', export_xls_employees_path(format: :xls), class: 'btn btn-primary' %>
+<%= link_to 'Xuất Excel', export_xls_employees_path(format: :xls), class: 'btn btn-success' %>
 
-<button type="button" class="btn btn-success">Xuất excel theo tháng</button>
-<button type="button" class="btn btn-success">Xuất excel theo quý</button>
-<button type="button" class="btn btn-success">Xuất excel theo năm</button>
+<br>
+<div>
+  <%= form_tag "", method: :get do %>
+  <% date = params[:daterange] %>
+  <%= text_field_tag 'daterange', date, required: true %>
+    <%= select_tag :status, options_for_select(['Công trình A', 'Công trình B', 'Công trình khác'], params[:status]), prompt: 'Tất cả' %>
+  <%= submit_tag 'Lọc' %>
+  <% end %>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <script>
+    $(function() {
+      $('input[name="daterange"]').daterangepicker({
+        opens: 'left',
+        locale: {
+          "format": "DD/MM/YYYY",
+          "separator": " - ",
+          "applyLabel": "Áp dụng",
+          "cancelLabel": "Hủy",
+          "fromLabel": "Từ",
+          "toLabel": "Đến",
+          "customRangeLabel": "Tùy chỉnh",
+          "daysOfWeek": [
+            "CN",
+            "T2",
+            "T3",
+            "T4",
+            "T5",
+            "T6",
+            "T7"
+          ],
+          "monthNames": [
+            "Tháng 1",
+            "Tháng 2",
+            "Tháng 3",
+            "Tháng 4",
+            "Tháng 5",
+            "Tháng 6",
+            "Tháng 7",
+            "Tháng 8",
+            "Tháng 9",
+            "Tháng 10",
+            "Tháng 11",
+            "Tháng 12"
+          ],
+          "firstDay": 1
+        }
+      }, function(start, end, label) {
+        console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+      });
+    });
+  </script>
 
 <table class = "table">
   <thead>

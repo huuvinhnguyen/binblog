@@ -8,7 +8,13 @@ class EmployeesController < ApplicationController
 
   # GET /employees/1 or /employees/1.json
   def show
-  @attendance = Attendance.new
+    @attendances = @employee.attendances
+    if params[:daterange].present? 
+      # byebug
+      start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
+      @attendances = @employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
+    end
+  
   end
 
   # GET /employees/new
@@ -103,18 +109,6 @@ class EmployeesController < ApplicationController
     # Gửi file excel về cho người dùng
     send_data p.to_stream.read, filename: "bang_luong_nhan_vien.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
-
-
-  def generate_csv
-    CSV.generate(headers: true) do |csv|
-      csv << ["Name", "Email", "Phone", "Daily Salary"]
-      @employees.each do |employee|
-        csv << [employee.name, employee.email, employee.phone, employee.daily_salary]
-      end
-    end
-  end
-
-
 
   private
     # Use callbacks to share common setup or constraints between actions.

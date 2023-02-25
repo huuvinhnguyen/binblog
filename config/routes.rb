@@ -14,12 +14,15 @@ Rails.application.routes.draw do
       get :export_attendance_xls
     end
   end
+
   resources :employees do
     resources :attendances, only: [:create]
   end
   resources :employees do
     member do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
+      get 'employees/:id', to: 'employees#show', as: 'filter_atendances'
+
     end
   end
   
