@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_19_045841) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_02_034113) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -20,6 +20,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_19_045841) do
     t.float "weight"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "project_id"
     t.index ["employee_id"], name: "index_attendances_on_employee_id"
   end
 
@@ -30,6 +31,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_19_045841) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "daily_salary"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "resumes", force: :cascade do |t|

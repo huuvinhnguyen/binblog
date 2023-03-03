@@ -83,3 +83,25 @@ production:
   database: ruby-getting-started_production
   username: ruby-getting-started
   password: <%= ENV['RUBY-GETTING-STARTED_DATABASE_PASSWORD'] %>
+
+default: &default
+  adapter: mysql2
+  encoding: utf8mb4
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: khuonvie_binbin
+  password: binbin2023
+  host: 173.254.104.194
+  port: 3306
+#
+# development:
+#   <<: *default
+#   database: khuonvie_binblog
+#
+# test:
+#   <<: *default
+#   database: khuonvie_binblog_test
+#
+# production:
+#   <<: *default
+#   database: khuonvie_binblog_production
+

@@ -1,4 +1,12 @@
 vi:
+  attendances:
+    select_project: Chọn công trình
+  projects:
+    title: "Công trình"
+    new: "Thêm công trình"
+    form:
+      name: "Tên công trình"
+    add: "Thêm"
   activerecord:
     models:
       employee: Nhân viên
@@ -14,6 +22,7 @@ vi:
         date: Ngày
         weight: Trọng số
         status: Trạng thái
+        project_id: Công trình
     enum:
       attendance:
         status:

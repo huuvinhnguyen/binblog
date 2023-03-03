@@ -1,0 +1,23 @@
+<h1><%= t('projects.title')%></h1>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @projects.each do |project| %>
+      <tr>
+        <td><%= project.name %></td>
+        <td>
+          <%= link_to "Edit", edit_project_path(project) %>
+          <%= button_to "Delete", project_path(project), method: :delete, data: { "turbo-method": :delete, "turbo-confirm": 'Are you sure?' } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= link_to "New Project", new_project_path %>
+
