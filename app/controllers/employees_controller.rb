@@ -3,11 +3,31 @@ class EmployeesController < ApplicationController
 
   # GET /employees or /employees.json
   def index
+  #   if params[:daterange].present?
+  #     start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
+  #     @employees = Employee.all.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
+  #   else
+  #     @employees = Employee.all
+  #   end
+    
     @employees = Employee.all
+    @attendances = Attendance.all
+    if params[:daterange].present?
+      start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
+      @employees = @employees.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
+      @attendances = @attendances.where(["date BETWEEN ? AND ?", start_date, end_date])
+    end
+    if params[:project_id].present?
+      @employees = @employees.joins(:attendances).where(attendances: { project_id:  params[:project_id]}).distinct
+      @attendances = @attendances.where({project_id: params[:project_id]}).distinct
+    end
+
   end
 
   # GET /employees/1 or /employees/1.json
   def show
+    session[:employee_id] = @employee.id # lưu trữ thông tin employee vào session
+
     @attendances = @employee.attendances
     if params[:daterange].present? 
       # byebug

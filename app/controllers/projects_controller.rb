@@ -4,14 +4,17 @@ class ProjectsController < ApplicationController
   end
 
   def show
+    @employee = Employee.find(session[:employee_id]) # truy cập thông tin employee từ session
     @project = Project.find(params[:id])
   end
 
   def new
     @project = Project.new
+    @employee = Employee.find(session[:employee_id]) # truy cập thông tin employee từ session
   end
 
   def create
+    
     @project = Project.new(project_params)
 
     if @project.save
