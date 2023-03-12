@@ -1,4 +1,8 @@
 vi:
+  date:
+    formats:
+      short: '%d/%m/%Y'
+
   attendances:
     select_project: Chọn công trình
   projects:
@@ -29,3 +33,4 @@ vi:
           present: Có mặt
           absent: Vắng mặt
           late: Đi trễ
+

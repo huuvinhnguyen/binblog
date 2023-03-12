@@ -10,7 +10,9 @@
   </p>
   <p>
     <strong>Lương/Ngày:</strong>
-    <%= employee.daily_salary %>
+    
+    <%= number_to_currency(employee.daily_salary, unit: "VND", precision: 0, delimiter: ".", format: "%n %u") %>
+
   </p>
 
 

@@ -16,4 +16,8 @@
 /* app/assets/stylesheets/application.css */
 /* *= require bootstrap-datepicker */
 
+.employee-box {
+  border: 1px solid #ccc;
+  padding: 10px;
+}
 

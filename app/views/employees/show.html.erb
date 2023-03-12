@@ -3,7 +3,11 @@
 <p style="color: green"><%= notice %></p>
 
 
-<%= render @employee %>
+
+<div class="employee-box">
+  <%= render @employee %>
+</div>
+
 
 <div class="d-flex justify-content-end">
   <%= link_to "Chỉnh sửa nhân viên", edit_employee_path(@employee), class: "btn btn-primary mr-2" %>
@@ -11,7 +15,7 @@
   <%= link_to "Quay lại", employees_path, class: "btn btn-secondary mr-2" %>
 
 </div>
-
+<div class="employee-box">
 <h1>Thêm ngày công</h1>
 <% attendance = Attendance.new %>
 <% attendance.status = 0 %>
@@ -35,6 +39,7 @@
     <%= form.submit 'Thêm ngày công', class: "btn btn-primary" %>
   </div>
 <% end %>
+</div>
 
 <br>
 
@@ -44,8 +49,8 @@
 <div>
   <%= form_tag filter_atendances_employee_path, method: :get do %>
   <% date = params[:daterange] %>
-  <%= text_field_tag 'daterange', date, required: true %>
-    <%= select_tag :status, options_for_select(['Công trình A', 'Công trình B', 'Công trình khác'], params[:status]), prompt: 'Chọn trạng thái' %>
+  <%= text_field_tag 'daterange', date, required: true, placeholder: "Chọn thời gian"%>
+      <%= select_tag :project_id, options_from_collection_for_select(Project.all, :id, :name, params[:project_id]), prompt: t("attendances.select_project"), class: "form-control" %>
   <%= submit_tag 'Lọc' %>
   <% end %>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
@@ -53,46 +58,49 @@
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
   <script>
-    $(function() {
-      $('input[name="daterange"]').daterangepicker({
-        opens: 'left',
-        locale: {
-          "format": "DD/MM/YYYY",
-          "separator": " - ",
-          "applyLabel": "Áp dụng",
-          "cancelLabel": "Hủy",
-          "fromLabel": "Từ",
-          "toLabel": "Đến",
-          "customRangeLabel": "Tùy chỉnh",
-          "daysOfWeek": [
-            "CN",
-            "T2",
-            "T3",
-            "T4",
-            "T5",
-            "T6",
-            "T7"
-          ],
-          "monthNames": [
-            "Tháng 1",
-            "Tháng 2",
-            "Tháng 3",
-            "Tháng 4",
-            "Tháng 5",
-            "Tháng 6",
-            "Tháng 7",
-            "Tháng 8",
-            "Tháng 9",
-            "Tháng 10",
-            "Tháng 11",
-            "Tháng 12"
-          ],
-          "firstDay": 1
-        }
-      }, function(start, end, label) {
-        console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
-      });
+    
+$(function() {
+  $('input[name="daterange"]').focus(function() {
+    $(this).daterangepicker({
+      opens: 'left',
+      locale: {
+        "format": "DD/MM/YYYY",
+        "separator": " - ",
+        "applyLabel": "Áp dụng",
+        "cancelLabel": "Hủy",
+        "fromLabel": "Từ",
+        "toLabel": "Đến",
+        "customRangeLabel": "Tùy chỉnh",
+        "daysOfWeek": [
+          "CN",
+          "T2",
+          "T3",
+          "T4",
+          "T5",
+          "T6",
+          "T7"
+        ],
+        "monthNames": [
+          "Tháng 1",
+          "Tháng 2",
+          "Tháng 3",
+          "Tháng 4",
+          "Tháng 5",
+          "Tháng 6",
+          "Tháng 7",
+          "Tháng 8",
+          "Tháng 9",
+          "Tháng 10",
+          "Tháng 11",
+          "Tháng 12"
+        ],
+        "firstDay": 1
+      }
+    }, function(start, end, label) {
+      console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
     });
+  });
+});
   </script>
 </div><table class="table">
   <thead>
@@ -109,12 +117,13 @@
   <tbody>
     <% @attendances.order(date: :desc).each do |attendance| %>
       <tr>
-        <td><%= attendance.date %></td>
-        <td><%= Project.find(attendance.project_id).name if attendance.project_id.present? %></td>
+        <td><%= l attendance.date, format: :short %></td>
+        <td><%= Project.find_by(id: attendance.project_id).try(:name) %></td>
         <td><%= attendance.weight %></td>
-        <td><%= @employee.daily_salary %></td>
+        <td><%= number_to_currency(@employee.daily_salary, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <% daily_salary = @employee.daily_salary ? @employee.daily_salary : 0.0 %>
-        <td><%= daily_salary ? (daily_salary.to_f * attendance.weight.to_f) : 0 %>
+        <% amount = daily_salary ? (daily_salary.to_f * attendance.weight.to_f) : 0 %>
+        <td><%= number_to_currency(amount, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <td>
           <%= button_to 'Xoá', attendance_destroy_employee_path(employee_id: @employee.id, id: attendance.id), method: :delete, data: { confirm: 'Are you sure?' } %>
 
@@ -127,7 +136,7 @@
   </tbody>
   <tfoot>
     <tr>
-      <td>Tổng lương: <%= total %></td>
+      <td>Tổng lương: <%= number_to_currency(total, unit: 'VND', format: '%n %u') %></td>
       <td>
         <div>
           <%= link_to "Xuất Excel", export_attendance_xls_employees_path(employee_id: @employee.id, format: :xls), class: "btn btn-primary", method: :get %>

@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'
   get 'resumes/index'
   get 'resumes/new'

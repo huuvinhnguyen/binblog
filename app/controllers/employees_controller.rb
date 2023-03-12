@@ -30,9 +30,12 @@ class EmployeesController < ApplicationController
 
     @attendances = @employee.attendances
     if params[:daterange].present? 
-      # byebug
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @attendances = @employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
+    end
+
+     if params[:project_id].present?
+      @attendances = @attendances.where({project_id: params[:project_id]}).distinct
     end
   
   end

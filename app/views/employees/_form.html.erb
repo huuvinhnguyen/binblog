@@ -25,10 +25,14 @@
     <%= form.label :phone, style: "display: block" %>
     <%= form.text_field :phone %>
   </div> 
-  <div>
-    <%= form.label :daily_salary, style: "display: block" %>
-    <%= form.text_field :daily_salary %>
-  </div>
+  
+  
+<div>
+  <%= form.label :daily_salary, style: "display: block" %>
+  <%= form.text_field :daily_salary, value: number_to_currency(form.object.daily_salary, unit: "VND", separator: ".", delimiter: ",", format: "%n %u") %>
+</div>
+
+
   
 
   <div>

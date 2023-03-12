@@ -6,6 +6,7 @@ gem 'rails', '~> 7.0.4'
 # Use postgresql as the database for Active Record
 gem 'pg', '~> 1.3.5'
 # gem 'mysql2', '>= 0.4.4'
+gem 'rails_admin'
 
 # Use SCSS for stylesheets
 gem 'sass-rails'
@@ -16,6 +17,7 @@ gem 'coffee-rails'
 # See https://github.com/sstephenson/execjs#readme for more supported runtimes
 # gem 'therubyracer',  platforms: :ruby
 gem 'bootsnap', require: false
+gem "bootstrap", "~> 4.5.0"
 gem 'listen'
 gem 'youtube-dl.rb'
 gem 'streamio-ffmpeg'
@@ -23,6 +25,7 @@ gem 'byebug', group: :development
 gem 'caxlsx'
 gem 'caxlsx_rails'
 gem 'bootstrap-datepicker-rails', '~> 1.6', '>= 1.6.1.1'
+gem 'slim'
 
 
 
@@ -52,5 +55,5 @@ gem 'puma'
 
 gem 'carrierwave'
 gem 'bootstrap-sass'
-gem 'bootstrap'
 
+gem "sassc-rails"
