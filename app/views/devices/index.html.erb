@@ -1,0 +1,16 @@
+<div id="mqtt-messages"></div>
+
+<h1>Send MQTT message</h1>
+
+<%= form_tag('/devices/publish', method: 'post') do %>
+  <div class="field">
+    <%= label_tag :topic, 'Topic' %><br>
+    <%= text_field_tag :topic %>
+  </div>
+  <div class="field">
+    <%= label_tag :message, 'Message' %><br>
+    <%= text_field_tag :message %>
+  </div>
+  <%= submit_tag 'Send message' %>
+<% end %>
+

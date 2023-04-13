@@ -4,8 +4,8 @@ ruby '>= 3.1', '<= 3.2'
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 7.0.4'
 # Use postgresql as the database for Active Record
-gem 'pg', '~> 1.3.5'
-# gem 'mysql2', '>= 0.4.4'
+# gem 'pg', '~> 1.3.5'
+gem 'mysql2', '>= 0.4.4'
 gem 'rails_admin'
 
 # Use SCSS for stylesheets
@@ -26,7 +26,11 @@ gem 'caxlsx'
 gem 'caxlsx_rails'
 gem 'bootstrap-datepicker-rails', '~> 1.6', '>= 1.6.1.1'
 gem 'slim'
-
+gem 'mqtt', :github => 'njh/ruby-mqtt'
+gem 'sidekiq'
+gem 'sidekiq-cron'
+gem 'actioncable'
+gem 'redis'
 
 
 

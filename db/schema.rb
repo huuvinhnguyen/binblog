@@ -11,10 +11,7 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.0].define(version: 2023_03_02_034113) do
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
-
-  create_table "attendances", force: :cascade do |t|
+  create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
     t.float "weight"
@@ -24,29 +21,29 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_02_034113) do
     t.index ["employee_id"], name: "index_attendances_on_employee_id"
   end
 
-  create_table "employees", force: :cascade do |t|
+  create_table "employees", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "email"
     t.string "phone"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.decimal "daily_salary"
+    t.decimal "daily_salary", precision: 10
   end
 
-  create_table "projects", force: :cascade do |t|
+  create_table "projects", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "resumes", force: :cascade do |t|
+  create_table "resumes", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "attachment"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "widgets", force: :cascade do |t|
+  create_table "widgets", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.text "description"
     t.integer "stock"

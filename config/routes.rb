@@ -1,10 +1,22 @@
 Rails.application.routes.draw do
+  mount ActionCable.server => '/cable'
+
+  get 'devices/index'
+  get 'devices/show'
+  get 'devices/new'
+  get 'devices/create'
+  get 'devices/edit'
+  get 'devices/update'
+  get 'devices/destroy'
+  post 'devices/publish'
+
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'
   get 'resumes/index'
   get 'resumes/new'
   get 'resumes/create'
   get 'resumes/destroy'
+
   resources :widgets
   # resources :employees do
   #   get :export_xls, on: :collection
@@ -26,8 +38,17 @@ Rails.application.routes.draw do
 
     end
   end
-  
- 
+  resources :devices, only: [:index, :new, :create, :destroy, :publish]
+  # config/routes.rb
+  resources :devices do
+    collection do
+      get :mqtt_data
+    end
+  end
+
+
+
+
 
 
   # The priority is based upon order of creation: first created -> highest priority.
