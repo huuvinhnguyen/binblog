@@ -104,7 +104,7 @@ class DevicesController < ApplicationController
       # client_id: 'myClientID'
     )
 
-    client.publish(topic, "{\"message\": \"#{message}\"}")
+    client.publish(topic, "{\"message\": \"#{message}\"}") if topic.present?
     client.disconnect()
 
 
