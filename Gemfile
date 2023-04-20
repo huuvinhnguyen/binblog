@@ -17,7 +17,7 @@ gem 'coffee-rails'
 # See https://github.com/sstephenson/execjs#readme for more supported runtimes
 # gem 'therubyracer',  platforms: :ruby
 gem 'bootsnap', require: false
-gem "bootstrap", "~> 4.5.0"
+gem 'bootstrap', '~> 5.1.3'
 gem 'listen'
 gem 'youtube-dl.rb'
 gem 'streamio-ffmpeg'
@@ -31,6 +31,16 @@ gem 'sidekiq'
 gem 'sidekiq-cron'
 gem 'actioncable'
 gem 'redis'
+gem "jsbundling-rails"
+# Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
+gem "turbo-rails"
+
+# Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
+gem "stimulus-rails"
+gem "jbuilder"
+gem "importmap-rails"
+
+
 
 
 
@@ -61,3 +71,5 @@ gem 'carrierwave'
 gem 'bootstrap-sass'
 
 gem "sassc-rails"
+
+gem "cssbundling-rails", "~> 1.1"

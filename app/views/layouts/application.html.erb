@@ -1,28 +1,18 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Your App Title</title>
-    <!-- Bootstrap CSS -->
+    <title>Demoapp</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
-    <%= stylesheet_link_tag "application", media: "all" %>
+    <%= csp_meta_tag %>
 
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
   </head>
-  <body>
-    
-    </nav>
 
+  <body>
     <div class="container">
       <%= yield %>
     </div>
-
-    <!-- Bootstrap JS -->
-      <%= javascript_include_tag "application" %>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-
   </body>
 </html>

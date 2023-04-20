@@ -43,6 +43,8 @@ Rails.application.routes.draw do
   resources :devices do
     collection do
       get :mqtt_data
+      get :latest_data
+
     end
   end
 
