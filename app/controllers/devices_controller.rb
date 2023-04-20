@@ -2,95 +2,34 @@
 class DevicesController < ApplicationController
 
   def index
-    MqttWorker.perform_async('topic1')
+    # MqttWorker.perform_async('topic1')
 
-    # @message = ""
-    # client = MQTT::Client.new
-    # client.host = 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com'
-    # client.ssl = true
-    # client.cert_file = path_to('cert.crt')
-    # client.key_file  = path_to('private.key')
-    # client.ca_file   = path_to('rootCA.pem')
-    # client.connect()
-    # # client.subscribe('topic1')
-    # # client.get do |topic,message|
-    # #   # Block is executed for every message received
-    # #   @message = message
-    # # end
-    # # client.disconnect()
-    #
-    # # @queue = Queue.new
-    # #
-    # # conn_opts = {
-    #   host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
-    #   port: 8883,
-    #   ssl: true,
-    #   cert_file: path_to('cert.crt'),
-    #   key_file: path_to('private.key'),
-    #   ca_file: path_to('rootCA.pem'),
-    #   # client_id: 'myClientID'
-    # }
-    #
-    # Thread.new do
-    #   MQTT::Client.connect(conn_opts) do |c|
-    #     c.get("topic1") do |t, message|
-    #       puts "#{t}: #{message}"
-    #       @queue << message
-    #     end
-    #   end
-    # end
+    Thread.new do
+      client = MQTT::Client.connect(
+        host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
+        port: 8883,
+        ssl: true,
+        cert_file: path_to('cert.crt'),
+        key_file: path_to('private.key'),
+        ca_file: path_to('rootCA.pem'),
+        client_id: 'myClientID',
+        keep_alive: 30
+      )
 
-     # message = @queue.pop
-    # @message = "abc"
-    # conn_opts = {
-    #   host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
-    #   port: 8883,
-    #   ssl: true,
-    #   cert_file: path_to('cert.crt'),
-    #   key_file: path_to('private.key'),
-    #   ca_file: path_to('rootCA.pem'),
-    #   # client_id: 'myClientID'
-    # }
-    #
-    # thread = Thread.new do
-    #    MQTT::Client.connect(conn_opts) do |c|
-    #     # The block will be called when you messages arrive to the topic
-    #     c.get("topic1") do |t, message|
-    #       puts "#{t}: #{message}"
-    #       @message = message
-    #       # render :index
-    #     end
-    #   end
-    # end
+      client.get('topic', timeout: 2) do |topic, message|
 
-    # thread.join
+        # json_parse = JSON.parse(message)
+        # puts "#{topic}: #{json_parse}"
+        json_message = JSON.generate(message)
+        ActionCable.server.broadcast('mqtt_channel', json_message)
 
-    # client = MQTT::Client.connect(
-    #   host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
-    #   port: 8883,
-    #   ssl: true,
-    #   cert_file: path_to('cert.crt'),
-    #   key_file: path_to('private.key'),
-    #   ca_file: path_to('rootCA.pem'),
-    #   # client_id: 'myClientID'
-    # )
-
-    # client.publish('both_directions', '{"message": "helloFromRailsApp - from ruby"}')
-    # client.subscribe('topic1')
-    # Thread.new do
-    #   topic, message = client.get
-    # end
-
-    # topic, message = client.get
-    # client.get do |topic, message|
-    #   @message = message
-    #   # render :index
-    # end
-    # client.disconnect
-
+      end
+      client.disconnect()
+    end
   end
 
   def publish
+
     topic = params[:topic]
     message = params[:message]
 
@@ -106,48 +45,16 @@ class DevicesController < ApplicationController
 
     client.publish(topic, "{\"message\": \"#{message}\"}") if topic.present?
     client.disconnect()
-
-
-
     redirect_to devices_index_path
+  end
 
-
+  def latest_data message
+    puts "message: #{message}"
+    render json: { abc: message} if message.present?
   end
 
   def mqtt_data
     render json: { mqtt_data: @queue.pop }
-  end
-
-
-  # app/controllers/devices_controller.rb
-  # def mqtt_data
-  #   topic = "example_topic"
-  #   conn_opts = {
-  #     host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
-  #     port: 8883,
-  #     ssl: true,
-  #     cert_file: path_to('cert.crt'),
-  #     key_file: path_to('private.key'),
-  #     ca_file: path_to('rootCA.pem'),
-  #     # client_id: 'myClientID'
-  #   }
-  #
-  #
-  #
-  #   Thread.new do
-  #     MQTT::Client.connect(conn_opts) do |c|
-  #       c.get("topic1") do |t, message|
-  #         puts "#{t}: #{message}"
-  #         @mqtt_data = message
-  #       end
-  #     end
-  #   end
-  #
-  #   render json: {mqtt_data: @mqtt_data}
-  # end
-
-
-  def show
   end
 
   def new
