@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   get 'devices/update'
   get 'devices/destroy'
   post 'devices/publish'
+  post 'devices/connect'
 
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'
