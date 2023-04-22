@@ -1,16 +1,17 @@
 <div id="mqtt-messages"></div>
 
-<h1>Send MQTT message</h1>
-
-<%= form_tag('/devices/publish', method: 'post') do %>
+<h1></h1>
+<%= form_tag('/devices/connect', method: 'post') do %>
   <div class="field">
-    <%= label_tag :topic, 'Topic' %><br>
-    <%= text_field_tag :topic %>
+    <%= label_tag :deviceid, 'Thiết bị' %><br>
+    <%= text_field_tag :deviceid %>
   </div>
-  <div class="field">
-    <%= label_tag :message, 'Message' %><br>
-    <%= text_field_tag :message %>
-  </div>
-  <%= submit_tag 'Send message' %>
+   <%= submit_tag 'Kết nối' %>
 <% end %>
-
+<div id="switch-div" style="display: none;">
+<%= form_tag('/devices/publish', method: 'post') do %>
+  <%= hidden_field_tag :message, "", id: 'message_field' %>
+  <%= submit_tag 'ON/OFF', class: 'btn btn-primary' %>
+<% end %> 
+<div id="device-status">Đang tải trạng thái...</div>
+</div>
