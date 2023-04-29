@@ -1,0 +1,6 @@
+<div id="switch-div" style="display: none;">
+  <%= form_tag('/devices/publish', method: 'post') do %>
+    <%= hidden_field_tag :message, "", id: 'message_field' %>
+    <%= submit_tag 'ON/OFF', class: 'btn btn-primary' %>
+  <% end %>
+</div>

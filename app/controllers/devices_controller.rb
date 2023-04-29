@@ -25,10 +25,10 @@ class DevicesController < ApplicationController
 
   def publish
 
-    puts "publish mess: #{@mess_mqtt}"
 
-    topic = session[:device_id]
+    topic = session[:device_id] + "/switch"
     message = params[:message]
+
 
     client = MQTT::Client.connect(
       host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
@@ -39,6 +39,9 @@ class DevicesController < ApplicationController
       ca_file: path_to('rootCA.pem'),
       # client_id: 'myClientID'
     )
+    puts "#topic: #{topic}"
+    puts "#publish mess: #{message}"
+
 
     client.publish(topic, message, retain: true) if topic.present?
     client.disconnect()
