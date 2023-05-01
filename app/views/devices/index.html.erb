@@ -5,10 +5,14 @@
 
   <%= form_tag('/devices/connect', method: 'post', ) do %>
     <%= label_tag :deviceid, 'Thiết bị' %><br>
-    <%= text_field_tag :deviceid, nil, placeholder: "kv_", class: 'form-control' %>
+    <%= text_field_tag :deviceid, nil, placeholder: "kv_", class: 'form-control', style: 'font-size: 50px;' %>
     <%= submit_tag 'Kết nối' %>
   <% end %>
-  <%= render 'publish_form' %>
+  <div id="switch-div" style="display: none;">
+     <%= render 'publish_form' %>
+    <div id="device-status">Trạng thái</div>
 
-  <div id="device-status">Đang tải trạng thái...</div>
+    <%= render 'switchon_form' %>
+  </div>
+
 </div>

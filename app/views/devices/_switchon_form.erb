@@ -1,0 +1,16 @@
+<div class="slider-value">
+  <input type="range" min="1000" max="10000" value="1000" step="1000" class="slider" id="slider1">
+  <%= form_tag('/devices/switchon', method: 'post') do %>
+    <%= hidden_field_tag :value, "", id: 'switchon_message_field' %>
+    <%= submit_tag 'Kích hoạt', id: 'publish-button-switchon', class: 'btn btn-primary' %>
+  <% end %>
+</div>
+
+<script>
+  const sliderInput = document.getElementById('slider1');
+  const messageField = document.getElementById('switchon_message_field');
+
+  sliderInput.addEventListener('input', () => {
+    messageField.value = sliderInput.value;
+  });
+</script>
