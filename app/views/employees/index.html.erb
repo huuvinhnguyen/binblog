@@ -4,6 +4,8 @@
 
 <%= link_to "Thêm nhân viên", new_employee_path %>
 <%= link_to t("projects.new"), new_project_path %>
+<%= link_to "Danh sách công trình", projects_path, class: 'btn btn-success' %>
+
 <%= link_to 'Xuất Excel', export_xls_employees_path(format: :xls), class: 'btn btn-success' %>
 
 <br>
