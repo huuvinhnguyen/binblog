@@ -1,9 +1,9 @@
 <h1><%= t('projects.title')%></h1>
-<table>
+<table class="table">
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Actions</th>
+      <th>Công trình</th>
+      <th>Thao tác</th>
     </tr>
   </thead>
   <tbody>
@@ -11,13 +11,15 @@
       <tr>
         <td><%= project.name %></td>
         <td>
-          <%= link_to "Edit", edit_project_path(project) %>
-          <%= button_to "Delete", project_path(project), method: :delete, data: { "turbo-method": :delete, "turbo-confirm": 'Are you sure?' } %>
+          <%= link_to "Chỉnh sửa", edit_project_path(project) %>
+          <%= button_to "Xoá", project_path(project), method: :delete, data: { "turbo-method": :delete, "turbo-confirm": 'Are you sure?' } %>
         </td>
       </tr>
     <% end %>
   </tbody>
 </table>
 
-<%= link_to "New Project", new_project_path %>
+<%= link_to "Thêm mới công trình", new_project_path %>
+<%= link_to "Danh sách nhân viên", employees_path, class: "btn btn-primary"  %>
+
 
