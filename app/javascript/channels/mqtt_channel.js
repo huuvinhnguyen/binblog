@@ -13,6 +13,9 @@ consumer.subscriptions.create("MqttChannel", {
 
   received(data) {
 
+    var connectionDiv = document.getElementById("connection-div");
+    connectionDiv.style.display = "none";
+
     const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
     const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
 
@@ -23,17 +26,18 @@ consumer.subscriptions.create("MqttChannel", {
 
     var switchDiv = document.getElementById("switch-div");
     switchDiv.style.display = "block";
-    if (message_hash.value == 1) {
-      status = "Đang hoạt động";
-      document.getElementById('message_field').value = '{ "value": 0 }';
+    // if (message_hash.value == 1) {
+    //   status = "Đang hoạt động";
+    //   document.getElementById('message_field').value = '{ "value": 0 }';
 
-    } else {
-      status = "không hoạt động";
-      document.getElementById('message_field').value = '{ "value": 1 }';
+    // } else {
+    //   status = "không hoạt động";
+    //   document.getElementById('message_field').value = '{ "value": 1 }';
 
-    }
-    const status_element = document.querySelector("#device-status");
-    status_element.textContent = status;
+    // }
+    // const status_element = document.querySelector("#device-status");
+    // status_element.textContent = status;
+
 
   }
 })
