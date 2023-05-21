@@ -41,6 +41,9 @@ Rails.application.routes.draw do
     end
   end
   resources :devices, only: [:index, :new, :create, :destroy, :publish]
+  namespace :api do
+    resources :devices, only: [:create]
+  end
   # config/routes.rb
   resources :devices do
     collection do

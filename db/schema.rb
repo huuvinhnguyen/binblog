@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_02_034113) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_20_161712) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -19,6 +19,15 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_02_034113) do
     t.datetime "updated_at", null: false
     t.integer "project_id"
     t.index ["employee_id"], name: "index_attendances_on_employee_id"
+  end
+
+  create_table "devices", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.string "name"
+    t.string "serial_number"
+    t.integer "status"
+    t.boolean "is_payment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "employees", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
