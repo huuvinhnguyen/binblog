@@ -102,11 +102,11 @@ class DevicesController < ApplicationController
         json_message = JSON.generate(message)
         ActionCable.server.broadcast('mqtt_channel', json_message)
         @client.disconnect()
-        ActionCable.server.remote_connections.where(current_user: User.find(1)).disconnect
+        # ActionCable.server.remote_connections.where(current_user: User.find(1)).disconnect
 
       end
       @client.disconnect()
-      ActionCable.server.remote_connections.where(current_user: User.find(1)).disconnect
+      # ActionCable.server.remote_connections.where(current_user: User.find(1)).disconnect
     end
 
   end
