@@ -93,11 +93,12 @@ class DevicesController < ApplicationController
 
   def subscribe_topic topic
 
+    json_message = nil
+
     Thread.new do
       @client.subscribe(topic)
       @client.get(topic, timeout: 2) do |rs_topic, message|
         current_message = JSON.generate(message)
-        decoded_string = JSON.parse(current_message)
         if json_message.to_s != current_message.to_s
           ActionCable.server.broadcast('mqtt_channel', current_message)
           json_message = current_message
