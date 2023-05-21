@@ -65,9 +65,6 @@ class DevicesController < ApplicationController
       ca_file: path_to('rootCA.pem'),
       # client_id: 'myClientID'
     )
-    puts "#topic: #{topic}"
-    puts "#publish mess: #{message}"
-
 
     client.publish(topic, message, retain: true) if topic.present?
     client.disconnect()
@@ -95,18 +92,18 @@ class DevicesController < ApplicationController
   private
 
   def subscribe_topic topic
+
     Thread.new do
       @client.subscribe(topic)
       @client.get(topic, timeout: 2) do |rs_topic, message|
-
-        json_message = JSON.generate(message)
-        ActionCable.server.broadcast('mqtt_channel', json_message)
-        @client.disconnect()
-        # ActionCable.server.remote_connections.where(current_user: User.find(1)).disconnect
-
+        current_message = JSON.generate(message)
+        decoded_string = JSON.parse(current_message)
+        if json_message.to_s != current_message.to_s
+          ActionCable.server.broadcast('mqtt_channel', current_message)
+          json_message = current_message
+        end
       end
       @client.disconnect()
-      # ActionCable.server.remote_connections.where(current_user: User.find(1)).disconnect
     end
 
   end
