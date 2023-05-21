@@ -72,7 +72,8 @@ class DevicesController < ApplicationController
     client.publish(topic, message, retain: true) if topic.present?
     client.disconnect()
 
-    subscribe_topic topic
+    mainTopic = session[:device_id]
+    subscribe_topic mainTopic
   end
  
 
