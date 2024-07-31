@@ -1,0 +1,14 @@
+
+<div id="dht-form-wrapper">
+    <div class="dht-value">
+        <div>
+            <div id="dht-value-temperature"></div>
+        </div>
+        <div>
+        <div id="dht-value-humidity"></div>
+        </div>
+        <%= form_with url: connect_dht_devices_path, method: :post, local: true do %>
+            <%= submit_tag 'Connect DHT', class: 'btn btn-secondary' %>
+        <% end %>
+    </div>
+</div>
