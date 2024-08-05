@@ -4,7 +4,7 @@
   <div id="connection-div" class="">
     <%= form_tag('/devices/connect', method: 'post', ) do %>
       <div class="d-flex">
-        <%= text_field_tag :deviceid, nil, placeholder: "kv_12345678", class: 'form-control px-2', style: 'font-size: 34px; flex: 1;' %>
+        <%= text_field_tag :deviceid, nil, placeholder: "ID", class: 'form-control px-2', style: 'font-size: 34px; flex: 1;' %>
         <%= submit_tag 'KẾT NỐI', class: 'btn btn-primary ml-2 py-2', style: 'margin-left: 10px;' %>
       </div>
     <% end %>
@@ -15,8 +15,9 @@
     <%= render 'switchon_form' %>
     <div id="last-active-message-div"></div>
   </div>
-</div>
 
-<div>
+
+  <div class="row">
     <%= render 'dht_form' %>
+</div>
 </div>

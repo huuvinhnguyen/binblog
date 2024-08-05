@@ -1,5 +1,8 @@
 // app/javascript/channels/mqtt_channel.js
 import consumer from "./consumer"
+// import { createConsumer } from "@rails/actioncable";
+import { createVerGauge, getTempColor, createRadGauge, getHumColor  }  from "gauges";
+
 
 consumer.subscriptions.create("MqttChannel", {
   connected() {
@@ -34,10 +37,11 @@ consumer.subscriptions.create("MqttChannel", {
       lastActiveMessageDiv.value = formattedDateTime;
     }
 
-    var temperatureDiv = document.getElementById("dht-value-temperature");
-    temperatureDiv.textContent = message_hash.tem;
-    var humidityDiv = document.getElementById("dht-value-humidity");
-    humidityDiv.textContent = message_hash.hum;
+    var tempGauge = createVerGauge('temp', -20, 60, ' °C').setVal(0).setColor(getTempColor(0));
+    tempGauge.setVal(message_hash.tem).setColor(getTempColor(message_hash.tem));
+
+    var humGauge = createRadGauge('hum', 0, 100, '%').setVal(80).setColor(getHumColor(80));
+    humGauge.setVal(message_hash.hum).setColor(getHumColor(message_hash.hum));
 
   }
 })

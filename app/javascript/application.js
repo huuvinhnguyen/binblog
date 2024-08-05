@@ -8,6 +8,7 @@ import "bootstrap"
 
 import "./jquery"
 import "./jquery_ujs"
+import "gauges"
 
 $(document).ready(function() {
     if ($('#dht-form-wrapper').length) {
@@ -28,6 +29,6 @@ $(document).ready(function() {
         }
     
         // Send request every second
-        setInterval(sendConnectDhtRequest, 1000);
+        setInterval(sendConnectDhtRequest, 5000);
     }
   });
