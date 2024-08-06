@@ -25,6 +25,16 @@ consumer.subscriptions.create("MqttChannel", {
     console.log(typeof message_hash);
     console.log("message_hash:", message_hash)
 
+
+    if(message_hash.sen == "dht11") {
+      var tempGauge = createVerGauge('temp', -20, 60, ' °C').setVal(0).setColor(getTempColor(0));
+    tempGauge.setVal(message_hash.tem).setColor(getTempColor(message_hash.tem));
+
+    var humGauge = createRadGauge('hum', 0, 100, '%').setVal(80).setColor(getHumColor(80));
+    humGauge.setVal(message_hash.hum).setColor(getHumColor(message_hash.hum));
+
+    } else {
+
     var switchDiv = document.getElementById("switch-div");
     switchDiv.style.display = "block";
 
@@ -36,13 +46,7 @@ consumer.subscriptions.create("MqttChannel", {
       const lastActiveMessageDiv = document.getElementById('last-active-message-div');
       lastActiveMessageDiv.value = formattedDateTime;
     }
-
-    var tempGauge = createVerGauge('temp', -20, 60, ' °C').setVal(0).setColor(getTempColor(0));
-    tempGauge.setVal(message_hash.tem).setColor(getTempColor(message_hash.tem));
-
-    var humGauge = createRadGauge('hum', 0, 100, '%').setVal(80).setColor(getHumColor(80));
-    humGauge.setVal(message_hash.hum).setColor(getHumColor(message_hash.hum));
-
+    }
   }
 })
 

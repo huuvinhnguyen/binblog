@@ -10,25 +10,25 @@ import "./jquery"
 import "./jquery_ujs"
 import "gauges"
 
-$(document).ready(function() {
-    if ($('#dht-form-wrapper').length) {
+// $(document).ready(function() {
+//     if ($('#dht-form-wrapper').length) {
 
-        function sendConnectDhtRequest() {
-        $.ajax({
-            url: "devices/connect_dht", // Ensure this matches the route in your Rails app
-            type: "POST",
-            dataType: "script", // Expect JavaScript response if needed
-            success: function(response) {
-            console.log("Request successful");
-            // Handle the response if needed
-            },
-            error: function(xhr, status, error) {
-            console.error("Request failed:", error);
-            }
-        });
-        }
+//         function sendConnectDhtRequest() {
+//         $.ajax({
+//             url: "devices/connect_dht", // Ensure this matches the route in your Rails app
+//             type: "POST",
+//             dataType: "script", // Expect JavaScript response if needed
+//             success: function(response) {
+//             console.log("Request successful");
+//             // Handle the response if needed
+//             },
+//             error: function(xhr, status, error) {
+//             console.error("Request failed:", error);
+//             }
+//         });
+//         }
     
-        // Send request every second
-        setInterval(sendConnectDhtRequest, 5000);
-    }
-  });
+//         // Send request every second
+//         setInterval(sendConnectDhtRequest, 5000);
+//     }
+//   });
