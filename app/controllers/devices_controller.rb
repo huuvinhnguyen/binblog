@@ -3,12 +3,12 @@ class DevicesController < ApplicationController
   before_action :initialize_mqtt_client
   def initialize_mqtt_client
     @client = MQTT::Client.connect(
-      host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
-      port: 8883,
-      ssl: true,
-      cert_file: path_to('cert.crt'),
-      key_file: path_to('private.key'),
-      ca_file: path_to('rootCA.pem'),
+      host: '103.9.77.155',
+      port: 1883,
+      # ssl: true,
+      # cert_file: path_to('cert.crt'),
+      # key_file: path_to('private.key'),
+      # ca_file: path_to('rootCA.pem'),
       keep_alive: 30
     )
 
@@ -25,23 +25,21 @@ class DevicesController < ApplicationController
 
   def publish
 
-
     topic = session[:device_id] + "/switch"
     message = params[:message]
 
 
     client = MQTT::Client.connect(
-      host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
-      port: 8883,
-      ssl: true,
-      cert_file: path_to('cert.crt'),
-      key_file: path_to('private.key'),
-      ca_file: path_to('rootCA.pem'),
+      host: '103.9.77.155',
+      port: 1883,
+      # ssl: true,
+      # cert_file: path_to('cert.crt'),
+      # key_file: path_to('private.key'),
+      # ca_file: path_to('rootCA.pem'),
       # client_id: 'myClientID'
     )
     puts "#topic: #{topic}"
     puts "#publish mess: #{message}"
-
 
     client.publish(topic, message, retain: true) if topic.present?
     client.disconnect()
@@ -50,19 +48,29 @@ class DevicesController < ApplicationController
 
   end
 
+  def connect_dht
+    
+    topic = session[:device_id] + "/dht"
+    subscribe_topic topic
+    puts "#topic: #{topic}"
+  end
+
+  def disconnect_mqtt
+  
+  end
+
   def switchon
 
     topic = session[:device_id] + "/switchon"
     message = "{ \"longlast\" : #{params[:value].to_i} }"
 
-
     client = MQTT::Client.connect(
-      host: 'a2eoz3l3pmara3-ats.iot.ap-southeast-1.amazonaws.com',
-      port: 8883,
-      ssl: true,
-      cert_file: path_to('cert.crt'),
-      key_file: path_to('private.key'),
-      ca_file: path_to('rootCA.pem'),
+      host: '103.9.77.155',
+      port: 1883,
+      # ssl: true,
+      # cert_file: path_to('cert.crt'),
+      # key_file: path_to('private.key'),
+      # ca_file: path_to('rootCA.pem'),
       # client_id: 'myClientID'
     )
 
@@ -106,9 +114,8 @@ class DevicesController < ApplicationController
       end
       @client.disconnect()
     end
-
   end
-
+  
   def path_to(filename)
     Rails.root.join('config', filename).to_s
   end

@@ -11,7 +11,9 @@ Rails.application.routes.draw do
   post 'devices/publish'
   post 'devices/connect'
   post 'devices/switchon'
-
+  post 'devices/connect_dht', to: 'devices#connect_dht', as: 'connect_dht_devices'
+  post 'devices/disconnect_mqtt', to: 'devices#disconnect_mqtt', as: 'disconnect_mqtt_devices'
+  
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'
   get 'resumes/index'

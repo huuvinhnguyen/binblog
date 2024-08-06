@@ -7,6 +7,7 @@ class MqttChannel < ApplicationCable::Channel
   def unsubscribed
     # hủy kết nối với MQTT tại đây
     puts "Disconnected from MQTT"
+
   end
 end
 

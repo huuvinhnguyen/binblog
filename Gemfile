@@ -6,7 +6,7 @@ gem 'rails', '~> 7.0.4'
 # Use postgresql as the database for Active Record
 # gem 'pg', '~> 1.3.5'
 gem 'mysql2', '>= 0.4.4'
-gem 'rails_admin'
+gem 'rails_admin', '3.1.4'
 
 # Use SCSS for stylesheets
 gem 'sass-rails'
@@ -19,8 +19,6 @@ gem 'coffee-rails'
 gem 'bootsnap', require: false
 gem 'bootstrap', '~> 5.1.3'
 gem 'listen'
-gem 'youtube-dl.rb'
-gem 'streamio-ffmpeg'
 gem 'byebug', group: :development
 gem 'caxlsx'
 gem 'caxlsx_rails'
@@ -31,7 +29,6 @@ gem 'sidekiq'
 gem 'sidekiq-cron'
 gem 'actioncable'
 gem 'redis'
-gem "jsbundling-rails"
 # Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
 gem "turbo-rails"
 
@@ -40,12 +37,6 @@ gem "stimulus-rails"
 gem "jbuilder"
 gem "importmap-rails"
 
-
-
-
-
-# Use jquery as the JavaScript library
-gem 'jquery-rails'
 # Turbolinks makes following links in your web application faster. Read more: https://github.com/rails/turbolinks
 gem 'turbolinks'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
@@ -61,15 +52,5 @@ gem 'spring',        group: :development
 
 gem 'puma'
 
-# Use Capistrano for deployment
-# gem 'capistrano-rails', group: :development
-
-# Use debugger
-# gem 'debugger', group: [:development, :test]
-
 gem 'carrierwave'
-gem 'bootstrap-sass'
-
-gem "sassc-rails"
-
-gem "cssbundling-rails", "~> 1.1"
+gem 'jquery-rails'
