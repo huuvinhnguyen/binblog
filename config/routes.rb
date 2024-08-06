@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   mount ActionCable.server => '/cable'
 
   get 'devices/index'
+  get 'devices/switchon_ab'
   get 'devices/show'
   get 'devices/new'
   get 'devices/create'
@@ -13,6 +14,7 @@ Rails.application.routes.draw do
   post 'devices/switchon'
   post 'devices/connect_dht', to: 'devices#connect_dht', as: 'connect_dht_devices'
   post 'devices/disconnect_mqtt', to: 'devices#disconnect_mqtt', as: 'disconnect_mqtt_devices'
+
   
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'

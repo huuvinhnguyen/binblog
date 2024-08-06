@@ -49,14 +49,14 @@ class DevicesController < ApplicationController
   end
 
   def connect_dht
-    
+
     topic = session[:device_id] + "/dht"
     subscribe_topic topic
     puts "#topic: #{topic}"
   end
 
   def disconnect_mqtt
-  
+
   end
 
   def switchon
@@ -80,7 +80,9 @@ class DevicesController < ApplicationController
     mainTopic = session[:device_id]
     subscribe_topic mainTopic
   end
- 
+
+  def switchon_ab
+  end
 
   def new
   end
@@ -115,7 +117,7 @@ class DevicesController < ApplicationController
       @client.disconnect()
     end
   end
-  
+
   def path_to(filename)
     Rails.root.join('config', filename).to_s
   end
