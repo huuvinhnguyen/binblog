@@ -1,4 +1,4 @@
-
+require 'slack-notifier'
 class DevicesController < ApplicationController
   before_action :initialize_mqtt_client
   def initialize_mqtt_client
@@ -82,18 +82,18 @@ class DevicesController < ApplicationController
   end
 
   def switchon_ab
-    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
-      defaults channel: "#genneral",
-               username: "huuvinh"
+    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
+      defaults channel: "nongtrai",
+               username: "khuonvien"
     end
     
     notifier.ping "Hello default"
   end
 
   def notify
-    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
-      defaults channel: "#genneral",
-               username: "huuvinh"
+    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
+      defaults channel: "#nongtrai",
+               username: "khuonvien"
     end
     
     # Gửi thông báo đến Slack và lưu phản hồi
