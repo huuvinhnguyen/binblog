@@ -82,6 +82,31 @@ class DevicesController < ApplicationController
   end
 
   def switchon_ab
+    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
+      defaults channel: "#genneral",
+               username: "huuvinh"
+    end
+    
+    notifier.ping "Hello default"
+  end
+
+  def notify
+    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
+      defaults channel: "#genneral",
+               username: "huuvinh"
+    end
+    
+    # Gửi thông báo đến Slack và lưu phản hồi
+    response = notifier.ping "Hello default"
+
+    # In ra phản hồi để kiểm tra
+    Rails.logger.info "Response: #{response.inspect}"
+
+    # Kiểm tra trạng thái phản hồi từ Slack
+    status = response.all? { |r| r.is_a?(Net::HTTPSuccess) } ? "success" : "failure"
+
+    # Trả về phản hồi dưới dạng JSON
+    render json: { message: "Notification sent to Slack", status: status }
   end
 
   def new

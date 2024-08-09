@@ -14,6 +14,8 @@ Rails.application.routes.draw do
   post 'devices/switchon'
   post 'devices/connect_dht', to: 'devices#connect_dht', as: 'connect_dht_devices'
   post 'devices/disconnect_mqtt', to: 'devices#disconnect_mqtt', as: 'disconnect_mqtt_devices'
+  post 'devices/notify', to: 'devices#notify'
+
 
   
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
