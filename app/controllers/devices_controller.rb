@@ -82,7 +82,7 @@ class DevicesController < ApplicationController
   end
 
   def switchon_ab
-    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
+    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
       defaults channel: "general",
                username: "khuonvien"
     end
@@ -91,7 +91,7 @@ class DevicesController < ApplicationController
   end
 
   def notify
-    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
+    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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" do
       defaults channel: "general",
                username: "khuonvien"
     end
