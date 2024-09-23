@@ -1,6 +1,7 @@
-
 class DevicesController < ApplicationController
   before_action :initialize_mqtt_client
+  skip_before_action :verify_authenticity_token, only: [:notify]
+
   def initialize_mqtt_client
     @client = MQTT::Client.connect(
       host: '103.9.77.155',
@@ -82,6 +83,50 @@ class DevicesController < ApplicationController
   end
 
   def switchon_ab
+    notifier = Slack::Notifier.new "https://abc.com" do
+      defaults channel: "general",
+               username: "khuonvien"
+    end
+    
+    notifier.ping "Hello default"
+  end
+
+  def notify
+    # Đọc dữ liệu JSON từ body của yêu cầu
+    begin
+      json_data = JSON.parse(request.body.read)
+      chip_id = json_data['id']
+      message = json_data['message']
+      time = Time.at(json_data['time'])
+      model = json_data['model']
+
+      # Cấu hình Slack Notifier
+      notifier = Slack::Notifier.new "https://abc.com" do
+        defaults channel: "general",
+                 username: "khuonvien"
+      end
+
+      # Tạo thông báo
+      slack_message = "Received data from ESP32:\n" +
+                      "Chip ID: #{chip_id}\n" +
+                      "Message: #{message}\n" +
+                      "Time: #{time}\n" +
+                      "Model: #{model}"
+
+      # Gửi thông báo đến Slack và lưu phản hồi
+      response = notifier.ping slack_message
+
+      # Kiểm tra trạng thái phản hồi từ Slack
+      # status = response.is_a?(Net::HTTPSuccess) ? "success" : "failure"
+      status = response.all? { |r| r.is_a?(Net::HTTPSuccess) } ? "success" : "failure"
+
+      # Trả về phản hồi dưới dạng JSON
+      render json: { message: "Notification sent to Slack", status: status }
+    rescue JSON::ParserError => e
+      # Xử lý lỗi phân tích cú pháp JSON
+      Rails.logger.error("Failed to parse JSON: #{e.message}")
+      render json: { message: "Invalid JSON", status: "failure" }, status: :bad_request
+    end
   end
 
   def new
