@@ -1,4 +1,3 @@
-require 'slack-notifier'
 class DevicesController < ApplicationController
   before_action :initialize_mqtt_client
   skip_before_action :verify_authenticity_token, only: [:notify]
