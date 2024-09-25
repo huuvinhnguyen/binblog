@@ -150,11 +150,9 @@ class DevicesController < ApplicationController
       parsed_data = JSON.parse(json_data)
 
       chip_id = parsed_data['device_id']
+      is_payment = parsed_data['is_payment']
       name = parsed_data['name']
-      # Find or create the device based on chip_id
-      puts "Chip Id: #{chip_id}"
       return if chip_id.nil? || chip_id.empty?
-
       device = Device.find_or_create_by(chip_id: chip_id) do |device|
         device.name = name
       end
