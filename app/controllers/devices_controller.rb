@@ -147,14 +147,14 @@ class DevicesController < ApplicationController
     begin
       parsed_data = message.is_a?(String) ? JSON.parse(message) : message
 
-      chip_id = parsed_data['device_id']
+      chip_id = parsed_data['id']
       is_payment = parsed_data['is_payment']
       name = parsed_data['name']
       return if chip_id.nil? || chip_id.empty?
       device = Device.find_or_create_by(chip_id: chip_id) do |device|
         device.name = name
       end
-  
+
       # Rails.logger.info "Device #{device.chip_id} stored in the database."
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse init message: #{e.message}"
