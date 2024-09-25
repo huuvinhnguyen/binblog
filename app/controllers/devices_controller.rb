@@ -42,12 +42,6 @@ class DevicesController < ApplicationController
     subscribe_topic topic
   end
 
-  def init_device
-    topic = session[:device_id] + "/init"
-    subscribe_topic topic
-    puts "#topic: #{topic}"
-  end
-
   def switchon
 
     topic = session[:device_id] + "/switchon"
@@ -112,7 +106,6 @@ class DevicesController < ApplicationController
   end
 
   def new
-    @device = Device.new
   end
 
   def create
