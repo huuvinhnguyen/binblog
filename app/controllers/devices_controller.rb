@@ -69,11 +69,9 @@ class DevicesController < ApplicationController
   end
 
   def notify
-    json_data = JSON.parse(request.body.read)
-    handle_device_init(json_data)
     begin
       json_data = JSON.parse(request.body.read)
-      handle_device_init(json_data)
+      handle_device_init(request.body.read)
       chip_id = json_data['id']
       message = json_data['message']
       time = Time.at(json_data['time'])
@@ -137,7 +135,7 @@ class DevicesController < ApplicationController
           ActionCable.server.broadcast('mqtt_channel', current_message)
           json_message = current_message
           puts "#handle device"
-          handle_device_init(json_message)
+          handle_device_init(JSON.parse(json_message))
 
         end
       end
@@ -147,9 +145,7 @@ class DevicesController < ApplicationController
 
   def handle_device_init(message)
     begin
-      # Parse the message (assuming it's JSON with a chip_id field)
-      json_data = JSON.parse(message)
-      parsed_data = JSON.parse(json_data)
+      parsed_data = message.is_a?(String) ? JSON.parse(message) : message
 
       chip_id = parsed_data['device_id']
       is_payment = parsed_data['is_payment']
