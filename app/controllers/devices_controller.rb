@@ -69,6 +69,8 @@ class DevicesController < ApplicationController
   end
 
   def notify
+    json_data = JSON.parse(request.body.read)
+    handle_device_init(json_data)
     begin
       json_data = JSON.parse(request.body.read)
       handle_device_init(json_data)
