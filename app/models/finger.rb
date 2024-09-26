@@ -1,4 +1,4 @@
-class Finger < ApplicationRecord
+class Finger < ActiveRecord::Base
     belongs_to :employee
   
     validates :finger_id, presence: true, uniqueness: true
