@@ -1,5 +1,6 @@
 class Employee < ActiveRecord::Base
   has_many :attendances, dependent: :destroy
+  has_many :fingers
   # has_many :projects, through: :attendances 
   
   def attendances
