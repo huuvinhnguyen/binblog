@@ -55,3 +55,6 @@ gem 'puma'
 gem 'carrierwave'
 gem 'jquery-rails'
 gem 'slack-notifier'
+gem 'devise'
+gem 'rolify'
+

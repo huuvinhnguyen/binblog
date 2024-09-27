@@ -12,9 +12,14 @@
   </head>
 
   <body>
-     <%= render 'shared/navbar' %>
 
+     <%= render 'shared/navbar' %>
       <div class="content-main">
+        <% if user_signed_in? %>
+        <%= link_to 'Sign Out', destroy_user_session_path, method: :delete, data: { confirm: 'Are you sure?' } %>
+        <% else %>
+          <%= link_to 'Sign In', new_user_session_path %>
+        <% end %>
         <%= yield %>
       </div>
 

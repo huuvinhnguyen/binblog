@@ -15,6 +15,27 @@
   <div id="last-active-message-div"></div>
 </div>
 
+<div>
+  <table class = "table">
+  <thead>
+    <th>Tên</th>  
+    <th>ID</th>  
+  </thead>
+
+  <% @devices.each do |device| %>
+    <tr>
+      <td><%= device.name %></td>
+      <td><%= device.chip_id%></td>
+
+    </tr>
+  <% end %>
+<tr>
+
+</tr>
+</table>
+
+</div>
+
 <div class="row">
   <%= render 'dht_form' %>
 </div>
