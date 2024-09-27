@@ -1,5 +1,6 @@
 class EmployeesController < ApplicationController
   before_action :authenticate_user!
+  before_action :initialize_mqtt_client
   before_action :set_employee, only: %i[ show edit update destroy ]
 
   # GET /employees or /employees.json
@@ -22,6 +23,14 @@ class EmployeesController < ApplicationController
       @employees = @employees.joins(:attendances).where(attendances: { project_id:  params[:project_id]}).distinct
       @attendances = @attendances.where({project_id: params[:project_id]}).distinct
     end
+
+  end
+
+  def initialize_mqtt_client  
+    @client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
 
   end
 
@@ -134,6 +143,43 @@ class EmployeesController < ApplicationController
     send_data p.to_stream.read, filename: "bang_luong_nhan_vien.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
+  def activate_adding_finger
+    topic = session[:device_id] + "/switch"
+    message = params[:message]
+
+    client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
+
+    client.publish(topic, message, retain: true) if topic.present?
+    client.disconnect()
+
+    subscribe_topic topic
+
+  end
+
+  def subscribe_topic topic
+
+    json_message = nil
+
+    Thread.new do
+      @client.subscribe(topic)
+      @client.get(topic, timeout: 2) do |rs_topic, message|
+        current_message = JSON.generate(message)
+
+        if json_message.to_s != current_message.to_s
+          ActionCable.server.broadcast('mqtt_channel', current_message)
+          json_message = current_message
+          puts "#handle device"
+          handle_device_init(JSON.parse(json_message))
+
+        end
+      end
+      @client.disconnect()
+    end
+  end
+  
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_employee

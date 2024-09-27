@@ -16,8 +16,13 @@
 
 </div>
 <div class="employee-box">
-<h1>Thêm vân tay</h1>
+<h1>Danh sách vân tay</h1>
+<%= form_with url: employees_activate_adding_finger_path  , method: :post, local: true do %>
+  <%= submit_tag 'Thêm Vân Tay', class: 'btn btn-secondary' %>
+<% end %>
+
 <h1>Thêm ngày công</h1>
+
 <% attendance = Attendance.new %>
 <% attendance.status = 0 %>
 <%= form_with(model: [@employee, attendance], local: true) do |form| %>
