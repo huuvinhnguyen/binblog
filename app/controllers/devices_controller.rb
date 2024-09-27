@@ -1,4 +1,5 @@
 class DevicesController < ApplicationController
+  before_action :authenticate_user!
   before_action :initialize_mqtt_client
   skip_before_action :verify_authenticity_token, only: [:notify]
 
@@ -11,6 +12,8 @@ class DevicesController < ApplicationController
   end
 
   def index
+    @devices = Device.all
+
   end
 
   def connect
