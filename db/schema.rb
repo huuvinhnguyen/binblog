@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_02_034350) do
+ActiveRecord::Schema[7.0].define(version: 2024_10_02_081435) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -54,12 +54,12 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_02_034350) do
   end
 
   create_table "fingers", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
-    t.string "finger_id", null: false
     t.bigint "employee_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.binary "fingerprint_template"
     t.string "device_finger_id"
+    t.bigint "finger_id"
     t.index ["device_finger_id"], name: "index_fingers_on_device_finger_id", unique: true
     t.index ["employee_id"], name: "index_fingers_on_employee_id"
     t.index ["finger_id"], name: "index_fingers_on_finger_id"
