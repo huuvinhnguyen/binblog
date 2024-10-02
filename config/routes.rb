@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   post 'devices/disconnect_mqtt', to: 'devices#disconnect_mqtt', as: 'disconnect_mqtt_devices'
   post 'devices/notify', to: 'devices#notify'
   post 'employees/activate_adding_finger'
+  post 'employees/enroll_fingerprint'
 
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'

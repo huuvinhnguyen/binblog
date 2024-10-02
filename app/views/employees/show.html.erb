@@ -17,9 +17,25 @@
 </div>
 <div class="employee-box">
 <h1>Danh sách vân tay</h1>
-<%= form_with url: employees_activate_adding_finger_path  , method: :post, local: true do %>
-  <%= submit_tag 'Thêm Vân Tay', class: 'btn btn-secondary' %>
+<table class = "table">
+<thead>
+  <th>ID</th>  
+  <th>Finger ID</th>  
+</thead>
+
+<% @employee.fingers.each do |finger| %>
+  <tr>
+    <td><%= finger.id %></td>
+    <td><%= finger.finger_id%></td>
+
+  </tr>
 <% end %>
+<tr>
+</tr>
+</table>
+<div>
+  <%= button_to 'Thêm Vân Tay', employees_activate_adding_finger_path, method: :post, class: 'btn btn-secondary' %>
+</div>
 
 <h1>Thêm ngày công</h1>
 

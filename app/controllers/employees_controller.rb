@@ -1,10 +1,11 @@
 class EmployeesController < ApplicationController
-  before_action :authenticate_user!
+  # before_action :authenticate_user!
   before_action :initialize_mqtt_client
   before_action :set_employee, only: %i[ show edit update destroy ]
 
   # GET /employees or /employees.json
   def index
+
   #   if params[:daterange].present?
   #     start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
   #     @employees = Employee.all.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
@@ -144,18 +145,37 @@ class EmployeesController < ApplicationController
   end
 
   def activate_adding_finger
-    topic = session[:device_id] + "/switch"
-    message = params[:message]
+    topic = "123456" + "/fingerprint"
+    message = {
+      device_id: 123456,
+      employee_id: 45678
+    }.to_json
 
     client = MQTT::Client.connect(
       host: '103.9.77.155',
       port: 1883,
     )
 
-    client.publish(topic, message, retain: true) if topic.present?
+    client.publish(topic, message, retain: false) if topic.present?
     client.disconnect()
 
-    subscribe_topic topic
+  end
+
+  def enroll_fingerprint
+
+    employee = Employee.find(params[:employee_id])
+    service = AddFingerService.new(
+      employee: employee,
+      finger_id: params[:finger_id],
+      fingerprint_template: params[:fingerprint_template],
+      device_finger_id: params[:device_finger_id]
+    )
+
+    if service.call
+      render json: { message: 'Finger added successfully' }, status: :created
+    else
+      render json: { error: 'Failed to add finger' }, status: :unprocessable_entity
+    end
 
   end
 
