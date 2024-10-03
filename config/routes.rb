@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   post 'employees/activate_adding_finger'
   post 'employees/enroll_fingerprint'
 
+
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'
   get 'resumes/index'
@@ -44,6 +45,7 @@ Rails.application.routes.draw do
     member do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
       get 'employees/:id', to: 'employees#show', as: 'filter_atendances'
+      delete 'delete_fingerprint', to: 'employees#delete_fingerprint'
 
     end
   end

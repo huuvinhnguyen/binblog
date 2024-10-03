@@ -145,10 +145,11 @@ class EmployeesController < ApplicationController
   end
 
   def activate_adding_finger
-    topic = "123456" + "/fingerprint"
+    topic = "12394568" + "/fingerprint"
     message = {
-      device_id: 123456,
-      employee_id: 45678
+      "action": "enroll",
+      "device_id": 12394568,
+      "employee_id": 1
     }.to_json
 
     client = MQTT::Client.connect(
@@ -156,7 +157,7 @@ class EmployeesController < ApplicationController
       port: 1883,
     )
 
-    client.publish(topic, message, retain: false) if topic.present?
+    client.publish(topic, message) if topic.present?
     client.disconnect()
 
   end
@@ -175,6 +176,18 @@ class EmployeesController < ApplicationController
       render json: { message: 'Finger added successfully' }, status: :created
     else
       render json: { error: 'Failed to add finger' }, status: :unprocessable_entity
+    end
+
+  end
+
+  def delete_fingerprint
+
+    service = DeleteFingerService.new(device_finger_id: params[:device_finger_id])
+
+    if service.call
+      render json: { message: 'Finger deleted successfully' }, status: :ok
+    else
+      render json: { error: 'Failed to delete finger' }, status: :unprocessable_entity
     end
 
   end

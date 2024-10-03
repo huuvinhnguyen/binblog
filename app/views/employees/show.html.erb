@@ -20,18 +20,23 @@
 <table class = "table">
 <thead>
   <th>ID</th>  
-  <th>Finger ID</th>  
+  <th>Finger ID</th> 
+  <th>device_finger_id </th>
+  <th>Thao tác</th>
 </thead>
 
-<% @employee.fingers.each do |finger| %>
-  <tr>
-    <td><%= finger.id %></td>
-    <td><%= finger.finger_id%></td>
-
-  </tr>
-<% end %>
-<tr>
-</tr>
+<tbody>
+  <% @employee.fingers.each do |finger| %>
+    <tr id="finger-<%= finger.device_finger_id %>">
+      <td><%= finger.id %></td>
+      <td><%= finger.finger_id %></td>
+      <td><%= finger.device_finger_id %></td>
+      <td>
+        <%= button_to 'Xoá', delete_fingerprint_employee_path(device_finger_id: finger.device_finger_id, employee_id: 1), method: :delete, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+      </td>
+    </tr>
+  <% end %>
+</tbody>
 </table>
 <div>
   <%= button_to 'Thêm Vân Tay', employees_activate_adding_finger_path, method: :post, class: 'btn btn-secondary' %>
