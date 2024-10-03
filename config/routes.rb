@@ -46,6 +46,7 @@ Rails.application.routes.draw do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
       get 'employees/:id', to: 'employees#show', as: 'filter_atendances'
       delete 'delete_fingerprint', to: 'employees#delete_fingerprint'
+      post 'delete_fingerprint_message', to: 'employees#delete_fingerprint_message'
 
     end
   end

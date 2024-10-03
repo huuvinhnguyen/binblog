@@ -32,7 +32,7 @@
       <td><%= finger.finger_id %></td>
       <td><%= finger.device_finger_id %></td>
       <td>
-        <%= button_to 'Xoá', delete_fingerprint_employee_path(device_finger_id: finger.device_finger_id, employee_id: 1), method: :delete, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+        <%= button_to 'Xoá', delete_fingerprint_message_employee_path(finger_id: finger.finger_id, employee_id: finger.employee_id, device_finger_id: finger.device_finger_id), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
       </td>
     </tr>
   <% end %>

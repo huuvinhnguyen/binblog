@@ -162,6 +162,7 @@ class EmployeesController < ApplicationController
 
   end
 
+  #POST 
   def enroll_fingerprint
 
     employee = Employee.find(params[:employee_id])
@@ -177,6 +178,26 @@ class EmployeesController < ApplicationController
     else
       render json: { error: 'Failed to add finger' }, status: :unprocessable_entity
     end
+
+  end
+
+  def delete_fingerprint_message
+
+    topic = "12394568" + "/fingerprint"
+    message = {
+      "action": "delete_fingerprint",
+      "finger_id": params[:finger_id],
+      "employee_id": params[:employee_id],
+      "device_finger_id": params[:device_finger_id]
+    }.to_json
+
+    client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
+
+    client.publish(topic, message) if topic.present?
+    client.disconnect()
 
   end
 
