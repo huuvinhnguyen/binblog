@@ -9,11 +9,8 @@ consumer.subscriptions.create("FingerprintsChannel", {
         this.unsubscribe();
     },
     received(data) {
-        const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
-        const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
-
-
-        if (message_hash.action === 'delete') {
+        
+        if (data.action === 'delete') {
             console.log("FingerprintsChannel_delete_finger")
 
             const fingerIdElement = document.getElementById(`finger-${data.device_finger_id}`);
@@ -21,6 +18,9 @@ consumer.subscriptions.create("FingerprintsChannel", {
                 fingerIdElement.remove();  // Remove the element from the DOM
             }
         }
+
+        const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
+        const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
 
         if (message_hash.action === 'enroll') {
             console.log("FingerprintsChannel_enroll_finger")
