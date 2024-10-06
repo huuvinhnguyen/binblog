@@ -5,13 +5,6 @@ class EmployeesController < ApplicationController
 
   # GET /employees or /employees.json
   def index
-
-  #   if params[:daterange].present?
-  #     start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
-  #     @employees = Employee.all.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
-  #   else
-  #     @employees = Employee.all
-  #   end
     
     @employees = Employee.all
     @attendances = Attendance.all
@@ -148,6 +141,8 @@ class EmployeesController < ApplicationController
     topic = "12394568" + "/fingerprint"
     message = {
       "action": "enroll",
+      "active": true,
+      "enrollment_mode": true,
       "device_id": 12394568,
       "employee_id": 1
     }.to_json
@@ -157,8 +152,15 @@ class EmployeesController < ApplicationController
       port: 1883,
     )
 
+    # message = { action: "enroll", enrollment_mode: true }
+
+    # ActionCable.server.broadcast('fingerprints_channel', message)
+
     client.publish(topic, message) if topic.present?
+    
     client.disconnect()
+
+    subscribe_topic topic
 
   end
 
@@ -175,9 +177,34 @@ class EmployeesController < ApplicationController
 
     if service.call
       render json: { message: 'Finger added successfully' }, status: :created
+      # message = { action: "enroll", enrollment_mode: false }
+      # ActionCable.server.broadcast('fingerprints_channel', message)
+
+
     else
       render json: { error: 'Failed to add finger' }, status: :unprocessable_entity
     end
+
+  end
+
+  #MQTT
+  def cancel_enrollment
+    puts "this is cancel_enrollment"
+    topic = "12394568" + "/fingerprint"
+    message = {
+      "action": "enroll",
+      "enrollment_mode": false,
+      "device_id": 12394568,
+      "employee_id": 1
+    }.to_json
+
+    client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
+
+    client.publish(topic, message) if topic.present?
+    client.disconnect()
 
   end
 
@@ -198,6 +225,7 @@ class EmployeesController < ApplicationController
 
     client.publish(topic, message) if topic.present?
     client.disconnect()
+    @client.disconnect()
 
   end
 
@@ -223,14 +251,10 @@ class EmployeesController < ApplicationController
         current_message = JSON.generate(message)
 
         if json_message.to_s != current_message.to_s
-          ActionCable.server.broadcast('mqtt_channel', current_message)
-          json_message = current_message
-          puts "#handle device"
-          handle_device_init(JSON.parse(json_message))
+          ActionCable.server.broadcast('fingerprints_channel', current_message)
 
         end
       end
-      @client.disconnect()
     end
   end
   

@@ -36,11 +36,28 @@
       </td>
     </tr>
   <% end %>
+  <tr> 
+    <%= button_to 'Thiết Lập Vân Tay', employees_activate_adding_finger_path, method: :post, class: 'btn btn-primary', id: "adding-finger-button", style: "float: right;" %>
+  </tr>
 </tbody>
+
 </table>
-<div>
-  <%= button_to 'Thêm Vân Tay', employees_activate_adding_finger_path, method: :post, class: 'btn btn-secondary' %>
+
+<div id="enrollment-mode" style="display: none; text-align: center;">
+  <%= button_to cancel_enrollment_employee_path(employee_id: @employee.id), method: :post, class: "btn btn-secondary", id: "cancel-enrollment-button", style: "display: none" do %>
+    <%= image_tag("close_icon_1.svg", alt: "Cancel Enrollment", style: "width: 50px; height: 50px;") %>
+  <% end %>
+
+  <!-- Display the fingerprint image below the button -->
+  <div style="margin-top: 10px;">
+    <%= image_tag 'fingerprint_1.svg', alt: 'Fingerprint', class: 'img-fluid' %>
+  </div>
+
+  <div>
+    <h2><span id="fingerprint-status"></span></h2>
+  </div>
 </div>
+
 
 <h1>Thêm ngày công</h1>
 

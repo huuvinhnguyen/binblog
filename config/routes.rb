@@ -47,6 +47,7 @@ Rails.application.routes.draw do
       get 'employees/:id', to: 'employees#show', as: 'filter_atendances'
       delete 'delete_fingerprint', to: 'employees#delete_fingerprint'
       post 'delete_fingerprint_message', to: 'employees#delete_fingerprint_message'
+      post 'cancel_enrollment', to: 'employees#cancel_enrollment'
 
     end
   end
