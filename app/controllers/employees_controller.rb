@@ -30,6 +30,7 @@ class EmployeesController < ApplicationController
 
   # GET /employees/1 or /employees/1.json
   def show
+    @device = User.find(1).devices.first
     session[:employee_id] = @employee.id # lưu trữ thông tin employee vào session
 
     @attendances = @employee.attendances
@@ -138,13 +139,14 @@ class EmployeesController < ApplicationController
   end
 
   def activate_adding_finger
-    topic = "12394568" + "/fingerprint"
+    chip_id = params[:chip_id]
+    topic = chip_id + "/fingerprint"
     message = {
       "action": "enroll",
       "active": true,
       "enrollment_mode": true,
-      "device_id": 12394568,
-      "employee_id": 1
+      "device_id": chip_id.to_s,
+      "employee_id": params[:employee_id]
     }.to_json
 
     client = MQTT::Client.connect(
@@ -189,7 +191,7 @@ class EmployeesController < ApplicationController
 
   #MQTT
   def cancel_enrollment
-    puts "this is cancel_enrollment"
+    
     topic = "12394568" + "/fingerprint"
     message = {
       "action": "enroll",
@@ -209,8 +211,8 @@ class EmployeesController < ApplicationController
   end
 
   def delete_fingerprint_message
-
-    topic = "12394568" + "/fingerprint"
+    chip_id = params[:chip_id]
+    topic = chip_id + "/fingerprint"
     message = {
       "action": "delete_fingerprint",
       "finger_id": params[:finger_id],

@@ -32,12 +32,12 @@
       <td><%= finger.finger_id %></td>
       <td><%= finger.device_finger_id %></td>
       <td>
-        <%= button_to 'Xoá', delete_fingerprint_message_employee_path(finger_id: finger.finger_id, employee_id: finger.employee_id, device_finger_id: finger.device_finger_id), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+        <%= button_to 'Xoá', delete_fingerprint_message_employee_path(chip_id: @device.chip_id, finger_id: finger.finger_id, employee_id: finger.employee_id, device_finger_id: finger.device_finger_id), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
       </td>
     </tr>
   <% end %>
   <tr> 
-    <%= button_to 'Thiết Lập Vân Tay', employees_activate_adding_finger_path, method: :post, class: 'btn btn-primary', id: "adding-finger-button", style: "float: right;" %>
+    <%= button_to 'Thiết Lập Vân Tay', employees_activate_adding_finger_path(employee_id: @employee.id, chip_id: @device.chip_id), method: :post, class: 'btn btn-primary', id: "adding-finger-button", style: "float: right;" %>
   </tr>
 </tbody>
 
