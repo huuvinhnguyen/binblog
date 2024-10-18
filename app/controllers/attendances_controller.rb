@@ -15,8 +15,18 @@ class AttendancesController < ApplicationController
   end
 
   def checkin
-    AttendanceService.new.checkin(@employee)
-    render json: { message: "Check-in successful for #{@employee.name}" }, status: :ok
+    device_finger_id = params[:device_finger_id]
+  
+    attendance_service = AttendanceService.new(device_finger_id)
+    employee = attendance_service.find_employee
+    
+    if employee
+      # Perform check-in logic via service
+      attendance_service.checkin(employee.id)
+      render json: { message: "Check-in successful for #{employee.name}" }, status: :ok
+    else
+      render json: { error: "Employee not found" }, status: :not_found
+    end
   end
 
   private
@@ -25,9 +35,5 @@ class AttendancesController < ApplicationController
     params.require(:attendance).permit(:date, :weight, :status, :project_id)
   end
 
-  def find_employee
-    @employee = Employee.find_by(device_finger_id: params[:device_finger_id])
-    render json: { error: "Employee not found" }, status: :not_found unless @employee
-  end
 end
 
