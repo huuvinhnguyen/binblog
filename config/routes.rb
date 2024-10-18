@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   post 'employees/activate_adding_finger'
   post 'employees/enroll_fingerprint'
   post 'checkins/create'
+  post 'attendances/checkin'
 
 
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
