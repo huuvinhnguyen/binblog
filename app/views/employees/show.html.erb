@@ -58,25 +58,22 @@
   </div>
 </div>
 
-
-<h1>Thêm ngày công</h1>
+<h1>Thêm chấm công</h1>
 
 <% attendance = Attendance.new %>
 <% attendance.status = 0 %>
-<%= form_with(model: [@employee, attendance], local: true) do |form| %>
+<%= form_with(model: [@employee, attendance], local: true, id: 'attendance-form') do |form| %>
+
+  <!-- Check-in field (start_time) -->
   <div class="form-group">
-    <%= form.label :date %>
-    <%= form.date_field :date, class: "form-control", required: true %>
+    <%= form.label :start_time, "Check-in Time" %>
+    <%= form.datetime_local_field :start_time, class: "form-control", required: true, id: 'start_time' %>
   </div>
 
+  <!-- Check-out field (end_time) -->
   <div class="form-group">
-    <%= form.label :weight %>
-    <%= form.number_field :weight, class: "form-control", value: 1.0, step: 0.1, validate: false %>
-  </div>
-   <div class="form-group">
-    <%= form.label :project_id %>
-    <%= form.collection_select(:project_id, Project.all, :id, :name, prompt: t("attendances.select_project"), class: "form-control") %>
-    <%= link_to t("projects.new"), new_project_path %>
+    <%= form.label :end_time, "Check-out Time" %>
+    <%= form.datetime_local_field :end_time, class: "form-control", required: false, id: 'end_time' %>
   </div>
 
   <div class="actions">
@@ -85,16 +82,33 @@
 <% end %>
 </div>
 
+<script>
+  document.getElementById('attendance-form').addEventListener('submit', function(event) {
+    // Get the values of start_time and end_time
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
+
+    if (startTime && endTime) {
+      // Convert the time inputs to JavaScript Date objects
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+
+      // Check if end_time is greater than start_time
+      if (end <= start) {
+        alert("End time must be greater than start time.");
+        event.preventDefault(); // Prevent form submission if validation fails
+      }
+    }
+  });
+</script>
+
+
 <br>
-
-<h1>Danh sách ngày làm việc</h1>
-
 
 <div>
   <%= form_tag filter_atendances_employee_path, method: :get do %>
   <% date = params[:daterange] %>
   <%= text_field_tag 'daterange', date, required: true, placeholder: "Chọn thời gian"%>
-      <%= select_tag :project_id, options_from_collection_for_select(Project.all, :id, :name, params[:project_id]), prompt: t("attendances.select_project"), class: "form-control" %>
   <%= submit_tag 'Lọc' %>
   <% end %>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
@@ -146,13 +160,31 @@ $(function() {
   });
 });
   </script>
-</div><table class="table">
+</div>
+
+<h1>Danh sách thưởng phạt</h1>
+<table class="table">
   <thead>
     <tr>
-      <th>Ngày</th>
-      <th>Công trình</th>
-      <th>Trọng số</th>
-      <th>Đơn giá</th>
+      <th>Thời gian</th>
+      <th>Mô tả</th>
+      <th>Thưởng / Phạt</th>
+      <th>Số tiền</th>
+    </tr>
+  </thead>
+  <tbody>
+   
+  </tbody>
+  </table>
+<h1>Danh sách chấm công</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Bắt đầu</th>
+      <th>Kết thúc</th>
+      <th>Số giờ làm</th>
+      <th>Lương/giờ</th>
       <th>Thành tiền</th>
       <th>Thao tác</th>
     </tr>
@@ -161,17 +193,36 @@ $(function() {
   <tbody>
     <% @attendances.order(date: :desc).each do |attendance| %>
       <tr>
-        <td><%= l attendance.date, format: :short %></td>
-        <td><%= Project.find_by(id: attendance.project_id).try(:name) %></td>
-        <td><%= attendance.weight %></td>
+        <td>
+          <% if attendance.start_time.present? %>
+            <%= l attendance.start_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td>
+          <% if attendance.end_time.present? %>
+            <%= l attendance.end_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td>
+          <% if attendance.start_time.present? && attendance.end_time.present? %>
+          <% working_hours = ((attendance.end_time - attendance.start_time) / 1.hour).round(2) %>
+          <%= working_hours %>
+          <% else %>
+            0
+          <% end %>
+        </td>
         <td><%= number_to_currency(@employee.daily_salary, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <% daily_salary = @employee.daily_salary ? @employee.daily_salary : 0.0 %>
-        <% amount = daily_salary ? (daily_salary.to_f * attendance.weight.to_f) : 0 %>
+        <% amount = daily_salary ? (daily_salary.to_f * working_hours.to_f) : 0 %>
         <td><%= number_to_currency(amount, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <td>
           <%= button_to 'Xoá', attendance_destroy_employee_path(employee_id: @employee.id, id: attendance.id), method: :delete, data: { confirm: 'Are you sure?' } %>
 
-        <% total += ( daily_salary.to_f * attendance.weight.to_f) %>
+        <% total += ( daily_salary.to_f * working_hours.to_f) %>
         <td>
         </td>
       </tr>

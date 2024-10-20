@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_18_073953) do
+ActiveRecord::Schema[7.0].define(version: 2024_10_19_171723) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -80,6 +80,17 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_18_073953) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "rewards_penalties", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "employee_id", null: false
+    t.string "description"
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.boolean "penalty", default: false
+    t.date "date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["employee_id"], name: "index_rewards_penalties_on_employee_id"
+  end
+
   create_table "roles", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "resource_type"
@@ -130,6 +141,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_18_073953) do
 
   add_foreign_key "attendances", "employees"
   add_foreign_key "fingers", "employees"
+  add_foreign_key "rewards_penalties", "employees"
   add_foreign_key "user_devices", "devices"
   add_foreign_key "user_devices", "users"
 end
