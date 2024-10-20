@@ -12,4 +12,8 @@ class Employee < ActiveRecord::Base
   def fingers
     Finger.where(employee_id: id)
   end
+
+  def rewards_penalties
+    RewardsPenalty.where(employee_id: id)
+  end
 end

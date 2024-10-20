@@ -43,6 +43,11 @@ Rails.application.routes.draw do
   resources :employees do
     resources :attendances, only: [:create]
   end
+
+  resources :employees do
+    resources :rewards_penalties, only: [:new, :create, :edit, :update, :destroy]
+  end
+  
   resources :employees do
     member do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'

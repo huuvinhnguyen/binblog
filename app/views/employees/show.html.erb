@@ -162,7 +162,10 @@ $(function() {
   </script>
 </div>
 
-<h1>Danh sách thưởng phạt</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Danh sách Thưởng/Phạt</h2>
+  <%= link_to 'Thêm Thưởng/Phạt', new_employee_rewards_penalty_path(@employee), class: 'btn btn-primary' %>
+</div>
 <table class="table">
   <thead>
     <tr>
@@ -170,10 +173,31 @@ $(function() {
       <th>Mô tả</th>
       <th>Thưởng / Phạt</th>
       <th>Số tiền</th>
+      <th>Thao tác</th>
     </tr>
   </thead>
   <tbody>
-   
+    <% rewards_penalties = @employee.rewards_penalties.order(date: :desc) %>
+    <% rewards_penalties.each do |reward_penalty| %>
+      <tr>
+        <!-- Display reward/penalty details here -->
+        <td>
+          <% if reward_penalty.date.present? %>
+            <%= l reward_penalty.date.in_time_zone('Asia/Ho_Chi_Minh'), format: :short %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td><%= reward_penalty.description %></td>
+        <td><%= reward_penalty.penalty ? "Penalty" : "Reward" %></td>
+        <td><%= reward_penalty.amount %></td>
+        <td>
+          <%= form_with(model: [@employee, reward_penalty], method: :delete, local: true) do |form| %>
+            <%= form.submit "Xoá", class: "btn btn-danger", data: { confirm: "Bạn có chắc chắn muốn xoá?" } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
   </tbody>
   </table>
 <h1>Danh sách chấm công</h1>
