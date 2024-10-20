@@ -5,7 +5,7 @@ class EmployeesController < ApplicationController
 
   # GET /employees or /employees.json
   def index
-    
+    @rewards_penalties = RewardPenalty.all
     @employees = Employee.all
     @attendances = Attendance.all
     if params[:daterange].present?
