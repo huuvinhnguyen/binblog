@@ -1,18 +1,15 @@
 class EmployeesController < ApplicationController
-  # before_action :authenticate_user!
+  before_action :authenticate_user!
+  before_action :initialize_mqtt_client
   before_action :set_employee, only: %i[ show edit update destroy ]
 
   # GET /employees or /employees.json
   def index
-  #   if params[:daterange].present?
-  #     start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
-  #     @employees = Employee.all.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
-  #   else
-  #     @employees = Employee.all
-  #   end
-    
+    # @employees = current_user.employees
+
     @employees = Employee.all
     @attendances = Attendance.all
+
     if params[:daterange].present?
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @employees = @employees.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
@@ -25,11 +22,21 @@ class EmployeesController < ApplicationController
 
   end
 
+  def initialize_mqtt_client  
+    @client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
+
+  end
+
   # GET /employees/1 or /employees/1.json
   def show
+    @device = User.find(1).devices.first
     session[:employee_id] = @employee.id # lưu trữ thông tin employee vào session
 
     @attendances = @employee.attendances
+
     if params[:daterange].present? 
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @attendances = @employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
@@ -53,9 +60,11 @@ class EmployeesController < ApplicationController
   # POST /employees or /employees.json
   def create
     @employee = Employee.new(employee_params)
+    # @employee = current_user.employees.build(employee_params)
     # byebug
     respond_to do |format|
       if @employee.save
+        current_user.employees << @employee
         format.html { redirect_to employee_url(@employee), notice: "Employee was successfully created." }
         format.json { render :show, status: :created, location: @employee }
       else
@@ -134,6 +143,128 @@ class EmployeesController < ApplicationController
     send_data p.to_stream.read, filename: "bang_luong_nhan_vien.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
+  def activate_adding_finger
+    chip_id = params[:chip_id]
+    topic = chip_id + "/fingerprint"
+    message = {
+      "action": "enroll",
+      "active": true,
+      "enrollment_mode": true,
+      "device_id": chip_id.to_s,
+      "employee_id": params[:employee_id]
+    }.to_json
+
+    client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
+
+    # message = { action: "enroll", enrollment_mode: true }
+
+    # ActionCable.server.broadcast('fingerprints_channel', message)
+
+    client.publish(topic, message) if topic.present?
+    
+    client.disconnect()
+
+    subscribe_topic topic
+
+  end
+
+  #POST 
+  def enroll_fingerprint
+
+    employee = Employee.find(params[:employee_id])
+    service = AddFingerService.new(
+      employee: employee,
+      finger_id: params[:finger_id],
+      fingerprint_template: params[:fingerprint_template],
+      device_finger_id: params[:device_finger_id]
+    )
+
+    if service.call
+      render json: { message: 'Finger added successfully' }, status: :created
+      # message = { action: "enroll", enrollment_mode: false }
+      # ActionCable.server.broadcast('fingerprints_channel', message)
+
+
+    else
+      render json: { error: 'Failed to add finger' }, status: :unprocessable_entity
+    end
+
+  end
+
+  #MQTT
+  def cancel_enrollment
+    
+    topic = "12394568" + "/fingerprint"
+    message = {
+      "action": "enroll",
+      "enrollment_mode": false,
+      "device_id": 12394568,
+      "employee_id": 1
+    }.to_json
+
+    client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
+
+    client.publish(topic, message) if topic.present?
+    client.disconnect()
+
+  end
+
+  def delete_fingerprint_message
+    chip_id = params[:chip_id]
+    topic = chip_id + "/fingerprint"
+    message = {
+      "action": "delete_fingerprint",
+      "finger_id": params[:finger_id],
+      "employee_id": params[:employee_id],
+      "device_finger_id": params[:device_finger_id]
+    }.to_json
+
+    client = MQTT::Client.connect(
+      host: '103.9.77.155',
+      port: 1883,
+    )
+
+    client.publish(topic, message) if topic.present?
+    client.disconnect()
+    @client.disconnect()
+
+  end
+
+  def delete_fingerprint
+
+    service = DeleteFingerService.new(device_finger_id: params[:device_finger_id])
+
+    if service.call
+      render json: { message: 'Finger deleted successfully' }, status: :ok
+    else
+      render json: { error: 'Failed to delete finger' }, status: :unprocessable_entity
+    end
+
+  end
+
+  def subscribe_topic topic
+
+    json_message = nil
+
+    Thread.new do
+      @client.subscribe(topic)
+      @client.get(topic, timeout: 2) do |rs_topic, message|
+        current_message = JSON.generate(message)
+
+        if json_message.to_s != current_message.to_s
+          ActionCable.server.broadcast('fingerprints_channel', current_message)
+
+        end
+      end
+    end
+  end
+  
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_employee

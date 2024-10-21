@@ -9,14 +9,33 @@ class AttendancesController < ApplicationController
       render :new
     end
   end
+
   def destroy
     redirect_to request.referer, notice: 'Attendance was successfully deleted.'
+  end
+
+  def checkin
+    device_finger_id = params[:device_finger_id]
+  
+    attendance_service = AttendanceService.new(device_finger_id)
+    employee = attendance_service.find_employee
+    
+    if employee
+      # Perform check-in logic via service
+      attendance_service.checkin(employee.id)
+      render json: { message: "Check-in successful for #{employee.name}" }, status: :ok
+    else
+      render json: { error: "Employee not found" }, status: :not_found
+    end
   end
 
   private
 
   def attendance_params
-    params.require(:attendance).permit(:date, :weight, :status, :project_id)
+    # params.require(:attendance).permit(:date, :weight, :status, :project_id, :start_time, :end_time)
+    params.require(:attendance).permit(:date, :weight, :start_time, :end_time, :project_id)
+
   end
+
 end
 

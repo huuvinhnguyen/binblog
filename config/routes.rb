@@ -16,9 +16,12 @@ Rails.application.routes.draw do
   post 'devices/connect_dht', to: 'devices#connect_dht', as: 'connect_dht_devices'
   post 'devices/disconnect_mqtt', to: 'devices#disconnect_mqtt', as: 'disconnect_mqtt_devices'
   post 'devices/notify', to: 'devices#notify'
+  post 'employees/activate_adding_finger'
+  post 'employees/enroll_fingerprint'
+  post 'checkins/create'
+  post 'attendances/checkin'
 
 
-  
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
   get 'youtube/download_mp3'
   get 'resumes/index'
@@ -40,10 +43,18 @@ Rails.application.routes.draw do
   resources :employees do
     resources :attendances, only: [:create]
   end
+
+  resources :employees do
+    resources :rewards_penalties, only: [:new, :create, :edit, :update, :destroy]
+  end
+  
   resources :employees do
     member do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
       get 'employees/:id', to: 'employees#show', as: 'filter_atendances'
+      delete 'delete_fingerprint', to: 'employees#delete_fingerprint'
+      post 'delete_fingerprint_message', to: 'employees#delete_fingerprint_message'
+      post 'cancel_enrollment', to: 'employees#cancel_enrollment'
 
     end
   end

@@ -16,24 +16,64 @@
 
 </div>
 <div class="employee-box">
-<h1>Thêm vân tay</h1>
-<h1>Thêm ngày công</h1>
-<% attendance = Attendance.new %>
-<% attendance.status = 0 %>
-<%= form_with(model: [@employee, attendance], local: true) do |form| %>
-  <div class="form-group">
-    <%= form.label :date %>
-    <%= form.date_field :date, class: "form-control", required: true %>
+<h1>Danh sách vân tay</h1>
+<table class = "table">
+<thead>
+  <th>ID</th>  
+  <th>Finger ID</th> 
+  <th>device_finger_id </th>
+  <th>Thao tác</th>
+</thead>
+
+<tbody>
+  <% @employee.fingers.each do |finger| %>
+    <tr id="finger-<%= finger.device_finger_id %>">
+      <td><%= finger.id %></td>
+      <td><%= finger.finger_id %></td>
+      <td><%= finger.device_finger_id %></td>
+      <td>
+        <%= button_to 'Xoá', delete_fingerprint_message_employee_path(chip_id: @device.chip_id, finger_id: finger.finger_id, employee_id: finger.employee_id, device_finger_id: finger.device_finger_id), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+      </td>
+    </tr>
+  <% end %>
+  <tr> 
+    <%= button_to 'Thiết Lập Vân Tay', employees_activate_adding_finger_path(employee_id: @employee.id, chip_id: @device.chip_id), method: :post, class: 'btn btn-primary', id: "adding-finger-button", style: "float: right;" %>
+  </tr>
+</tbody>
+
+</table>
+
+<div id="enrollment-mode" style="display: none; text-align: center;">
+  <%= button_to cancel_enrollment_employee_path(employee_id: @employee.id), method: :post, class: "btn btn-secondary", id: "cancel-enrollment-button", style: "display: none" do %>
+    <%= image_tag("close_icon_1.svg", alt: "Cancel Enrollment", style: "width: 50px; height: 50px;") %>
+  <% end %>
+
+  <!-- Display the fingerprint image below the button -->
+  <div style="margin-top: 10px;">
+    <%= image_tag 'fingerprint_1.svg', alt: 'Fingerprint', class: 'img-fluid' %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :weight %>
-    <%= form.number_field :weight, class: "form-control", value: 1.0, step: 0.1, validate: false %>
+  <div>
+    <h2><span id="fingerprint-status"></span></h2>
   </div>
-   <div class="form-group">
-    <%= form.label :project_id %>
-    <%= form.collection_select(:project_id, Project.all, :id, :name, prompt: t("attendances.select_project"), class: "form-control") %>
-    <%= link_to t("projects.new"), new_project_path %>
+</div>
+
+<h1>Thêm chấm công</h1>
+
+<% attendance = Attendance.new %>
+<% attendance.status = 0 %>
+<%= form_with(model: [@employee, attendance], local: true, id: 'attendance-form') do |form| %>
+
+  <!-- Check-in field (start_time) -->
+  <div class="form-group">
+    <%= form.label :start_time, "Check-in Time" %>
+    <%= form.datetime_local_field :start_time, class: "form-control", required: true, id: 'start_time' %>
+  </div>
+
+  <!-- Check-out field (end_time) -->
+  <div class="form-group">
+    <%= form.label :end_time, "Check-out Time" %>
+    <%= form.datetime_local_field :end_time, class: "form-control", required: false, id: 'end_time' %>
   </div>
 
   <div class="actions">
@@ -42,16 +82,33 @@
 <% end %>
 </div>
 
+<script>
+  document.getElementById('attendance-form').addEventListener('submit', function(event) {
+    // Get the values of start_time and end_time
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
+
+    if (startTime && endTime) {
+      // Convert the time inputs to JavaScript Date objects
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+
+      // Check if end_time is greater than start_time
+      if (end <= start) {
+        alert("End time must be greater than start time.");
+        event.preventDefault(); // Prevent form submission if validation fails
+      }
+    }
+  });
+</script>
+
+
 <br>
-
-<h1>Danh sách ngày làm việc</h1>
-
 
 <div>
   <%= form_tag filter_atendances_employee_path, method: :get do %>
   <% date = params[:daterange] %>
   <%= text_field_tag 'daterange', date, required: true, placeholder: "Chọn thời gian"%>
-      <%= select_tag :project_id, options_from_collection_for_select(Project.all, :id, :name, params[:project_id]), prompt: t("attendances.select_project"), class: "form-control" %>
   <%= submit_tag 'Lọc' %>
   <% end %>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
@@ -103,13 +160,55 @@ $(function() {
   });
 });
   </script>
-</div><table class="table">
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Danh sách Thưởng/Phạt</h2>
+  <%= link_to 'Thêm Thưởng/Phạt', new_employee_rewards_penalty_path(@employee), class: 'btn btn-primary' %>
+</div>
+<table class="table">
   <thead>
     <tr>
-      <th>Ngày</th>
-      <th>Công trình</th>
-      <th>Trọng số</th>
-      <th>Đơn giá</th>
+      <th>Thời gian</th>
+      <th>Mô tả</th>
+      <th>Thưởng / Phạt</th>
+      <th>Số tiền</th>
+      <th>Thao tác</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% rewards_penalties = @employee.rewards_penalties.order(date: :desc) %>
+    <% rewards_penalties.each do |reward_penalty| %>
+      <tr>
+        <!-- Display reward/penalty details here -->
+        <td>
+          <% if reward_penalty.date.present? %>
+            <%= l reward_penalty.date.in_time_zone('Asia/Ho_Chi_Minh'), format: :short %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td><%= reward_penalty.description %></td>
+        <td><%= reward_penalty.penalty ? "Penalty" : "Reward" %></td>
+        <td><%= reward_penalty.amount %></td>
+        <td>
+          <%= form_with(model: [@employee, reward_penalty], method: :delete, local: true) do |form| %>
+            <%= form.submit "Xoá", class: "btn btn-danger", data: { confirm: "Bạn có chắc chắn muốn xoá?" } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+  </table>
+<h1>Danh sách chấm công</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Bắt đầu</th>
+      <th>Kết thúc</th>
+      <th>Số giờ làm</th>
+      <th>Lương/giờ</th>
       <th>Thành tiền</th>
       <th>Thao tác</th>
     </tr>
@@ -118,26 +217,52 @@ $(function() {
   <tbody>
     <% @attendances.order(date: :desc).each do |attendance| %>
       <tr>
-        <td><%= l attendance.date, format: :short %></td>
-        <td><%= Project.find_by(id: attendance.project_id).try(:name) %></td>
-        <td><%= attendance.weight %></td>
+        <td>
+          <% if attendance.start_time.present? %>
+            <%= l attendance.start_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td>
+          <% if attendance.end_time.present? %>
+            <%= l attendance.end_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td>
+          <% if attendance.start_time.present? && attendance.end_time.present? %>
+          <% working_hours = ((attendance.end_time - attendance.start_time) / 1.hour).round(2) %>
+          <%= working_hours %>
+          <% else %>
+            0
+          <% end %>
+        </td>
         <td><%= number_to_currency(@employee.daily_salary, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <% daily_salary = @employee.daily_salary ? @employee.daily_salary : 0.0 %>
-        <% amount = daily_salary ? (daily_salary.to_f * attendance.weight.to_f) : 0 %>
+        <% amount = daily_salary ? (daily_salary.to_f * working_hours.to_f) : 0 %>
         <td><%= number_to_currency(amount, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <td>
           <%= button_to 'Xoá', attendance_destroy_employee_path(employee_id: @employee.id, id: attendance.id), method: :delete, data: { confirm: 'Are you sure?' } %>
 
-        <% total += ( daily_salary.to_f * attendance.weight.to_f) %>
+        <% total += ( daily_salary.to_f * working_hours.to_f) %>
         <td>
         </td>
       </tr>
     <% end %>
+
+    <!-- Tính tổng thưởng và phạt -->
+    <% total_rewards = @employee.rewards_penalties.where(penalty: false).sum(:amount) %>
+    <% total_penalties = @employee.rewards_penalties.where(penalty: true).sum(:amount) %>
+
+    <% adjusted_total = total + total_rewards - total_penalties %>
    
   </tbody>
+
   <tfoot>
     <tr>
-      <td>Tổng lương: <%= number_to_currency(total, unit: 'VND', format: '%n %u') %></td>
+      <td>Tổng lương: <%= number_to_currency(adjusted_total, unit: 'VND', format: '%n %u') %></td>
       <td>
         <div>
           <%= link_to "Xuất Excel", export_attendance_xls_employees_path(employee_id: @employee.id, format: :xls), class: "btn btn-primary", method: :get %>

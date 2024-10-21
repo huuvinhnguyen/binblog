@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_09_26_090648) do
+ActiveRecord::Schema[7.0].define(version: 2024_10_19_171723) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -18,6 +18,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_26_090648) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "project_id"
+    t.datetime "start_time"
+    t.datetime "end_time"
     t.index ["employee_id"], name: "index_attendances_on_employee_id"
   end
 
@@ -31,6 +33,11 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_26_090648) do
     t.index ["chip_id"], name: "index_devices_on_chip_id", unique: true
   end
 
+  create_table "devices_users", id: false, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "device_id", null: false
+    t.bigint "user_id", null: false
+  end
+
   create_table "employees", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "email"
@@ -40,15 +47,24 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_26_090648) do
     t.decimal "daily_salary", precision: 10
   end
 
+  create_table "employees_users", id: false, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "user_id"
+    t.bigint "employee_id"
+    t.index ["employee_id"], name: "index_employees_users_on_employee_id"
+    t.index ["user_id", "employee_id"], name: "index_employees_users_on_user_id_and_employee_id", unique: true
+    t.index ["user_id"], name: "index_employees_users_on_user_id"
+  end
+
   create_table "fingers", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
-    t.string "finger_id", null: false
     t.bigint "employee_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.binary "fingerprint_template"
+    t.string "device_finger_id"
+    t.bigint "finger_id"
+    t.index ["device_finger_id"], name: "index_fingers_on_device_finger_id", unique: true
     t.index ["employee_id"], name: "index_fingers_on_employee_id"
-    t.index ["finger_id"], name: "index_fingers_on_finger_id", unique: true
-    t.index ["fingerprint_template"], name: "index_fingers_on_fingerprint_template", unique: true, using: :hash
+    t.index ["finger_id"], name: "index_fingers_on_finger_id"
   end
 
   create_table "projects", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -64,6 +80,17 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_26_090648) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "rewards_penalties", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "employee_id", null: false
+    t.string "description"
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.boolean "penalty", default: false
+    t.date "date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["employee_id"], name: "index_rewards_penalties_on_employee_id"
+  end
+
   create_table "roles", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "resource_type"
@@ -73,6 +100,15 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_26_090648) do
     t.index ["name", "resource_type", "resource_id"], name: "index_roles_on_name_and_resource_type_and_resource_id"
     t.index ["name"], name: "index_roles_on_name"
     t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
+  end
+
+  create_table "user_devices", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "device_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["device_id"], name: "index_user_devices_on_device_id"
+    t.index ["user_id"], name: "index_user_devices_on_user_id"
   end
 
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -105,4 +141,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_26_090648) do
 
   add_foreign_key "attendances", "employees"
   add_foreign_key "fingers", "employees"
+  add_foreign_key "rewards_penalties", "employees"
+  add_foreign_key "user_devices", "devices"
+  add_foreign_key "user_devices", "users"
 end
