@@ -3,8 +3,6 @@
 <h1>Danh sách Nhân viên</h1>
 
 <%= link_to "Thêm nhân viên", new_employee_path %>
-<%= link_to t("projects.new"), new_project_path %>
-<%= link_to "Danh sách công trình", projects_path, class: 'btn btn-success' %>
 
 <%= link_to 'Xuất Excel', export_xls_employees_path(format: :xls), class: 'btn btn-success' %>
 
@@ -12,9 +10,6 @@
   <%= form_tag employees_path, method: :get do %>
     <% date = params[:daterange] %>
     <%= text_field_tag 'daterange', date, required: true %>
-    <div class="form-group">
-      <%= select_tag :project_id, options_from_collection_for_select(Project.all, :id, :name, params[:project_id]), prompt: t("attendances.select_project"), class: "form-control" %>
-    </div>
     <%= submit_tag 'Lọc' %>
     <%= link_to "Tất cả", employees_path %>
 
@@ -71,15 +66,13 @@
   <table class = "table">
     <thead>
       <th>Tên</th>  
-      <th>Email</th>  
-      <th>Lương/Ngày</th>  
+      <th>Lương/Giờ</th>  
       <th>Tổng thu nhập</th>  
     </thead>
 
     <% @employees.each do |employee| %>
       <tr>
         <td><%= link_to employee.name, employee %></td>
-        <td><%= employee.email%></td>
         <td><%= number_with_precision(employee.daily_salary, precision: 0, delimiter: ',', separator: '.') %> VND</td>
 
         <%  
@@ -88,8 +81,6 @@
           %>
         <% amount = total_weight.to_f * employee.daily_salary.to_f %>
         <td><%= number_with_precision(amount, precision: 0, delimiter: ',', separator: '.') %> VND</td>
-
-
       </tr>
     <% end %>
     <tr>

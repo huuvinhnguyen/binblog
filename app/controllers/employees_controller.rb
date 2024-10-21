@@ -1,13 +1,15 @@
 class EmployeesController < ApplicationController
-  # before_action :authenticate_user!
+  before_action :authenticate_user!
   before_action :initialize_mqtt_client
   before_action :set_employee, only: %i[ show edit update destroy ]
 
   # GET /employees or /employees.json
   def index
-    @rewards_penalties = RewardPenalty.all
+    # @employees = current_user.employees
+
     @employees = Employee.all
     @attendances = Attendance.all
+
     if params[:daterange].present?
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @employees = @employees.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
@@ -34,6 +36,7 @@ class EmployeesController < ApplicationController
     session[:employee_id] = @employee.id # lưu trữ thông tin employee vào session
 
     @attendances = @employee.attendances
+
     if params[:daterange].present? 
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @attendances = @employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
@@ -57,9 +60,11 @@ class EmployeesController < ApplicationController
   # POST /employees or /employees.json
   def create
     @employee = Employee.new(employee_params)
+    # @employee = current_user.employees.build(employee_params)
     # byebug
     respond_to do |format|
       if @employee.save
+        current_user.employees << @employee
         format.html { redirect_to employee_url(@employee), notice: "Employee was successfully created." }
         format.json { render :show, status: :created, location: @employee }
       else
