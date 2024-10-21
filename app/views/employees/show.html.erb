@@ -251,11 +251,18 @@ $(function() {
         </td>
       </tr>
     <% end %>
+
+    <!-- Tính tổng thưởng và phạt -->
+    <% total_rewards = @employee.rewards_penalties.where(penalty: false).sum(:amount) %>
+    <% total_penalties = @employee.rewards_penalties.where(penalty: true).sum(:amount) %>
+
+    <% adjusted_total = total + total_rewards - total_penalties %>
    
   </tbody>
+
   <tfoot>
     <tr>
-      <td>Tổng lương: <%= number_to_currency(total, unit: 'VND', format: '%n %u') %></td>
+      <td>Tổng lương: <%= number_to_currency(adjusted_total, unit: 'VND', format: '%n %u') %></td>
       <td>
         <div>
           <%= link_to "Xuất Excel", export_attendance_xls_employees_path(employee_id: @employee.id, format: :xls), class: "btn btn-primary", method: :get %>
