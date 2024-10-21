@@ -70,6 +70,12 @@ Rails.application.routes.draw do
 
     end
   end
+  
+  resources :fingers, only: [:index, :show, :new, :create, :destroy]
+  # or nested under employees
+  resources :employees do
+    resources :fingers, only: [:index, :show, :new, :create, :destroy]
+  end
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

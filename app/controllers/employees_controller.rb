@@ -1,5 +1,5 @@
 class EmployeesController < ApplicationController
-  before_action :authenticate_user!
+  before_action :authenticate_user!, except: [:enroll_fingerprint, :delete_fingerprint]
   before_action :initialize_mqtt_client
   before_action :set_employee, only: %i[ show edit update destroy ]
 
@@ -236,6 +236,7 @@ class EmployeesController < ApplicationController
 
   end
 
+  #DELETE
   def delete_fingerprint
 
     service = DeleteFingerService.new(device_finger_id: params[:device_finger_id])
