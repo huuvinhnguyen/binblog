@@ -215,12 +215,18 @@ class EmployeesController < ApplicationController
           working_hours = 0.0
         end
   
-        daily_salary = employee.daily_salary || 0.0
-        amount = daily_salary.to_f * working_hours.to_f
+        salary = 0.0
+        if attendance.hourly_wage.present? && attendance.hourly_wage > 0 
+          salary = attendance.hourly_wage ? attendance.hourly_wage : 0.0
+        else 
+          salary = employee.daily_salary ? employee.daily_salary : 0.0
+        end
+      
+        amount = salary.to_f * working_hours.to_f
         total_attendance_amount += amount
         start_time = I18n.l(attendance.start_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short)
         end_time = I18n.l(attendance.end_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short)
-        sheet.add_row [start_time, end_time, working_hours, daily_salary.to_f, amount]
+        sheet.add_row [start_time, end_time, working_hours, salary.to_f, amount]
       end
   
       # Tính tổng lương

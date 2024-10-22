@@ -49,7 +49,7 @@ class AttendancesController < ApplicationController
   private
 
   def attendance_params
-    params.require(:attendance).permit(:date, :weight, :start_time, :end_time, :project_id)
+    params.require(:attendance).permit(:date, :weight, :start_time, :end_time, :project_id, :hourly_wage)
   end
 
 end

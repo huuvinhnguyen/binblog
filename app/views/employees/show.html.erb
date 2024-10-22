@@ -198,15 +198,22 @@ $(function() {
             0
           <% end %>
         </td>
-        <td><%= number_to_currency(@employee.daily_salary, unit: 'VND', format: '%n %u', precision: 0) %></td>
-        <% daily_salary = @employee.daily_salary ? @employee.daily_salary : 0.0 %>
-        <% amount = daily_salary ? (daily_salary.to_f * working_hours.to_f) : 0 %>
+        <% salary = 0.0 %>
+        <% if attendance.hourly_wage.present? && attendance.hourly_wage > 0 %>
+          <% salary = attendance.hourly_wage ? attendance.hourly_wage : 0.0 %>
+        <% else %>
+          <% salary = @employee.daily_salary ? @employee.daily_salary : 0.0 %>
+        <% end %>
+
+        <td><%= number_to_currency(salary, unit: 'VND', format: '%n %u', precision: 0) %></td>
+        <% amount = (salary.to_f * working_hours.to_f) %>
+
         <td><%= number_to_currency(amount, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <td>
           <%= button_to 'Xoá', attendance_destroy_employee_path(employee_id: @employee.id, id: attendance.id), method: :delete, data: { confirm: 'Are you sure?' } %>
           <%= link_to 'Sửa', edit_employee_attendance_path(@employee, attendance), class: 'btn btn-primary btn-sm' %>
 
-        <% total += ( daily_salary.to_f * working_hours.to_f) %>
+        <% total += ( salary.to_f * working_hours.to_f) %>
         <td>
         </td>
       </tr>

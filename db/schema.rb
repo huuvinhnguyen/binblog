@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_22_090746) do
+ActiveRecord::Schema[7.0].define(version: 2024_10_22_145504) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -20,6 +20,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_22_090746) do
     t.integer "project_id"
     t.datetime "start_time"
     t.datetime "end_time"
+    t.decimal "hourly_wage", precision: 12
     t.index ["employee_id"], name: "index_attendances_on_employee_id"
   end
 
