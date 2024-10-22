@@ -5,6 +5,7 @@
 <%= link_to "Thêm nhân viên", new_employee_path %>
 
 <%= link_to 'Xuất Excel', export_xls_employees_path(format: :xls), class: 'btn btn-success' %>
+<%= link_to 'Xuất CSV', export_csv_employees_path(format: :csv), class: 'btn btn-success' %>
 
 <br>
   <%= form_tag employees_path, method: :get do %>
@@ -62,12 +63,14 @@
   </script>
 
 <div class="employee-box">
-
-  <table class = "table">
+  <table class="table">
     <thead>
       <th>Tên</th>  
       <th>Lương/Giờ</th>  
-      <th>Tổng thu nhập</th>  
+      <th>Số giờ</th>
+      <th>Lương</th>
+      <th>Thưởng</th>
+      <th>Phạt</td>
     </thead>
 
     <% @employees.each do |employee| %>
@@ -75,16 +78,29 @@
         <td><%= link_to employee.name, employee %></td>
         <td><%= number_with_precision(employee.daily_salary, precision: 0, delimiter: ',', separator: '.') %> VND</td>
 
-        <%  
+        <% 
+          total_hours = employee.attendances.sum do |attendance|
+            if attendance.start_time.present? && attendance.end_time.present?
+              ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
+            else
+              0
+            end
+          end
 
-            total_weight = @attendances.where(employee_id: employee.id).sum(:weight)
-          %>
-        <% amount = total_weight.to_f * employee.daily_salary.to_f %>
-        <td><%= number_with_precision(amount, precision: 0, delimiter: ',', separator: '.') %> VND</td>
+          total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount)
+          total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount)
+
+          total_income = (employee.daily_salary.to_f * total_hours) + total_rewards - total_penalties
+        %>
+
+        <td><%= total_hours %></td>
+        <td><%= total_rewards.round(0) %></td>
+        <td><%= total_penalties.round(0) %></td>
+
+        <td><%= number_with_precision(total_income, precision: 0, delimiter: ',', separator: '.') %> VND</td>
       </tr>
     <% end %>
-    <tr>
-
-    </tr>
   </table>
+  </div>
+
 

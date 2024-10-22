@@ -1,5 +1,5 @@
 class EmployeesController < ApplicationController
-  before_action :authenticate_user!, except: [:enroll_fingerprint, :delete_fingerprint]
+  # before_action :authenticate_user!, except: [:enroll_fingerprint, :delete_fingerprint]
   before_action :initialize_mqtt_client
   before_action :set_employee, only: %i[ show edit update destroy ]
 
@@ -108,21 +108,63 @@ class EmployeesController < ApplicationController
   
   def export_xls
     @employees = Employee.all
-
-    # Tạo file excel từ danh sách employees
+  
     p = Axlsx::Package.new
     wb = p.workbook
     wb.add_worksheet(name: "Employees") do |sheet|
-      sheet.add_row ["Tên", "Email", "Điện thoại", "Lương / ngày"]
+      sheet.add_row ["Tên", "Email", "Điện thoại", "Lương / Giờ", "Tổng giờ", "Thưởng", "Phạt", "Tổng lương"]
+  
       @employees.each do |employee|
-        sheet.add_row [employee.name, employee.email, employee.phone, employee.daily_salary]
+        total_hours = employee.attendances.sum do |attendance|
+          if attendance.start_time.present? && attendance.end_time.present?
+            ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
+          else
+            0
+          end
+        end
+
+        total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount).round(0)
+        total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount).round(0)
+        total_salary = (employee.daily_salary.to_f * total_hours) + total_rewards - total_penalties
+
+        sheet.add_row [employee.name, employee.email, employee.phone, employee.daily_salary, total_hours, total_rewards, total_penalties, total_salary]
       end
     end
-
-    # Gửi file excel về cho người dùng
+  
     send_data p.to_stream.read, filename: "nhan_cong.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
+  def export_csv
+    @employees = Employee.all
+  
+    csv_data = CSV.generate(headers: true) do |csv|
+      # Thêm tiêu đề
+      csv << ["Tên", "Email", "Điện thoại", "Lương / Giờ", "Tổng giờ", "Thưởng", "Phạt", "Tổng lương"]
+  
+      # Duyệt qua từng employee và tính toán các thông số
+      @employees.each do |employee|
+        total_hours = employee.attendances.sum do |attendance|
+          if attendance.start_time.present? && attendance.end_time.present?
+            ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
+          else
+            0
+          end
+        end
+  
+        total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount).round(0)
+        total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount).round(0)
+        total_salary = (employee.daily_salary.to_f * total_hours) + total_rewards - total_penalties
+  
+        # Thêm dòng dữ liệu cho employee vào CSV
+        csv << [employee.name, employee.email, employee.phone, employee.daily_salary, total_hours, total_rewards, total_penalties, total_salary]
+      end
+    end
+  
+    # Gửi file CSV về cho người dùng
+    send_data csv_data, filename: "nhan_cong.csv", type: "text/csv"
+  end
+  
+  
   def export_attendance_xls
     employee = Employee.find(params[:employee_id])
   
@@ -148,7 +190,9 @@ class EmployeesController < ApplicationController
       sheet.add_row ["Điện thoại", employee.phone]
       sheet.add_row ["Lương / Giờ", employee.daily_salary]
       sheet.add_row []
-  
+      sheet.add_row [params[:daterange]]
+      sheet.add_row []
+
       # Thêm danh sách thưởng/phạt
       sheet.add_row ["Danh sách Thưởng/Phạt"]
       sheet.add_row ["Thời gian", "Mô tả", "Thưởng/Phạt", "Số tiền"]

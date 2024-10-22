@@ -36,13 +36,15 @@ Rails.application.routes.draw do
   resources :employees do
     collection do
       get :export_xls
+      get :export_csv
       get :export_attendance_xls
     end
   end
 
   resources :employees do
-    resources :attendances, only: [:create]
+    resources :attendances, only: [:create, :edit, :update, :destroy]
   end
+  
 
   resources :employees do
     resources :rewards_penalties, only: [:new, :create, :edit, :update, :destroy]
