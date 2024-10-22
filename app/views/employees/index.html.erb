@@ -71,6 +71,7 @@
       <th>Lương</th>
       <th>Thưởng</th>
       <th>Phạt</td>
+      <th>Thu nhập</td>
     </thead>
 
     <% @employees.each do |employee| %>
@@ -94,6 +95,7 @@
         %>
 
         <td><%= total_hours %></td>
+        <td><%= (employee.daily_salary.to_f * total_hours).round(0) %></td>
         <td><%= total_rewards.round(0) %></td>
         <td><%= total_penalties.round(0) %></td>
 

@@ -10,37 +10,13 @@
 
 
 <div class="d-flex justify-content-end">
-  <%= button_to 'Thiết Lập Vân Tay', employee_fingers_path(@employee), method: :get, class: 'btn btn-primary', id: "adding-finger-button", style: "margin-left: 20px;" %>
-  <%= link_to "Chỉnh sửa nhân viên", edit_employee_path(@employee), class: "btn btn-primary", style: "margin-left: 20px;" %>
-  <%= button_to "Xoá nhân viên", @employee, method: :delete, data: { confirm: "Bạn có chắc chắn muốn xoá nhân viên này?" }, class: "btn btn-danger", style: "margin-left: 20px;" %>
-  <%= link_to "Quay lại", employees_path, class: "btn btn-secondary", style: "margin-left: 20px;" %>
+  <%= button_to 'Thiết Lập Vân Tay', employee_fingers_path(@employee), method: :get, class: 'btn btn-primary', id: "adding-finger-button", style: "margin-left: 5px;" %>
+  <%= link_to "Chỉnh sửa nhân viên", edit_employee_path(@employee), class: "btn btn-primary", style: "margin-left: 5px;" %>
+  <%= button_to "Xoá nhân viên", @employee, method: :delete, data: { confirm: "Bạn có chắc chắn muốn xoá nhân viên này?" }, class: "btn btn-danger", style: "margin-left: 5px;" %>
+  <%= link_to "Quay lại", employees_path, class: "btn btn-secondary", style: "margin-left: 5px;" %>
 </div>
 
 <div class="employee-box">
-
-<h1>Thêm chấm công</h1>
-
-<% attendance = Attendance.new %>
-<% attendance.status = 0 %>
-<%= form_with(model: [@employee, attendance], local: true, id: 'attendance-form') do |form| %>
-
-  <!-- Check-in field (start_time) -->
-  <div class="form-group">
-    <%= form.label :start_time, "Check-in Time" %>
-    <%= form.datetime_local_field :start_time, class: "form-control", required: true, id: 'start_time' %>
-  </div>
-
-  <!-- Check-out field (end_time) -->
-  <div class="form-group">
-    <%= form.label :end_time, "Check-out Time" %>
-    <%= form.datetime_local_field :end_time, class: "form-control", required: false, id: 'end_time' %>
-  </div>
-
-  <div class="actions">
-    <%= form.submit 'Thêm ngày công', class: "btn btn-primary" %>
-  </div>
-<% end %>
-</div>
 
 <script>
   document.getElementById('attendance-form').addEventListener('submit', function(event) {
@@ -123,7 +99,7 @@ $(function() {
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>Danh sách Thưởng/Phạt</h2>
+  <h1>Danh sách Thưởng/Phạt</h1>
   <%= link_to 'Thêm Thưởng/Phạt', new_employee_rewards_penalty_path(@employee), class: 'btn btn-primary' %>
 </div>
 <table class="table">
@@ -149,8 +125,8 @@ $(function() {
           <% end %>
         </td>
         <td><%= reward_penalty.description %></td>
-        <td><%= reward_penalty.penalty ? "Penalty" : "Reward" %></td>
-        <td><%= reward_penalty.amount %></td>
+        <td><%= reward_penalty.penalty ? "Phạt" : "Thưởng" %></td>
+        <td><%= number_to_currency(reward_penalty.amount, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <td>
           <%= form_with(model: [@employee, reward_penalty], method: :delete, local: true) do |form| %>
             <%= form.submit "Xoá", class: "btn btn-danger", data: { confirm: "Bạn có chắc chắn muốn xoá?" } %>
@@ -161,6 +137,29 @@ $(function() {
   </tbody>
   </table>
 <h1>Danh sách chấm công</h1>
+
+<% attendance = Attendance.new %>
+<% attendance.status = 0 %>
+<%= form_with(model: [@employee, attendance], local: true, id: 'attendance-form') do |form| %>
+
+  <!-- Check-in field (start_time) -->
+  <div class="form-group">
+    <%= form.label :start_time, "Check-in Time" %>
+    <%= form.datetime_local_field :start_time, class: "form-control", required: true, id: 'start_time' %>
+  </div>
+
+  <!-- Check-out field (end_time) -->
+  <div class="form-group">
+    <%= form.label :end_time, "Check-out Time" %>
+    <%= form.datetime_local_field :end_time, class: "form-control", required: false, id: 'end_time' %>
+  </div>
+  <br>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div></div>
+    <%= form.submit 'Thêm ngày công', class: "btn btn-primary" %>
+  </div>
+<% end %>
+</div>
 
 <table class="table">
   <thead>
@@ -223,16 +222,19 @@ $(function() {
 
   <tfoot>
     <tr>
-      <td><h1>Tổng lương: <%= number_to_currency(adjusted_total, unit: 'VND', format: '%n %u') %></h1></td>
       <td>
         <div>
-          <%= link_to "Xuất Excel", export_attendance_xls_employees_path(employee_id: @employee.id, daterange: params[:daterange], format: :xls), class: "btn btn-primary", method: :get %>
-          <div style="clear:both"></div>
+          
         </div>
       </td>
     </tr>
-    <tr>
-      
-    </tr>
+   
   </tfoot>
 </table>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Tổng lương: <%= number_to_currency(adjusted_total, unit: 'VND', format: '%n %u', precision: 0) %></h1>
+  <%= link_to "Xuất Excel", export_attendance_xls_employees_path(employee_id: @employee.id, daterange: params[:daterange], format: :xls), class: "btn btn-primary" %>
+</div>
+
+
+

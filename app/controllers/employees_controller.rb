@@ -13,7 +13,7 @@ class EmployeesController < ApplicationController
     if params[:daterange].present?
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @employees = @employees.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
-      @attendances = @attendances.where(["date BETWEEN ? AND ?", start_date, end_date])
+      @attendances = @attendances.where(["start_time BETWEEN ? AND ?", start_date, end_date])
     end
     if params[:project_id].present?
       @employees = @employees.joins(:attendances).where(attendances: { project_id:  params[:project_id]}).distinct
@@ -40,7 +40,7 @@ class EmployeesController < ApplicationController
 
     if params[:daterange].present? 
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
-      @attendances = @employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
+      @attendances = @employee.attendances.where("start_time BETWEEN ? AND ?", start_date, end_date)
       @rewards_penalties = @employee.rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
     end
 
@@ -173,7 +173,7 @@ class EmployeesController < ApplicationController
   
     if params[:daterange].present? 
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
-      attendances = employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
+      attendances = employee.attendances.where("start_time BETWEEN ? AND ?", start_date, end_date)
       rewards_penalties = employee.rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
     end
   
