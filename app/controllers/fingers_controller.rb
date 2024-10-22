@@ -33,6 +33,26 @@ class FingersController < ApplicationController
       @finger.destroy
       redirect_to employee_fingers_path(@employee), notice: 'Finger was successfully deleted.'
     end
+
+    def delete_fingerprint_message
+        chip_id = params[:chip_id]
+        topic = chip_id + "/fingerprint"
+        message = {
+            "action": "delete_fingerprint",
+            "finger_id": params[:finger_id],
+            "employee_id": params[:employee_id],
+            "device_finger_id": params[:device_finger_id]
+        }.to_json
+
+        client = MQTT::Client.connect(
+            host: '103.9.77.155',
+            port: 1883,
+        )
+
+        client.publish(topic, message) if topic.present?
+        client.disconnect()
+    
+    end
   
     private
   

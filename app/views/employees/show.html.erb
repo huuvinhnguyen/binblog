@@ -10,53 +10,13 @@
 
 
 <div class="d-flex justify-content-end">
-  <%= link_to "Chỉnh sửa nhân viên", edit_employee_path(@employee), class: "btn btn-primary mr-2" %>
-  <%= button_to "Xoá nhân viên", @employee, method: :delete, data: { confirm: "Bạn có chắc chắn muốn xoá nhân viên này?" }, class: "btn btn-danger" %>
-  <%= link_to "Quay lại", employees_path, class: "btn btn-secondary mr-2" %>
-
+  <%= button_to 'Thiết Lập Vân Tay', employee_fingers_path(@employee), method: :get, class: 'btn btn-primary', id: "adding-finger-button", style: "margin-left: 20px;" %>
+  <%= link_to "Chỉnh sửa nhân viên", edit_employee_path(@employee), class: "btn btn-primary", style: "margin-left: 20px;" %>
+  <%= button_to "Xoá nhân viên", @employee, method: :delete, data: { confirm: "Bạn có chắc chắn muốn xoá nhân viên này?" }, class: "btn btn-danger", style: "margin-left: 20px;" %>
+  <%= link_to "Quay lại", employees_path, class: "btn btn-secondary", style: "margin-left: 20px;" %>
 </div>
+
 <div class="employee-box">
-<h1>Danh sách vân tay</h1>
-<table class = "table">
-<thead>
-  <th>ID</th>  
-  <th>Finger ID</th> 
-  <th>device_finger_id </th>
-  <th>Thao tác</th>
-</thead>
-
-<tbody>
-  <% @employee.fingers.each do |finger| %>
-    <tr id="finger-<%= finger.device_finger_id %>">
-      <td><%= finger.id %></td>
-      <td><%= finger.finger_id %></td>
-      <td><%= finger.device_finger_id %></td>
-      <td>
-        <%= button_to 'Xoá', delete_fingerprint_message_employee_path(chip_id: @device.chip_id, finger_id: finger.finger_id, employee_id: finger.employee_id, device_finger_id: finger.device_finger_id), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
-      </td>
-    </tr>
-  <% end %>
-  <tr> 
-    <%= button_to 'Thiết Lập Vân Tay', employees_activate_adding_finger_path(employee_id: @employee.id, chip_id: @device.chip_id), method: :post, class: 'btn btn-primary', id: "adding-finger-button", style: "float: right;" %>
-  </tr>
-</tbody>
-
-</table>
-
-<div id="enrollment-mode" style="display: none; text-align: center;">
-  <%= button_to cancel_enrollment_employee_path(employee_id: @employee.id), method: :post, class: "btn btn-secondary", id: "cancel-enrollment-button", style: "display: none" do %>
-    <%= image_tag("close_icon_1.svg", alt: "Cancel Enrollment", style: "width: 50px; height: 50px;") %>
-  <% end %>
-
-  <!-- Display the fingerprint image below the button -->
-  <div style="margin-top: 10px;">
-    <%= image_tag 'fingerprint_1.svg', alt: 'Fingerprint', class: 'img-fluid' %>
-  </div>
-
-  <div>
-    <h2><span id="fingerprint-status"></span></h2>
-  </div>
-</div>
 
 <h1>Thêm chấm công</h1>
 
@@ -177,7 +137,7 @@ $(function() {
     </tr>
   </thead>
   <tbody>
-    <% rewards_penalties = @employee.rewards_penalties.order(date: :desc) %>
+    <% rewards_penalties = @rewards_penalties.order(date: :desc) %>
     <% rewards_penalties.each do |reward_penalty| %>
       <tr>
         <!-- Display reward/penalty details here -->
@@ -253,8 +213,8 @@ $(function() {
     <% end %>
 
     <!-- Tính tổng thưởng và phạt -->
-    <% total_rewards = @employee.rewards_penalties.where(penalty: false).sum(:amount) %>
-    <% total_penalties = @employee.rewards_penalties.where(penalty: true).sum(:amount) %>
+    <% total_rewards = @rewards_penalties.where(penalty: false).sum(:amount) %>
+    <% total_penalties = @rewards_penalties.where(penalty: true).sum(:amount) %>
 
     <% adjusted_total = total + total_rewards - total_penalties %>
    
@@ -262,10 +222,10 @@ $(function() {
 
   <tfoot>
     <tr>
-      <td>Tổng lương: <%= number_to_currency(adjusted_total, unit: 'VND', format: '%n %u') %></td>
+      <td><h1>Tổng lương: <%= number_to_currency(adjusted_total, unit: 'VND', format: '%n %u') %></h1></td>
       <td>
         <div>
-          <%= link_to "Xuất Excel", export_attendance_xls_employees_path(employee_id: @employee.id, format: :xls), class: "btn btn-primary", method: :get %>
+          <%= link_to "Xuất Excel", export_attendance_xls_employees_path(employee_id: @employee.id, daterange: params[:daterange], format: :xls), class: "btn btn-primary", method: :get %>
           <div style="clear:both"></div>
         </div>
       </td>

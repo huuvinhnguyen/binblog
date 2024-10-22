@@ -53,7 +53,6 @@ Rails.application.routes.draw do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
       get 'employees/:id', to: 'employees#show', as: 'filter_atendances'
       delete 'delete_fingerprint', to: 'employees#delete_fingerprint'
-      post 'delete_fingerprint_message', to: 'employees#delete_fingerprint_message'
       post 'cancel_enrollment', to: 'employees#cancel_enrollment'
 
     end
@@ -72,6 +71,9 @@ Rails.application.routes.draw do
   end
   
   resources :fingers, only: [:index, :show, :new, :create, :destroy]
+  resources :fingers do
+    post 'delete_fingerprint_message', on: :collection
+  end
   # or nested under employees
   resources :employees do
     resources :fingers, only: [:index, :show, :new, :create, :destroy]

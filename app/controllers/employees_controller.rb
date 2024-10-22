@@ -36,10 +36,12 @@ class EmployeesController < ApplicationController
     session[:employee_id] = @employee.id # lưu trữ thông tin employee vào session
 
     @attendances = @employee.attendances
+    @rewards_penalties = @employee.rewards_penalties
 
     if params[:daterange].present? 
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @attendances = @employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
+      @rewards_penalties = @employee.rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
     end
 
      if params[:project_id].present?
@@ -123,6 +125,20 @@ class EmployeesController < ApplicationController
 
   def export_attendance_xls
     employee = Employee.find(params[:employee_id])
+  
+    attendances = employee.attendances
+    rewards_penalties = employee.rewards_penalties
+  
+    if params[:daterange].present? 
+      start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
+      attendances = employee.attendances.where("date BETWEEN ? AND ?", start_date, end_date)
+      rewards_penalties = employee.rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
+    end
+  
+    total_attendance_amount = 0
+    total_rewards = 0
+    total_penalties = 0
+  
     # Tạo file excel từ danh sách employees
     p = Axlsx::Package.new
     wb = p.workbook
@@ -130,18 +146,50 @@ class EmployeesController < ApplicationController
       sheet.add_row ["Tên:", employee.name ]
       sheet.add_row ["Email", employee.email]
       sheet.add_row ["Điện thoại", employee.phone]
-      sheet.add_row ["Lương / Ngày", employee.daily_salary]
+      sheet.add_row ["Lương / Giờ", employee.daily_salary]
       sheet.add_row []
-      sheet.add_row ["Ngày", "Trọng số", "Thành tiền"]
-      employee.attendances.order(date: :desc).each do |attendance|
-        sheet.add_row [attendance.date, attendance.weight, attendance.weight.to_f * employee.daily_salary.to_f]
+  
+      # Thêm danh sách thưởng/phạt
+      sheet.add_row ["Danh sách Thưởng/Phạt"]
+      sheet.add_row ["Thời gian", "Mô tả", "Thưởng/Phạt", "Số tiền"]
+      rewards_penalties.order(date: :desc).each do |rewards_penalty|
+        start_date = I18n.l(rewards_penalty.date.in_time_zone('Asia/Ho_Chi_Minh'), format: :short)
+        sheet.add_row [start_date, rewards_penalty.description, rewards_penalty.penalty ? "Phạt" : "Thưởng", rewards_penalty.amount]
+        total_rewards += rewards_penalty.amount unless rewards_penalty.penalty
+        total_penalties += rewards_penalty.amount if rewards_penalty.penalty
       end
-      sheet.add_row ["Tổng lương:", "", employee.attendances.sum(:weight).to_f * employee.daily_salary.to_f]
+  
+      sheet.add_row []
+  
+      # Thêm danh sách chấm công
+      sheet.add_row ["Danh sách chấm công"]
+      sheet.add_row ["Bắt đầu", "Kết thúc", "Số giờ", "Lương/giờ", "Thành tiền"]
+      attendances.order(date: :desc).each do |attendance|
+        if attendance.start_time.present? && attendance.end_time.present?
+          working_hours = ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
+        else
+          working_hours = 0.0
+        end
+  
+        daily_salary = employee.daily_salary || 0.0
+        amount = daily_salary.to_f * working_hours.to_f
+        total_attendance_amount += amount
+        start_time = I18n.l(attendance.start_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short)
+        end_time = I18n.l(attendance.end_time.in_time_zone('Asia/Ho_Chi_Minh'), format: :short)
+        sheet.add_row [start_time, end_time, working_hours, daily_salary.to_f, amount]
+      end
+  
+      # Tính tổng lương
+      total_salary = total_attendance_amount + total_rewards - total_penalties
+  
+      sheet.add_row []
+      sheet.add_row ["Tổng lương:", "", "", "", total_salary]
     end
-
+  
     # Gửi file excel về cho người dùng
     send_data p.to_stream.read, filename: "bang_luong_nhan_vien.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
+  
 
   def activate_adding_finger
     chip_id = params[:chip_id]
@@ -215,26 +263,6 @@ class EmployeesController < ApplicationController
 
   end
 
-  def delete_fingerprint_message
-    chip_id = params[:chip_id]
-    topic = chip_id + "/fingerprint"
-    message = {
-      "action": "delete_fingerprint",
-      "finger_id": params[:finger_id],
-      "employee_id": params[:employee_id],
-      "device_finger_id": params[:device_finger_id]
-    }.to_json
-
-    client = MQTT::Client.connect(
-      host: '103.9.77.155',
-      port: 1883,
-    )
-
-    client.publish(topic, message) if topic.present?
-    client.disconnect()
-    @client.disconnect()
-
-  end
 
   #DELETE
   def delete_fingerprint
