@@ -36,16 +36,27 @@ class AttendancesController < ApplicationController
   
     attendance_service = AttendanceService.new(device_finger_id)
     employee = attendance_service.find_employee
-    
+  
     if employee
-      # Perform check-in logic via service
-      attendance_service.checkin(employee.id)
-      notify employee
-      render json: { message: "Check-in successful for #{employee.name}" }, status: :ok
+      result = attendance_service.handle_attendance(employee.id)
+      message = result[:message] || ""
+      case result[:status]
+      when :checkin
+        notify(employee, message)
+        render json: { message: "Check-in successful for #{employee.name}" }, status: :ok
+      when :checkout
+        notify(employee, message)
+        render json: { message: "Checkout successful for #{employee.name}" }, status: :ok
+      when :wait
+        notify(employee, message)
+        render json: { message: result[:message] }, status: :forbidden
+      end
     else
       render json: { error: "Employee not found" }, status: :not_found
     end
   end
+  
+  
 
   private
 
@@ -53,7 +64,7 @@ class AttendancesController < ApplicationController
     params.require(:attendance).permit(:date, :weight, :start_time, :end_time, :project_id, :hourly_wage)
   end
 
-  def notify(employee)
+  def notify(employee, message)
     managers = employee.users # Assuming `employee.users` returns all managers for the employee
   
     if managers.any?
@@ -66,7 +77,8 @@ class AttendancesController < ApplicationController
                      username: "khuonvien"
           end
           
-          notifier.ping "Hello, User check-in for #{employee.name}"
+          slack_message = "Hello, User check-in for #{employee.name}\n" + message
+          notifier.ping slack_message
         else
           Rails.logger.error "Slack Webhook URL is missing for manager #{manager.email}"
         end
