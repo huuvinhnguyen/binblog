@@ -109,30 +109,42 @@ class EmployeesController < ApplicationController
   def export_xls
     @employees = Employee.all
   
+    # Create Excel file from employee data
     p = Axlsx::Package.new
     wb = p.workbook
     wb.add_worksheet(name: "Employees") do |sheet|
       sheet.add_row ["Tên", "Email", "Điện thoại", "Lương / Giờ", "Tổng giờ", "Thưởng", "Phạt", "Tổng lương"]
   
       @employees.each do |employee|
-        total_hours = employee.attendances.sum do |attendance|
+        total_hours = 0.0
+        total_salary = 0.0
+  
+        employee.attendances.each do |attendance|
           if attendance.start_time.present? && attendance.end_time.present?
-            ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
-          else
-            0
+            hours_worked = ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
+            total_hours += hours_worked
+  
+            salary = if attendance.hourly_wage.present? && attendance.hourly_wage > 0
+                       attendance.hourly_wage
+                     else
+                       employee.daily_salary || 0.0
+                     end
+  
+            total_salary += salary.to_f * hours_worked
           end
         end
-
+  
         total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount).round(0)
         total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount).round(0)
-        total_salary = (employee.daily_salary.to_f * total_hours) + total_rewards - total_penalties
-
+        total_salary = total_salary + total_rewards - total_penalties
+  
         sheet.add_row [employee.name, employee.email, employee.phone, employee.daily_salary, total_hours, total_rewards, total_penalties, total_salary]
       end
     end
   
     send_data p.to_stream.read, filename: "nhan_cong.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
+  
 
   def export_csv
     @employees = Employee.all

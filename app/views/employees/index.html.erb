@@ -62,7 +62,7 @@
     });
   </script>
 
-<div class="employee-box">
+  <div class="employee-box">
   <table class="table">
     <thead>
       <th>Tên</th>  
@@ -70,8 +70,8 @@
       <th>Số giờ</th>
       <th>Lương</th>
       <th>Thưởng</th>
-      <th>Phạt</td>
-      <th>Thu nhập</td>
+      <th>Phạt</th>
+      <th>Thu nhập</th>
     </thead>
 
     <% @employees.each do |employee| %>
@@ -80,29 +80,39 @@
         <td><%= number_with_precision(employee.daily_salary, precision: 0, delimiter: ',', separator: '.') %> VND</td>
 
         <% 
-          total_hours = employee.attendances.sum do |attendance|
+          total_hours = 0.0
+          total_salary = 0.0
+
+          # Calculate total hours and total salary based on hourly wage or daily salary
+          employee.attendances.each do |attendance|
             if attendance.start_time.present? && attendance.end_time.present?
-              ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
-            else
-              0
+              hours_worked = ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
+              total_hours += hours_worked
+
+              # Calculate salary per attendance record
+              salary = if attendance.hourly_wage.present? && attendance.hourly_wage > 0
+                         attendance.hourly_wage
+                       else
+                         employee.daily_salary || 0.0
+                       end
+
+              total_salary += salary.to_f * hours_worked
             end
           end
 
-          total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount)
-          total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount)
+          total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount).round(0)
+          total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount).round(0)
 
-          total_income = (employee.daily_salary.to_f * total_hours) + total_rewards - total_penalties
+          # Final total income calculation (total salary + rewards - penalties)
+          total_income = total_salary + total_rewards - total_penalties
         %>
 
-        <td><%= total_hours %></td>
-        <td><%= (employee.daily_salary.to_f * total_hours).round(0) %></td>
-        <td><%= total_rewards.round(0) %></td>
-        <td><%= total_penalties.round(0) %></td>
-
+        <td><%= total_hours.round(2) %></td>
+        <td><%= number_with_precision(total_salary, precision: 0, delimiter: ',', separator: '.') %> VND</td>
+        <td><%= total_rewards %></td>
+        <td><%= total_penalties %></td>
         <td><%= number_with_precision(total_income, precision: 0, delimiter: ',', separator: '.') %> VND</td>
       </tr>
     <% end %>
   </table>
-  </div>
-
-
+</div>
