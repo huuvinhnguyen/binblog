@@ -10,6 +10,23 @@ class AttendancesController < ApplicationController
     end
   end
 
+  def edit
+    # Hiển thị form chỉnh sửa attendance
+    @employee = Employee.find(params[:employee_id])
+    @attendance = @employee.attendances.find(params[:id])
+  end
+
+  def update
+    @employee = Employee.find(params[:employee_id])
+    @attendance = @employee.attendances.find(params[:id])
+
+    if @attendance.update(attendance_params)
+      redirect_to employee_path(@employee), notice: 'Attendance đã được cập nhật thành công'
+    else
+      render :edit
+    end
+  end
+
   def destroy
     redirect_to request.referer, notice: 'Attendance was successfully deleted.'
   end
@@ -32,9 +49,7 @@ class AttendancesController < ApplicationController
   private
 
   def attendance_params
-    # params.require(:attendance).permit(:date, :weight, :status, :project_id, :start_time, :end_time)
-    params.require(:attendance).permit(:date, :weight, :start_time, :end_time, :project_id)
-
+    params.require(:attendance).permit(:date, :weight, :start_time, :end_time, :project_id, :hourly_wage)
   end
 
 end

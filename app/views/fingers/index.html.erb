@@ -1,0 +1,42 @@
+<div class="employee-box">
+<h1>Danh sách vân tay</h1>
+<table class = "table">
+<thead>
+  <th>ID</th>  
+  <th>Finger ID</th> 
+  <th>device_finger_id </th>
+  <th>Thao tác</th>
+</thead>
+
+<tbody>
+  <% @employee.fingers.each do |finger| %>
+    <tr id="finger-<%= finger.device_finger_id %>">
+      <td><%= finger.id %></td>
+      <td><%= finger.finger_id %></td>
+      <td><%= finger.device_finger_id %></td>
+    
+      <td>
+        <%= button_to 'Xoá', delete_fingerprint_message_fingers_path(chip_id: @device.chip_id, finger_id: finger.finger_id, employee_id: finger.employee_id, device_finger_id: finger.device_finger_id), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+      </td>
+     
+ 
+
+    </tr>
+  <% end %>
+  <tr> 
+  <%= button_to 'Thiết Lập Vân Tay', employees_activate_adding_finger_path(employee_id: @employee.id, chip_id: @device.chip_id), method: :post, class: 'btn btn-primary', id: "adding-finger-button", style: "float: right;" %>
+</tr>
+</tbody>
+
+</table>
+
+<div id="enrollment-mode" style="display: none; text-align: center;">
+  <!-- Display the fingerprint image below the button -->
+  <div style="margin-top: 10px;">
+    <%= image_tag 'fingerprint_1.svg', alt: 'Fingerprint', class: 'img-fluid' %>
+  </div>
+
+  <div>
+    <h2><span id="fingerprint-status"></span></h2>
+  </div>
+</div>

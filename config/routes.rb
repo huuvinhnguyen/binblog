@@ -36,13 +36,15 @@ Rails.application.routes.draw do
   resources :employees do
     collection do
       get :export_xls
+      get :export_csv
       get :export_attendance_xls
     end
   end
 
   resources :employees do
-    resources :attendances, only: [:create]
+    resources :attendances, only: [:create, :edit, :update, :destroy]
   end
+  
 
   resources :employees do
     resources :rewards_penalties, only: [:new, :create, :edit, :update, :destroy]
@@ -53,7 +55,6 @@ Rails.application.routes.draw do
       delete 'attendances/:id', to: 'employees#destroy_attendance', as: 'attendance_destroy'
       get 'employees/:id', to: 'employees#show', as: 'filter_atendances'
       delete 'delete_fingerprint', to: 'employees#delete_fingerprint'
-      post 'delete_fingerprint_message', to: 'employees#delete_fingerprint_message'
       post 'cancel_enrollment', to: 'employees#cancel_enrollment'
 
     end
@@ -69,6 +70,15 @@ Rails.application.routes.draw do
       get :latest_data
 
     end
+  end
+  
+  resources :fingers, only: [:index, :show, :new, :create, :destroy]
+  resources :fingers do
+    post 'delete_fingerprint_message', on: :collection
+  end
+  # or nested under employees
+  resources :employees do
+    resources :fingers, only: [:index, :show, :new, :create, :destroy]
   end
 
   # The priority is based upon order of creation: first created -> highest priority.
