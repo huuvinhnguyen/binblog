@@ -213,7 +213,7 @@ $(function() {
 
         <td><%= number_to_currency(amount, unit: 'VND', format: '%n %u', precision: 0) %></td>
         <td>
-          <%= button_to 'Xoá', attendance_destroy_employee_path(employee_id: @employee.id, id: attendance.id), method: :delete, data: { confirm: 'Are you sure?' } %>
+          <%= button_to 'Xoá', employee_attendance_path(@employee, attendance), method: :delete, data: { confirm: 'Are you sure?' } %>
           <%= link_to 'Sửa', edit_employee_attendance_path(@employee, attendance), class: 'btn btn-primary btn-sm' %>
 
         <% total += ( salary.to_f * working_hours.to_f) %>

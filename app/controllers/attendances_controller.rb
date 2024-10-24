@@ -28,8 +28,12 @@ class AttendancesController < ApplicationController
   end
 
   def destroy
-    redirect_to request.referer, notice: 'Attendance was successfully deleted.'
+    @employee = Employee.find(params[:employee_id])
+    @attendance = @employee.attendances.find(params[:id])
+    @attendance.destroy
+    redirect_to employee_path(@employee), notice: 'Attendance was successfully deleted.'
   end
+  
 
   def checkin
     device_finger_id = params[:device_finger_id]
