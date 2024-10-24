@@ -77,7 +77,7 @@ class AttendancesController < ApplicationController
                      username: "khuonvien"
           end
           
-          slack_message = "Hello, User check-in for #{employee.name}\n" + message
+          slack_message = "Xin chào bạn #{employee.name}\n" + message
           notifier.ping slack_message
         else
           Rails.logger.error "Slack Webhook URL is missing for manager #{manager.email}"
