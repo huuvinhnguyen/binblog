@@ -4,8 +4,8 @@
 
 <%= link_to "Thêm nhân viên", new_employee_path %>
 
-<%= link_to 'Xuất Excel', export_xls_employees_path(format: :xls), class: 'btn btn-success' %>
-<%= link_to 'Xuất CSV', export_csv_employees_path(format: :csv), class: 'btn btn-success' %>
+<%= link_to 'Xuất Excel', export_xls_employees_path(daterange: params[:daterange], format: :xls), class: 'btn btn-success' %>
+<%= link_to 'Xuất CSV', export_csv_employees_path(daterange: params[:daterange], format: :csv), class: 'btn btn-success' %>
 
 <br>
   <%= form_tag employees_path, method: :get do %>
@@ -76,7 +76,7 @@
 
     <% @employees.each do |employee| %>
       <tr>
-        <td><%= link_to employee.name, employee %></td>
+        <td><%= link_to employee.name, employee_path(employee, daterange: params[:daterange]) %></td>
         <td><%= number_with_precision(employee.daily_salary, precision: 0, delimiter: ',', separator: '.') %> VND</td>
 
         <% 
@@ -84,7 +84,7 @@
           total_salary = 0.0
 
           # Calculate total hours and total salary based on hourly wage or daily salary
-          employee.attendances.each do |attendance|
+          @attendances.where(employee_id: employee.id).each do |attendance|
             if attendance.start_time.present? && attendance.end_time.present?
               hours_worked = ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
               total_hours += hours_worked
@@ -100,8 +100,8 @@
             end
           end
 
-          total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount).round(0)
-          total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount).round(0)
+          total_rewards = @rewards_penalties.where(employee_id: employee.id).where(penalty: false).sum(:amount).round(0)
+          total_penalties = @rewards_penalties.where(employee_id: employee.id).where(penalty: true).sum(:amount).round(0)
 
           # Final total income calculation (total salary + rewards - penalties)
           total_income = total_salary + total_rewards - total_penalties
