@@ -10,7 +10,7 @@
 <br>
   <%= form_tag employees_path, method: :get do %>
     <% date = params[:daterange] %>
-    <%= text_field_tag 'daterange', date, required: true %>
+    <%= text_field_tag 'daterange', date, required: true, placeholder: "Chọn thời gian" %>
     <%= submit_tag 'Lọc' %>
     <%= link_to "Tất cả", employees_path %>
 
