@@ -6,25 +6,30 @@ class EmployeesController < ApplicationController
   # GET /employees or /employees.json
   def index
     # @employees = current_user.employees
-  
+    
     @employees = Employee.all
     @attendances = Attendance.where(employee_id: @employees.pluck(:id))
     @rewards_penalties = RewardsPenalty.where(employee_id: @employees.pluck(:id))
   
-    if params[:daterange].present?
+    # Set default daterange to the current month
+    if params[:daterange].blank?
+      start_date = Date.today.beginning_of_month
+      end_date = Date.today.end_of_month
+      params[:daterange] = "#{start_date.strftime('%d/%m/%Y')} - #{end_date.strftime('%d/%m/%Y')}"
+    else
       start_date, end_date = params[:daterange].split(' - ').map { |date| Date.parse(date) }
-  
-      # Filter employees based on attendances OR rewards_penalties within the date range
-      @employees = @employees.joins("LEFT JOIN attendances ON attendances.employee_id = employees.id")
-                             .joins("LEFT JOIN rewards_penalties ON rewards_penalties.employee_id = employees.id")
-                             .where("attendances.date BETWEEN :start_date AND :end_date OR rewards_penalties.date BETWEEN :start_date AND :end_date",
-                                    start_date: start_date, end_date: end_date)
-                             .distinct
-  
-      # Filter attendances within the daterange
-      @attendances = @attendances.where(["start_time BETWEEN ? AND ?", start_date, end_date])
-      @rewards_penalties = @rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
     end
+  
+    # Filter employees based on attendances OR rewards_penalties within the date range
+    @employees = @employees.joins("LEFT JOIN attendances ON attendances.employee_id = employees.id")
+                           .joins("LEFT JOIN rewards_penalties ON rewards_penalties.employee_id = employees.id")
+                           .where("attendances.date BETWEEN :start_date AND :end_date OR rewards_penalties.date BETWEEN :start_date AND :end_date",
+                                  start_date: start_date, end_date: end_date)
+                           .distinct
+  
+    # Filter attendances within the daterange
+    @attendances = @attendances.where(["start_time BETWEEN ? AND ?", start_date, end_date])
+    @rewards_penalties = @rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
   
     if params[:project_id].present?
       # Filter employees and attendances based on project_id
@@ -35,6 +40,7 @@ class EmployeesController < ApplicationController
       @attendances = @attendances.where(project_id: params[:project_id])
     end
   end
+  
   
 
   def initialize_mqtt_client  
