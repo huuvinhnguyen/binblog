@@ -21,7 +21,7 @@ class AttendancesController < ApplicationController
     @attendance = @employee.attendances.find(params[:id])
 
     if @attendance.update(attendance_params)
-      redirect_to employee_path(@employee), notice: 'Attendance đã được cập nhật thành công'
+      redirect_to employee_path(@employee), notice: 'Cập nhật thành công.'
     else
       render :edit
     end

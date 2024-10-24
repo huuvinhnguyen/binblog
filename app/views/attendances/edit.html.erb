@@ -1,7 +1,18 @@
 <h1>Chỉnh sửa Checkin/out</h1>
 
 <%= form_with(model: [@employee, @attendance], local: true) do |form| %>
-  
+
+  <% if @attendance.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@attendance.errors.count, "error") %> prohibited this attendance from being saved:</h2>
+      <ul>
+        <% @attendance.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <div class="form-group">
     <%= form.label :start_time, 'Giờ bắt đầu' %>
     <%= form.datetime_local_field :start_time, class: "form-control" %>
@@ -14,11 +25,8 @@
 
   <div class="form-group">
     <%= form.label :hourly_wage, 'Lương / giờ' %>
-    <%= form.text_field :hourly_wage %>
+    <%= form.text_field :hourly_wage, class: "form-control" %>
   </div>
-
 
   <%= form.submit 'Cập nhật', class: "btn btn-primary" %>
 <% end %>
-
-<%= link_to 'Quay lại', employee_path(@employee), class: 'btn btn-secondary' %>
