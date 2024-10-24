@@ -13,7 +13,8 @@
   <%= button_to 'Thiết Lập Vân Tay', employee_fingers_path(@employee), method: :get, class: 'btn btn-primary', id: "adding-finger-button", style: "margin-left: 5px;" %>
   <%= link_to "Chỉnh sửa nhân viên", edit_employee_path(@employee), class: "btn btn-primary", style: "margin-left: 5px;" %>
   <%= button_to "Xoá nhân viên", @employee, method: :delete, data: { confirm: "Bạn có chắc chắn muốn xoá nhân viên này?" }, class: "btn btn-danger", style: "margin-left: 5px;" %>
-  <%= link_to "Quay lại", employees_path, class: "btn btn-secondary", style: "margin-left: 5px;" %>
+  <%= link_to "Quay lại", employees_path(daterange: params[:daterange]), class: "btn btn-secondary", style: "margin-left: 5px;" %>
+
 </div>
 
 <div class="employee-box">
@@ -130,6 +131,8 @@ $(function() {
         <td>
           <%= form_with(model: [@employee, reward_penalty], method: :delete, local: true) do |form| %>
             <%= form.submit "Xoá", class: "btn btn-danger", data: { confirm: "Bạn có chắc chắn muốn xoá?" } %>
+            <%= link_to 'Sửa', edit_employee_rewards_penalty_path(@employee, reward_penalty), class: "btn btn-primary" %>
+
           <% end %>
         </td>
       </tr>
