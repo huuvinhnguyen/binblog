@@ -59,6 +59,14 @@ class EmployeesController < ApplicationController
     @attendances = @employee.attendances
     @rewards_penalties = @employee.rewards_penalties
 
+    if params[:daterange].blank?
+      start_date = Date.today.beginning_of_month
+      end_date = Date.today.end_of_month
+      params[:daterange] = "#{start_date.strftime('%d/%m/%Y')} - #{end_date.strftime('%d/%m/%Y')}"
+    else
+      start_date, end_date = params[:daterange].split(' - ').map { |date| Date.parse(date) }
+    end
+
     if params[:daterange].present? 
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
       @attendances = @employee.attendances.where("start_time BETWEEN ? AND ?", start_date, end_date)
