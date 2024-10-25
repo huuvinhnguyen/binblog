@@ -6,21 +6,42 @@ class EmployeesController < ApplicationController
   # GET /employees or /employees.json
   def index
     # @employees = current_user.employees
-
+    
     @employees = Employee.all
-    @attendances = Attendance.all
-
-    if params[:daterange].present?
-      start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
-      @employees = @employees.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
-      @attendances = @attendances.where(["start_time BETWEEN ? AND ?", start_date, end_date])
+    @attendances = Attendance.where(employee_id: @employees.pluck(:id))
+    @rewards_penalties = RewardsPenalty.where(employee_id: @employees.pluck(:id))
+  
+    # Set default daterange to the current month
+    if params[:daterange].blank?
+      start_date = Date.today.beginning_of_month
+      end_date = Date.today.end_of_month
+      params[:daterange] = "#{start_date.strftime('%d/%m/%Y')} - #{end_date.strftime('%d/%m/%Y')}"
+    else
+      start_date, end_date = params[:daterange].split(' - ').map { |date| Date.parse(date) }
     end
+  
+    # Filter employees based on attendances OR rewards_penalties within the date range
+    @employees = @employees.joins("LEFT JOIN attendances ON attendances.employee_id = employees.id")
+                           .joins("LEFT JOIN rewards_penalties ON rewards_penalties.employee_id = employees.id")
+                           .where("attendances.date BETWEEN :start_date AND :end_date OR rewards_penalties.date BETWEEN :start_date AND :end_date",
+                                  start_date: start_date, end_date: end_date)
+                           .distinct
+  
+    # Filter attendances within the daterange
+    @attendances = @attendances.where(["start_time BETWEEN ? AND ?", start_date, end_date])
+    @rewards_penalties = @rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
+  
     if params[:project_id].present?
-      @employees = @employees.joins(:attendances).where(attendances: { project_id:  params[:project_id]}).distinct
-      @attendances = @attendances.where({project_id: params[:project_id]}).distinct
+      # Filter employees and attendances based on project_id
+      @employees = @employees.joins(:attendances)
+                             .where(attendances: { project_id: params[:project_id] })
+                             .distinct
+  
+      @attendances = @attendances.where(project_id: params[:project_id])
     end
-
   end
+  
+  
 
   def initialize_mqtt_client  
     @client = MQTT::Client.connect(
@@ -37,6 +58,14 @@ class EmployeesController < ApplicationController
 
     @attendances = @employee.attendances
     @rewards_penalties = @employee.rewards_penalties
+
+    if params[:daterange].blank?
+      start_date = Date.today.beginning_of_month
+      end_date = Date.today.end_of_month
+      params[:daterange] = "#{start_date.strftime('%d/%m/%Y')} - #{end_date.strftime('%d/%m/%Y')}"
+    else
+      start_date, end_date = params[:daterange].split(' - ').map { |date| Date.parse(date) }
+    end
 
     if params[:daterange].present? 
       start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
@@ -107,7 +136,25 @@ class EmployeesController < ApplicationController
   end
   
   def export_xls
-    @employees = Employee.all
+    employees = Employee.all
+    attendances = Attendance.where(employee_id: employees.pluck(:id))
+    rewards_penalties = RewardsPenalty.where(employee_id: employees.pluck(:id))
+  
+    if params[:daterange].present?
+      start_date, end_date = params[:daterange].split(' - ').map { |date| Date.parse(date) }
+  
+      # Filter employees based on attendances OR rewards_penalties within the date range
+      employees = employees.joins("LEFT JOIN attendances ON attendances.employee_id = employees.id")
+                             .joins("LEFT JOIN rewards_penalties ON rewards_penalties.employee_id = employees.id")
+                             .where("attendances.date BETWEEN :start_date AND :end_date OR rewards_penalties.date BETWEEN :start_date AND :end_date",
+                                    start_date: start_date, end_date: end_date)
+                             .distinct
+  
+      # Filter attendances within the daterange
+      attendances = attendances.where(["start_time BETWEEN ? AND ?", start_date, end_date])
+      rewards_penalties = rewards_penalties.where(["date BETWEEN ? AND ?", start_date, end_date])
+    end
+  
   
     # Create Excel file from employee data
     p = Axlsx::Package.new
@@ -115,11 +162,11 @@ class EmployeesController < ApplicationController
     wb.add_worksheet(name: "Employees") do |sheet|
       sheet.add_row ["Tên", "Email", "Điện thoại", "Lương / Giờ", "Tổng giờ", "Thưởng", "Phạt", "Tổng lương"]
   
-      @employees.each do |employee|
+      employees.each do |employee|
         total_hours = 0.0
         total_salary = 0.0
   
-        employee.attendances.each do |attendance|
+        attendances.where(employee_id: employee.id).each do |attendance|
           if attendance.start_time.present? && attendance.end_time.present?
             hours_worked = ((attendance.end_time - attendance.start_time) / 1.hour).round(2)
             total_hours += hours_worked
@@ -134,20 +181,26 @@ class EmployeesController < ApplicationController
           end
         end
   
-        total_rewards = employee.rewards_penalties.where(penalty: false).sum(:amount).round(0)
-        total_penalties = employee.rewards_penalties.where(penalty: true).sum(:amount).round(0)
-        total_salary = total_salary + total_rewards - total_penalties
+        # Filter rewards_penalties based on daterange
+        rewards_in_range = rewards_penalties.where(employee_id: employee.id).where(penalty: false, date: start_date..end_date).sum(:amount).round(0)
+        penalties_in_range = rewards_penalties.where(employee_id: employee.id).where(penalty: true, date: start_date..end_date).sum(:amount).round(0)
   
-        sheet.add_row [employee.name, employee.email, employee.phone, employee.daily_salary, total_hours, total_rewards, total_penalties, total_salary]
+        total_salary = total_salary + rewards_in_range - penalties_in_range
+  
+        sheet.add_row [employee.name, employee.email, employee.phone, employee.daily_salary, total_hours, rewards_in_range, penalties_in_range, total_salary]
       end
     end
   
     send_data p.to_stream.read, filename: "nhan_cong.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
   
-
   def export_csv
     @employees = Employee.all
+
+    if params[:daterange].present?
+      start_date, end_date = params[:daterange].split(' - ').map{ |date| Date.parse(date) }
+      @employees = @employees.joins(:attendances).where(attendances: { date: start_date..end_date }).distinct
+    end
   
     csv_data = CSV.generate(headers: true) do |csv|
       # Thêm tiêu đề

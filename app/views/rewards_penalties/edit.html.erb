@@ -1,0 +1,39 @@
+<h1>Chỉnh sửa Thưởng / Phạt</h1>
+
+<%= form_with(model: [@employee, @reward_penalty], local: true) do |form| %>
+  <% if @reward_penalty.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@reward_penalty.errors.count, "error") %> prohibited this reward/penalty from being saved:</h2>
+      <ul>
+        <% @reward_penalty.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :description, "Mô tả" %>
+    <%= form.text_field :description, class: "form-control", required: true %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :date, "Thời gian" %>
+    <%= form.datetime_local_field :date, class: "form-control", required: true %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :penalty, "Phạt / Thưởng" %>
+    <%= form.select :penalty, [["Thưởng", false], ["Phạt", true]], class: "form-control", required: true %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :amount, "Số tiền" %>
+    <%= form.number_field :amount, step: 0.01, class: "form-control", required: true %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit "Cập nhật" %>
+  </div>
+<% end %>
+
