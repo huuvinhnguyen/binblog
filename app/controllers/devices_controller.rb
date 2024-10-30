@@ -1,5 +1,5 @@
 class DevicesController < ApplicationController
-  before_action :authenticate_user!
+  before_action :authenticate_user!, except: [:notify]
   before_action :initialize_mqtt_client
   skip_before_action :verify_authenticity_token, only: [:notify]
   before_action :set_device, only: [:show]
@@ -85,7 +85,6 @@ class DevicesController < ApplicationController
     subscribe_topic(topic)
   end
 
-
   def switchon_ab
     notifier = Slack::Notifier.new "https://abc.com" do
       defaults channel: "general",
@@ -95,43 +94,29 @@ class DevicesController < ApplicationController
     notifier.ping "Hello default"
   end
 
-  def notify
-    begin
-      json_data = JSON.parse(request.body.read)
-      handle_device_init(request.body.read)
-      chip_id = json_data['id']
-      message = json_data['message']
-      time = Time.at(json_data['time'])
-      model = json_data['model']
+  def notify 
+    # Parse JSON từ request body
+    json_data = JSON.parse(request.body.read)
+    handle_device_init(request.body.read) 
 
-      # Cấu hình Slack Notifier
-      notifier = Slack::Notifier.new "https://abc.com" do
-        defaults channel: "general",
-                 username: "khuonvien"
-      end
+    chip_id = json_data['id']
+    message = json_data['message']
+    # time = Time.at(json_data['time'])
+    time = Time.current
+    model = json_data['model']
+    device = Device.find_by(chip_id: chip_id)
 
-      # Tạo thông báo
-      slack_message = "Received data from ESP32:\n" +
-                      "Chip ID: #{chip_id}\n" +
-                      "Message: #{message}\n" +
-                      "Time: #{time}\n" +
+    slack_message = "Received data from ESP32:\n" \
+                      "Chip ID: #{chip_id}\n" \
+                      "Message: #{message}\n" \
+                      "Time: #{time}\n" \
                       "Model: #{model}"
 
-      # Gửi thông báo đến Slack và lưu phản hồi
-      response = notifier.ping slack_message
+    users = device.users
+    notify_users(users, slack_message) 
 
-      # Kiểm tra trạng thái phản hồi từ Slack
-      # status = response.is_a?(Net::HTTPSuccess) ? "success" : "failure"
-      status = response.all? { |r| r.is_a?(Net::HTTPSuccess) } ? "success" : "failure"
-
-      # Trả về phản hồi dưới dạng JSON
-      render json: { message: "Notification sent to Slack", status: status }
-    rescue JSON::ParserError => e
-      Rails.logger.error("Failed to parse JSON: #{e.message}")
-      render json: { message: "Invalid JSON", status: "failure" }, status: :bad_request
-    end
   end
-
+  
   def show
       topic = params[:deviceid]
       subscribe_topic topic
@@ -154,6 +139,21 @@ class DevicesController < ApplicationController
 
   private
 
+  def notify_users(users, message)
+    if users.present?
+      responses = users.map do |user|
+        SlackNotificationService.new(user.webhook_url, message).send_notification
+      end
+
+      status = responses.all? ? "success" : "failure"
+    else
+      Rails.logger.error "No managers found for this notification"
+      status = "failure"
+    end
+
+    render json: { message: "Notification sent to Slack", status: status }
+  end
+
   def subscribe_topic topic
 
     json_message = nil
@@ -168,7 +168,6 @@ class DevicesController < ApplicationController
           json_message = current_message
           puts "#handle device"
           handle_device_init(JSON.parse(json_message))
-
         end
       end
       @client.disconnect()
@@ -182,7 +181,7 @@ class DevicesController < ApplicationController
       chip_id = parsed_data['id']
       is_payment = parsed_data['is_payment']
       name = parsed_data['name']
-      return if chip_id.nil? || chip_id.empty?
+      return if chip_id.nil? || chip_id.to_s.empty?
       device = Device.find_or_create_by(chip_id: chip_id) do |device|
         device.name = name
       end
@@ -196,8 +195,6 @@ class DevicesController < ApplicationController
   def path_to(filename)
     Rails.root.join('config', filename).to_s
   end
-
-  private
 
   def set_device
     @device = Device.find(params[:id])
