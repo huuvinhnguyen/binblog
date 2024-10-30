@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_23_035520) do
+ActiveRecord::Schema[7.0].define(version: 2024_10_25_104041) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -31,6 +31,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_23_035520) do
     t.boolean "is_payment"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "device_type"
     t.index ["chip_id"], name: "index_devices_on_chip_id", unique: true
   end
 

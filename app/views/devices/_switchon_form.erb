@@ -1,6 +1,11 @@
-<div class="slider-value">
+<div class="slider-value" style="border: 1px solid grey; border-radius: 10px; padding: 20px;">
+  <!-- Range slider for setting the value -->
   <input type="range" min="1000" max="10000" value="1000" step="1000" class="slider" id="slider1">
+
   <%= form_tag('/devices/switchon', method: 'post') do %>
+    <!-- Hidden field for chip_id -->
+    <%= hidden_field_tag :chip_id, chip_id %>
+    <!-- Hidden field for the slider value -->
     <%= hidden_field_tag :value, "", id: 'switchon_message_field' %>
     <%= submit_tag 'KÍCH HOẠT', id: 'publish-button-switchon', class: 'btn btn-primary' %>
   <% end %>
@@ -14,3 +19,50 @@
     messageField.value = sliderInput.value;
   });
 </script>
+
+<!-- Toggle Switch Form with Grey Border -->
+<div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+  <%= form_tag('/devices/switchon', method: 'post') do %>
+    <!-- Hidden field for chip_id -->
+    <%= hidden_field_tag :chip_id, chip_id %>
+    <!-- Hidden field for the toggle state as 'switch' parameter -->
+    <%= hidden_field_tag :switch, "0", id: 'toggle_state_field' %>
+
+    <!-- Styled Toggle Switch -->
+    <div class="toggle-switch">
+      <label class="switch">
+        <%= check_box_tag :toggle, "1", false, id: 'toggle-switch',
+          onchange: "document.getElementById('toggle_state_field').value = this.checked ? '1' : '0'; this.form.submit();" %>
+        <span class="slider-round"></span>
+      </label>
+      <span>ON / OFF</span>
+    </div>
+  <% end %>
+</div>
+
+<!-- Timer Setting Form with Grey Border -->
+<div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+  <%= form_tag('/devices/switchon', method: 'post') do %>
+    <!-- Hidden field for chip_id -->
+    <%= hidden_field_tag :chip_id, chip_id %>
+    
+    <!-- Date and Time Input Field -->
+    <div class="form-group">
+      <label for="start_time">Ngày và giờ hẹn giờ:</label>
+      <%= datetime_local_field_tag :start_time, nil, id: 'start_time', class: 'form-control' %>
+    </div>
+    
+    <!-- Duration Input Field -->
+    <div class="form-group">
+      <label for="duration">Thời gian hoạt động (phút):</label>
+      <%= number_field_tag :duration, nil, id: 'duration', class: 'form-control', min: 1, step: 1 %>
+    </div>
+    
+    <!-- Submit Button for Timer -->
+    <br><br>
+    <%= submit_tag 'Hẹn giờ', class: 'btn btn-success' %>
+  <% end %>
+</div>
+<br>
+<br>
+<br>

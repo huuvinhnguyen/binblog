@@ -10,27 +10,27 @@
     <% end %>
   </div>
 </div>
-<div id="switch-div" style="display: none;">
-  <%= render 'switchon_form' %>
-  <div id="last-active-message-div"></div>
-</div>
+  <div id="switch-div" style="display: none;">
+    <%= render 'switchon_form', chip_id: "" %>
+    <div id="last-active-message-div"></div>
+  </div>
 
 <div>
   <table class = "table">
   <thead>
     <th>Tên</th>  
     <th>ID</th>  
+    <th>Thao tác</th>
   </thead>
 
   <% @devices.each do |device| %>
     <tr>
       <td><%= device.name %></td>
       <td><%= device.chip_id%></td>
-
+      <td>Truy cập</td>
     </tr>
   <% end %>
-<tr>
-
+  <tr>
 </tr>
 </table>
 

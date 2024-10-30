@@ -2,6 +2,7 @@
 @import "bootstrap";
 @import "devices";
 @import "gauges";
+@import "toggle";
 
 .container {
   @include make-container();

@@ -2,6 +2,7 @@ class DevicesController < ApplicationController
   before_action :authenticate_user!
   before_action :initialize_mqtt_client
   skip_before_action :verify_authenticity_token, only: [:notify]
+  before_action :set_device, only: [:show]
 
   def initialize_mqtt_client  
     @client = MQTT::Client.connect(
@@ -17,9 +18,21 @@ class DevicesController < ApplicationController
   end
 
   def connect
-    session[:device_id] = params[:deviceid]
-    topic = params[:deviceid]
-    subscribe_topic topic
+    # session[:device_id] = params[:deviceid]
+    # topic = params[:deviceid]
+    # subscribe_topic topic
+
+    @device = Device.find_by(chip_id: params[:deviceid])
+    if @device
+      # Perform connection logic here
+      redirect_to device_path(@device), notice: "Connected successfully."
+
+      
+    else
+      flash[:alert] = "Device not found."
+      render :connect # Re-render the form
+    end
+
   end
 
   def publish
@@ -46,21 +59,32 @@ class DevicesController < ApplicationController
   end
 
   def switchon
-
-    topic = session[:device_id] + "/switchon"
-    message = "{ \"longlast\" : #{params[:value].to_i} }"
-
+    # Đường dẫn đến mã nguồn gốc
+    # https://github.com/huuvinhnguyen/kvxduino/pull/4/files#diff-72403d98b2706b2110d12c0b98c93d5febf832c7ca1b2ab17fc2935f88943b45
+  
+    topic = "#{params[:chip_id]}/switchon"
+    message_hash = {}
+  
+    # Kiểm tra và thêm các tham số vào hash
+    message_hash["start_time"] = params[:start_time].to_s if params[:start_time].present?
+    message_hash["longlast"] = params[:duration].to_s if params[:duration].present?
+    message_hash["value"] = params[:value].to_i if params[:value].present?
+    message_hash["switch"] = params[:switch].to_i if params[:switch].present?
+  
+    # Chuyển đổi hash thành JSON
+    message = message_hash.to_json
+  
     client = MQTT::Client.connect(
       host: '103.9.77.155',
       port: 1883
     )
-
-    client.publish(topic, message, retain: true) if topic.present?
+  
+    client.publish(topic, message, retain: false) if topic.present?
     client.disconnect()
-
-    mainTopic = session[:device_id]
-    subscribe_topic mainTopic
+  
+    subscribe_topic(topic)
   end
+
 
   def switchon_ab
     notifier = Slack::Notifier.new "https://abc.com" do
@@ -106,6 +130,11 @@ class DevicesController < ApplicationController
       Rails.logger.error("Failed to parse JSON: #{e.message}")
       render json: { message: "Invalid JSON", status: "failure" }, status: :bad_request
     end
+  end
+
+  def show
+      topic = params[:deviceid]
+      subscribe_topic topic
   end
 
   def new
@@ -166,5 +195,11 @@ class DevicesController < ApplicationController
 
   def path_to(filename)
     Rails.root.join('config', filename).to_s
+  end
+
+  private
+
+  def set_device
+    @device = Device.find(params[:id])
   end
 end

@@ -1,2 +1,24 @@
-<h1>Devices#show</h1>
-<p>Find me in app/views/devices/show.html.erb</p>
+<!-- app/views/devices/show.html.erb -->
+<h1><%= @device.name %></p></h1>
+
+<p><strong>Chip ID:</strong> <%= @device.chip_id %></p>
+<p><strong>Status:</strong> <%= @device.status %></p>
+<p><strong>Is Payment Enabled:</strong> <%= @device.is_payment ? 'Yes' : 'No' %></p>
+<p><strong>Lần cuối cập nhật vào lúc:</strong> </p>
+<p><strong>Lịch sử</strong> </p>
+<%= link_to 'Back to Devices', devices_path, class: 'btn btn-secondary' %>
+
+<br>
+<br>
+<% if @device.device_type == "switch" %>
+    <div id="switch-div" style="display: block;">
+    <%= render 'switchon_form', chip_id: @device.chip_id %>
+    <div id="last-active-message-div"></div>
+    </div>
+<% end %>
+
+<% if @device.device_type == "dht" %>
+    <div class="row">
+    <%= render 'dht_form' %>
+    </div>
+<% end %>
