@@ -28,7 +28,15 @@
     <!-- Hidden field for the toggle state as 'switch_value' parameter -->
     <%= hidden_field_tag :switch_value, "0", id: 'toggle_state_field' %>
 
-    
+    <!-- Styled Toggle Switch -->
+    <div class="toggle-switch">
+      <label class="switch">
+        <%= check_box_tag :toggle, "1", false, id: 'toggle-switch',
+          onchange: "document.getElementById('toggle_state_field').value = this.checked ? '1' : '0'; this.form.submit();" %>
+        <span class="slider-round"></span>
+      </label>
+      <span>ON / OFF</span>
+    </div>
   <% end %>
 </div>
 
