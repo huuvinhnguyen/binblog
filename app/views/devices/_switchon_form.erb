@@ -51,15 +51,11 @@
     // Ngăn chặn hành động gửi form mặc định
     event.preventDefault();
 
-    // Xác nhận hành động gửi form
-    const confirmed = confirm("Bạn có chắc chắn muốn gửi không?");
-    if (confirmed) {
-      toggleForm.submit(); // Gửi form nếu được xác nhận
-    } else {
-      toggleSwitch.checked = !toggleSwitch.checked; // Khôi phục trạng thái trước đó nếu không được xác nhận
-    }
+    // Gửi form ngay lập tức mà không cần xác nhận
+    toggleForm.submit();
   });
 </script>
+
 
 
 <!-- Timer Setting Form with Grey Border -->
