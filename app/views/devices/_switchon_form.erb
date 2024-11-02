@@ -6,7 +6,7 @@
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
     <!-- Hidden field for the slider value -->
-    <%= hidden_field_tag :value, "", id: 'switchon_message_field' %>
+    <%= hidden_field_tag :longlast, "", id: 'switchon_message_field' %>
     <%= submit_tag 'KÍCH HOẠT', id: 'publish-button-switchon', class: 'btn btn-primary' %>
   <% end %>
 </div>
@@ -25,8 +25,8 @@
   <%= form_tag('/devices/switchon', method: 'post') do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
-    <!-- Hidden field for the toggle state as 'switch' parameter -->
-    <%= hidden_field_tag :switch, "0", id: 'toggle_state_field' %>
+    <!-- Hidden field for the toggle state as 'switch_value' parameter -->
+    <%= hidden_field_tag :switch_value, "0", id: 'toggle_state_field' %>
 
     <!-- Styled Toggle Switch -->
     <div class="toggle-switch">
@@ -49,13 +49,19 @@
     <!-- Date and Time Input Field -->
     <div class="form-group">
       <label for="start_time">Ngày và giờ hẹn giờ:</label>
-      <%= datetime_local_field_tag :start_time, nil, id: 'start_time', class: 'form-control' %>
+      <%= datetime_local_field_tag :start_time, nil, id: 'reminder-start-time', class: 'form-control' %>
     </div>
     
     <!-- Duration Input Field -->
     <div class="form-group">
       <label for="duration">Thời gian hoạt động (phút):</label>
-      <%= number_field_tag :duration, nil, id: 'duration', class: 'form-control', min: 1, step: 1 %>
+      <%= number_field_tag :duration, nil, id: 'reminder-duration', class: 'form-control', min: 1, step: 1 %>
+    </div>
+
+    <!-- Repeat Type Select Field -->
+    <div class="form-group">
+      <label for="repeat_type">Kiểu lặp lại:</label>
+      <%= select_tag :repeat_type, options_for_select([['Không lặp lại', 'none'], ['Hằng ngày', 'daily'], ['Hằng tuần', 'weekly'], ['Hằng tháng', 'monthly']]), id: 'reminder-repeat-type', class: 'form-control' %>
     </div>
     
     <!-- Submit Button for Timer -->

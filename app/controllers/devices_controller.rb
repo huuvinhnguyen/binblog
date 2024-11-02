@@ -1,6 +1,6 @@
 class DevicesController < ApplicationController
   before_action :authenticate_user!, except: [:notify]
-  before_action :initialize_mqtt_client
+  # before_action :initialize_mqtt_client
   skip_before_action :verify_authenticity_token, only: [:notify]
   before_action :set_device, only: [:show]
 
@@ -45,7 +45,7 @@ class DevicesController < ApplicationController
       port: 1883,
     )
 
-    client.publish(topic, message, retain: true) if topic.present?
+    client.publish(topic, message, retain: false) if topic.present?
     client.disconnect()
 
     subscribe_topic topic
@@ -59,17 +59,21 @@ class DevicesController < ApplicationController
   end
 
   def switchon
+    initialize_mqtt_client
+
     # Đường dẫn đến mã nguồn gốc
     # https://github.com/huuvinhnguyen/kvxduino/pull/4/files#diff-72403d98b2706b2110d12c0b98c93d5febf832c7ca1b2ab17fc2935f88943b45
   
     topic = "#{params[:chip_id]}/switchon"
     message_hash = {}
+    message_hash["reminder"] = {} if params[:start_time].present?
   
     # Kiểm tra và thêm các tham số vào hash
-    message_hash["start_time"] = params[:start_time].to_s if params[:start_time].present?
-    message_hash["longlast"] = params[:duration].to_s if params[:duration].present?
-    message_hash["value"] = params[:value].to_i if params[:value].present?
-    message_hash["switch"] = params[:switch].to_i if params[:switch].present?
+    message_hash["reminder"]["start_time"] = params[:start_time].to_s if params[:start_time].present?
+    message_hash["reminder"]["duration"] = params[:duration].to_i * 60 if params[:duration].present?
+    message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
+    message_hash["longlast"] = params[:longlast].to_s if params[:longlast].present?
+    message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
   
     # Chuyển đổi hash thành JSON
     message = message_hash.to_json
@@ -82,7 +86,6 @@ class DevicesController < ApplicationController
     client.publish(topic, message, retain: false) if topic.present?
     client.disconnect()
   
-    subscribe_topic(topic)
   end
 
   def switchon_ab
@@ -118,8 +121,14 @@ class DevicesController < ApplicationController
   end
   
   def show
-      topic = params[:deviceid]
-      subscribe_topic topic
+
+    initialize_mqtt_client
+    topic = @device.chip_id.to_s
+    subscribe_topic topic
+    message = { "action": "ping" }.to_json
+    pingTopic = topic + "/ping"
+    @client.publish(pingTopic, message, retain: false) if pingTopic.present?
+    # mosquitto_pub -h 103.9.77.155 -p 1883 -t "3197470/switchon" -m '{ "switch_value": 1 }' 
   end
 
   def new
@@ -157,20 +166,21 @@ class DevicesController < ApplicationController
   def subscribe_topic topic
 
     json_message = nil
+    @client.unsubscribed unless @client.connected?
+    @client.subscribe(topic) unless @client.connected?
 
     Thread.new do
-      @client.subscribe(topic)
       @client.get(topic, timeout: 2) do |rs_topic, message|
         current_message = JSON.generate(message)
-
         if json_message.to_s != current_message.to_s
           ActionCable.server.broadcast('mqtt_channel', current_message)
+          puts "$$$$$$$$$$$$$$$$$"
           json_message = current_message
-          puts "#handle device"
           handle_device_init(JSON.parse(json_message))
         end
       end
-      @client.disconnect()
+      # client.disconnect()
+
     end
   end
 

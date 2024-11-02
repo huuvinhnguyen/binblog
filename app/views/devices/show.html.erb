@@ -1,12 +1,11 @@
 <!-- app/views/devices/show.html.erb -->
 <h1><%= @device.name %></p></h1>
+<%= link_to 'Danh sách thiết bị', devices_path, class: 'btn btn-secondary' %>
+<div>
+  <label for="last-active">Lần hoạt động cuối:</label>
+  <span id="last-active" style="border: none;"></span>
+</div>
 
-<p><strong>Chip ID:</strong> <%= @device.chip_id %></p>
-<p><strong>Status:</strong> <%= @device.status %></p>
-<p><strong>Is Payment Enabled:</strong> <%= @device.is_payment ? 'Yes' : 'No' %></p>
-<p><strong>Lần cuối cập nhật vào lúc:</strong> </p>
-<p><strong>Lịch sử</strong> </p>
-<%= link_to 'Back to Devices', devices_path, class: 'btn btn-secondary' %>
 
 <br>
 <br>
