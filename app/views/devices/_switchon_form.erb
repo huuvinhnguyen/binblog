@@ -22,7 +22,7 @@
 
 <!-- Toggle Switch Form with Grey Border -->
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-  <%= form_tag('/devices/switchon', method: 'post') do %>
+  <%= form_tag('/devices/switchon', method: 'post', id: 'toggle-form') do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
     <!-- Hidden field for the toggle state as 'switch_value' parameter -->
@@ -31,14 +31,36 @@
     <!-- Styled Toggle Switch -->
     <div class="toggle-switch">
       <label class="switch">
-        <%= check_box_tag :toggle, "1", false, id: 'toggle-switch',
-          onchange: "document.getElementById('toggle_state_field').value = this.checked ? '1' : '0'; this.form.submit();" %>
+        <%= check_box_tag :toggle, "1", false, id: 'toggle-switch' %>
         <span class="slider-round"></span>
       </label>
       <span>ON / OFF</span>
     </div>
   <% end %>
 </div>
+
+<script>
+  const toggleSwitch = document.getElementById('toggle-switch');
+  const toggleStateField = document.getElementById('toggle_state_field');
+  const toggleForm = document.getElementById('toggle-form');
+
+  toggleSwitch.addEventListener('change', (event) => {
+    // Cập nhật giá trị cho trường ẩn
+    toggleStateField.value = toggleSwitch.checked ? '1' : '0';
+
+    // Ngăn chặn hành động gửi form mặc định
+    event.preventDefault();
+
+    // Xác nhận hành động gửi form
+    const confirmed = confirm("Bạn có chắc chắn muốn gửi không?");
+    if (confirmed) {
+      toggleForm.submit(); // Gửi form nếu được xác nhận
+    } else {
+      toggleSwitch.checked = !toggleSwitch.checked; // Khôi phục trạng thái trước đó nếu không được xác nhận
+    }
+  });
+</script>
+
 
 <!-- Timer Setting Form with Grey Border -->
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
