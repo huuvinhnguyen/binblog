@@ -1,19 +1,19 @@
 <div class="slider-value" style="border: 1px solid grey; border-radius: 10px; padding: 20px;">
   <!-- Range slider for setting the value -->
-  <input type="range" min="1000" max="10000" value="1000" step="1000" class="slider" id="slider1">
+  <input type="range" min="1000" max="10000" value="1000" step="1000" class="slider" id="switch-slider">
 
   <%= form_tag('/devices/switchon', method: 'post') do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
     <!-- Hidden field for the slider value -->
-    <%= hidden_field_tag :longlast, "", id: 'switchon_message_field' %>
+    <%= hidden_field_tag :longlast, "", id: 'switchon-message-field' %>
     <%= submit_tag 'KÍCH HOẠT', id: 'publish-button-switchon', class: 'btn btn-primary' %>
   <% end %>
 </div>
 
 <script>
-  const sliderInput = document.getElementById('slider1');
-  const messageField = document.getElementById('switchon_message_field');
+  const sliderInput = document.getElementById('switch-slider');
+  const messageField = document.getElementById('switchon-message-field');
 
   sliderInput.addEventListener('input', () => {
     messageField.value = sliderInput.value;
