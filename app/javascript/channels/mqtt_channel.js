@@ -62,7 +62,7 @@ consumer.subscriptions.create("MqttChannel", {
     
         if (reminderDuration) {
           console.log("Duration:", message_hash.reminder.duration);
-          reminderDuration.value = message_hash.reminder.duration / 60 || "";
+          reminderDuration.value = message_hash.reminder.duration / 60000 || "";
         } else {
           console.error("reminder-duration element not found");
         }

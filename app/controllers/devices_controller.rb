@@ -70,7 +70,7 @@ class DevicesController < ApplicationController
   
     # Kiểm tra và thêm các tham số vào hash
     message_hash["reminder"]["start_time"] = params[:start_time].to_s if params[:start_time].present?
-    message_hash["reminder"]["duration"] = params[:duration].to_i * 60 if params[:duration].present?
+    message_hash["reminder"]["duration"] = params[:duration].to_i * 60000 if params[:duration].present?
     message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
     message_hash["longlast"] = params[:longlast].to_s if params[:longlast].present?
     message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
