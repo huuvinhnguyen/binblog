@@ -79,14 +79,15 @@ consumer.subscriptions.create("MqttChannel", {
 
     }
 
-    var connectionDiv = document.getElementById("connection-div");
-    connectionDiv.style.display = "none";
-
-    console.log(typeof message_hash);
-    console.log("message_hash:", message_hash)
-
-
     if(message_hash.sen == "dht11") {
+
+      var connectionDiv = document.getElementById("connection-div");
+      connectionDiv.style.display = "none";
+
+      console.log(typeof message_hash);
+      console.log("message_hash:", message_hash)
+
+
       var tempGauge = createVerGauge('temp', -20, 60, ' °C').setVal(0).setColor(getTempColor(0));
       tempGauge.setVal(message_hash.tem).setColor(getTempColor(message_hash.tem));
 

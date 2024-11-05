@@ -25,7 +25,7 @@
 
   <% @devices.each do |device| %>
     <tr>
-      <td><%= device.name %></td>
+      <td><%= link_to device.name, device_path(device) %></td>
       <td><%= device.chip_id%></td>
       <td>Truy cập</td>
     </tr>

@@ -59,7 +59,7 @@ class DevicesController < ApplicationController
   end
 
   def switchon
-    initialize_mqtt_client
+    # initialize_mqtt_client
 
     # Đường dẫn đến mã nguồn gốc
     # https://github.com/huuvinhnguyen/kvxduino/pull/4/files#diff-72403d98b2706b2110d12c0b98c93d5febf832c7ca1b2ab17fc2935f88943b45
@@ -72,9 +72,8 @@ class DevicesController < ApplicationController
     message_hash["reminder"]["start_time"] = params[:start_time].to_s if params[:start_time].present?
     message_hash["reminder"]["duration"] = params[:duration].to_i * 60000 if params[:duration].present?
     message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
-    message_hash["longlast"] = params[:longlast].to_s if params[:longlast].present?
+    message_hash["longlast"] = params[:longlast].to_i * 1000 if params[:longlast].present?
     message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
-  
     # Chuyển đổi hash thành JSON
     message = message_hash.to_json
   

@@ -1,24 +1,18 @@
 <div class="slider-value" style="border: 1px solid grey; border-radius: 10px; padding: 20px;">
   <!-- Range slider for setting the value -->
-  <input type="range" min="1000" max="10000" value="1000" step="1000" class="slider" id="switch-slider">
+  <input type="range" min="1" max="10" value="1" step="1" class="slider" id="switch-slider">
 
   <%= form_tag('/devices/switchon', method: 'post') do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
     <!-- Hidden field for the slider value -->
     <%= hidden_field_tag :longlast, "", id: 'switchon-message-field' %>
-    <%= submit_tag 'KÍCH HOẠT', id: 'publish-button-switchon', class: 'btn btn-primary' %>
+    <div style="text-align: right; margin-top: 20px;">
+      <%= submit_tag 'KÍCH HOẠT', id: 'publish-button-switchon', class: 'btn btn-primary' %>
+    </div>
   <% end %>
 </div>
 
-<script>
-  const sliderInput = document.getElementById('switch-slider');
-  const messageField = document.getElementById('switchon-message-field');
-
-  sliderInput.addEventListener('input', () => {
-    messageField.value = sliderInput.value;
-  });
-</script>
 
 <!-- Toggle Switch Form with Grey Border -->
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
@@ -84,7 +78,9 @@
     
     <!-- Submit Button for Timer -->
     <br><br>
-    <%= submit_tag 'Hẹn giờ', class: 'btn btn-success' %>
+    <div style="text-align: right; margin-top: 20px;">
+      <%= submit_tag 'Hẹn giờ', class: 'btn btn-success' %>
+    </div>
   <% end %>
 </div>
 <br>
