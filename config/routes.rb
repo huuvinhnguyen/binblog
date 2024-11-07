@@ -2,6 +2,10 @@ Rails.application.routes.draw do
   devise_for :users
   mount ActionCable.server => '/cable'
 
+  namespace :api do
+    post 'devices/receive_info', to: 'devices#receive_info'
+  end
+
   get 'devices/index'
   get 'devices/switchon_ab'
   get 'devices/show'
