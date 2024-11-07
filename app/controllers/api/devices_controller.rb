@@ -2,14 +2,12 @@ module Api
   class Api::DevicesController < ApplicationController
 
     def receive_info
-      # Lấy dữ liệu từ request
-      device_id = params[:device_id]
-      device_type = params[:device_type]
-      switch_value = params[:switch_value]
-      update_at = params[:update_at]
-      reminders = params[:reminders] # Dữ liệu reminders là một array
+      # Nhận và xử lý dữ liệu từ ESP8266
+    message = params.permit(:device_type, :topic_type, :device_id, :switch_value, :update_at, :longlast, :timetrigger, reminder: {}, reminders: [])
+    
+    ActionCable.server.broadcast('mqtt_channel', message)
 
-      render json: { status: 'success', message: 'Device information received' }, status: :ok
+    render json: { status: 'success', message: 'Device information received' }, status: :ok
 
     end
 
@@ -17,6 +15,4 @@ module Api
     render json: { status: 'error', message: e.message }, status: :unprocessable_entity
   end
 
-    private    
-  end
 end

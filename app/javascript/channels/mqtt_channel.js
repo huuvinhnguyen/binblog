@@ -16,8 +16,9 @@ consumer.subscriptions.create("MqttChannel", {
 
   received(data) {
    
-    const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
-    const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
+    // const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
+    // const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
+    var message_hash = data
     
     if (message_hash.device_type === "switch") {
 
