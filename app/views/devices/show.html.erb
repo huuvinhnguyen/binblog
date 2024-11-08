@@ -10,7 +10,8 @@
 <br>
 <br>
 <% if @device.device_type == "switch" %>
-    <div id="switch-div" style="display: block;">
+
+    <div id="switch-div" style="display: block;" data-chip-id="<%= @device.chip_id %>">
     <%= render 'switchon_form', chip_id: @device.chip_id %>
     <div id="last-active-message-div"></div>
     </div>

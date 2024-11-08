@@ -14,10 +14,19 @@ consumer.subscriptions.create("MqttChannel", {
     this.unsubscribe();
   },
 
-  received(data) {
+  received(message_hash) {
    
-    const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
-    const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
+    // const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
+    // const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
+
+
+    const currentDeviceId = document.getElementById('switch-div').getAttribute('data-chip-id');
+    console.log(currentDeviceId);
+    if (message_hash.device_id === currentDeviceId) {
+
+    } else {
+      return;
+    }
     
     if (message_hash.device_type === "switch") {
 
