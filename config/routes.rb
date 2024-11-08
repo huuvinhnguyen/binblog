@@ -3,7 +3,12 @@ Rails.application.routes.draw do
   mount ActionCable.server => '/cable'
 
   namespace :api do
-    post 'devices/receive_info', to: 'devices#receive_info'
+    resources :devices, only: [] do
+      collection do
+        post :receive_info
+        get :device_info  
+      end
+    end
   end
 
   get 'devices/index'
