@@ -87,6 +87,24 @@ class DevicesController < ApplicationController
   
   end
 
+  def remove_reminder_message
+    chip_id = params[:chip_id]
+    topic = chip_id + "/switchon"
+    message = {
+        "action": "remove_reminder",
+        "start_time": params[:start_time]
+    }.to_json
+
+    client = MQTT::Client.connect(
+        host: '103.9.77.155',
+        port: 1883,
+    )
+
+    client.publish(topic, message) if topic.present?
+    client.disconnect()
+
+  end
+
   def switchon_ab
     notifier = Slack::Notifier.new "https://abc.com" do
       defaults channel: "general",
@@ -123,11 +141,12 @@ class DevicesController < ApplicationController
 
     initialize_mqtt_client
     topic = @device.chip_id.to_s
+    @device_info = @device.device_info.present? ? JSON.parse(@device.device_info) : {}
     subscribe_topic topic
     message = { "action": "ping" }.to_json
     pingTopic = topic + "/ping"
     @client.publish(pingTopic, message, retain: false) if pingTopic.present?
-    # mosquitto_pub -h 103.9.77.155 -p 1883 -t "3197470/switchon" -m '{ "switch_value": 1 }' 
+
   end
 
   def new

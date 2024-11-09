@@ -77,8 +77,11 @@ Rails.application.routes.draw do
     collection do
       get :mqtt_data
       get :latest_data
-
     end
+  end
+
+  resources :devices do
+    post 'remove_reminder_message', on: :collection
   end
   
   resources :fingers, only: [:index, :show, :new, :create, :destroy]

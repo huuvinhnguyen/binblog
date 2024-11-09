@@ -3,7 +3,9 @@
 <%= link_to 'Danh sách thiết bị', devices_path, class: 'btn btn-secondary' %>
 <div>
   <label for="last-active">Lần hoạt động cuối:</label>
-  <span id="last-active" style="border: none;"></span>
+  <span id="last-active" style="border: none;">
+    <%= Time.at(@device_info['update_at']).strftime('%d-%m-%Y %H:%M:%S') if @device_info['update_at'].present? %>
+  </span>
 </div>
 
 
