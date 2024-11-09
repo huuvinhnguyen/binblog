@@ -48,6 +48,101 @@ consumer.subscriptions.create("MqttChannel", {
         console.error("last-active element or update_at not found");
       }
 
+      if (message_hash.reminders && Array.isArray(message_hash.reminders)) {
+        const remindersList = document.getElementById("reminders-list");
+  
+        if (remindersList) {
+          // Clear the current reminders list
+          remindersList.innerHTML = `
+            <h3>Danh sách Hẹn giờ</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Ngày và giờ bắt đầu</th>
+                  <th>Thời gian hoạt động (phút)</th>
+                  <th>Kiểu lặp lại</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="reminders-tbody"></tbody>
+            </table>
+          `;
+  
+          const remindersTbody = document.getElementById("reminders-tbody");
+  
+          // Populate the reminders table with each reminder
+          message_hash.reminders.forEach((reminder) => {
+            const row = document.createElement("tr");
+  
+            // Start Time
+            const startTimeCell = document.createElement("td");
+            if (reminder.start_time) {
+              const formattedStartTime = formatDateTime(new Date(reminder.start_time) / 1000); // Assuming timestamp is in ms
+              startTimeCell.innerText = formattedStartTime;
+            } else {
+              startTimeCell.innerText = "Không có thời gian";
+            }
+            row.appendChild(startTimeCell);
+  
+            // Duration
+            const durationCell = document.createElement("td");
+            durationCell.innerText = `${reminder.duration / 60000} phút`; // Assuming duration is in ms
+            row.appendChild(durationCell);
+  
+            // Repeat Type
+            const repeatTypeCell = document.createElement("td");
+            let repeatTypeText;
+            switch (reminder.repeat_type) {
+              case 'none':
+                repeatTypeText = 'Không lặp lại';
+                break;
+              case 'daily':
+                repeatTypeText = 'Hằng ngày';
+                break;
+              case 'weekly':
+                repeatTypeText = 'Hằng tuần';
+                break;
+              case 'monthly':
+                repeatTypeText = 'Hằng tháng';
+                break;
+              default:
+                repeatTypeText = 'Không xác định';
+            }
+            repeatTypeCell.innerText = repeatTypeText;
+            row.appendChild(repeatTypeCell);
+  
+            // Action - Delete Button
+            const actionCell = document.createElement("td");
+            const deleteButton = document.createElement("button");
+            deleteButton.classList.add("btn", "btn-danger");
+            deleteButton.innerText = "Xoá";
+            deleteButton.onclick = function () {
+              if (confirm("Bạn có chắc chắn muốn xoá?")) {
+                fetch(`/devices/remove_reminder_message?chip_id=${message_hash.device_id}&start_time=${reminder.start_time}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                  }
+                }).then(response => {
+                  if (!response.ok) {
+                    throw new Error('Failed to delete reminder');
+                  }
+                  console.log("Reminder deleted");
+                }).catch(error => console.error("Error:", error));
+              }
+            };
+            actionCell.appendChild(deleteButton);
+            row.appendChild(actionCell);
+  
+            remindersTbody.appendChild(row);
+          });
+        } else {
+          console.error("reminders-list element not found");
+        }
+      }
+
+
       if (message_hash.reminder) {
         const reminderStartTime = document.getElementById("reminder-start-time");
         const reminderDuration = document.getElementById("reminder-duration");
@@ -87,6 +182,7 @@ consumer.subscriptions.create("MqttChannel", {
       }
 
     }
+    
 
     if(message_hash.sen == "dht11") {
 

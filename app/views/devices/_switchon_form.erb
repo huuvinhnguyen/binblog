@@ -88,7 +88,7 @@
 <br>
 <br>
 <!-- Reminders List -->
-<div class="reminders-list" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+<div class="reminders-list", id="reminders-list" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
   <h3>Danh sách Hẹn giờ</h3>
 
   <% if @device_info['reminders'].present? %>
@@ -103,8 +103,14 @@
       </thead>
       <tbody>
         <% @device_info['reminders'].each_with_index do |reminder, index| %>
-          <tr>
-            <td><%= Time.parse(reminder['start_time']).strftime('%Y-%m-%d %H:%M:%S') %></td>
+            <tr>
+            <td>
+              <% if reminder['start_time'].present? %>
+              <%= Time.parse(reminder['start_time']).strftime('%Y-%m-%d %H:%M:%S') %>
+              <% else %>
+                Không có thời gian
+              <% end %>
+            </td>
             <td><%= reminder['duration'] / 60000 %> phút</td> <!-- Assuming duration is in milliseconds -->
             <td>
               <% case reminder['repeat_type']
