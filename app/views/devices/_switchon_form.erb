@@ -105,7 +105,7 @@
         <% @device_info['reminders'].each_with_index do |reminder, index| %>
             <tr>
             <td>
-              <% if reminder['start_time'].present? %>
+              <% if reminder['start_time'].present? && reminder['start_time'] != "null" %>
               <%= Time.parse(reminder['start_time']).strftime('%Y-%m-%d %H:%M:%S') %>
               <% else %>
                 Không có thời gian
