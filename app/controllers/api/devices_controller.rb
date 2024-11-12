@@ -22,7 +22,14 @@ module Api
           :repeat_type
         ],
         relays: [
-          reminders: []
+          :switch_value,
+          :longlast,
+          :timetrigger,
+          reminders: [
+            :start_time,
+            :duration,
+            :repeat_type
+          ]
         ]
       )
 
