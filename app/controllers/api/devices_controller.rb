@@ -3,7 +3,28 @@ module Api
 
     def receive_info
       # Receive and process data from ESP8266
-      message = params.permit(:device_type, :topic_type, :device_id, :switch_value, :update_at, :longlast, :timetrigger, reminder: [:start_time, :duration, :repeat_type], reminders: [:start_time, :duration, :repeat_type])
+      message = params.permit(
+        :device_type,
+        :topic_type,
+        :device_id,
+        :switch_value,
+        :update_at,
+        :longlast,
+        :timetrigger,
+        reminder: [
+          :start_time,
+          :duration,
+          :repeat_type
+        ],
+        reminders: [
+          :start_time,
+          :duration,
+          :repeat_type
+        ],
+        relays: [
+          reminders: []
+        ]
+      )
 
       puts "message received: #{message}"
 
