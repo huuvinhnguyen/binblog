@@ -69,6 +69,7 @@ class DevicesController < ApplicationController
     message_hash["reminder"] = {} if params[:start_time].present?
   
     # Kiểm tra và thêm các tham số vào hash
+    message_hash["relay_index"] = params[:relay_index] if params[:relay_index].present?
     message_hash["reminder"]["start_time"] = params[:start_time].to_s if params[:start_time].present?
     message_hash["reminder"]["duration"] = params[:duration].to_i * 60000 if params[:duration].present?
     message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
@@ -91,6 +92,7 @@ class DevicesController < ApplicationController
     chip_id = params[:chip_id]
     topic = chip_id + "/switchon"
     message = {
+        "relay_index": params[:tab_index],
         "action": "remove_reminder",
         "start_time": params[:start_time]
     }.to_json

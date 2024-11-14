@@ -15,10 +15,6 @@ consumer.subscriptions.create("MqttChannel", {
   },
 
   received(message_hash) {
-   
-    // const string_data = JSON.parse(data.replace(/(?:\\[rn])+/g, ''));
-    // const message_hash = JSON.parse(string_data.replace(/(?:\\[rn])+/g, ''));
-
 
     const currentDeviceId = document.getElementById('switch-div').getAttribute('data-chip-id');
     console.log(currentDeviceId);
@@ -27,8 +23,25 @@ consumer.subscriptions.create("MqttChannel", {
     } else {
       return;
     }
+
+    let relayIndex = getCurrentRelayIndex();
+
+    document.querySelectorAll('[id^="relay-tab-"]').forEach(tab => {
+      tab.addEventListener("shown.bs.tab", function() {
+        relayIndex = getCurrentRelayIndex();
+      });
+    });
+   
+    document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggleSwitch) => {
+      if (message_hash.relays[relayIndex].switch_value === 1) {
+        toggleSwitch.checked = true;
+      } else if (message_hash.relays[relayIndex].switch_value === 0) {
+        toggleSwitch.checked = false;
+      }
+    });
     
     if (message_hash.device_type === "switch") {
+      
 
       const toggleSwitch = document.getElementById("toggle-switch");
 
@@ -48,8 +61,8 @@ consumer.subscriptions.create("MqttChannel", {
         console.error("last-active element or update_at not found");
       }
 
-      if (message_hash.reminders && Array.isArray(message_hash.reminders)) {
-        const remindersList = document.getElementById("reminders-list");
+      if (message_hash.relays[relayIndex].reminders && Array.isArray(message_hash.relays[relayIndex].reminders)) {
+        const remindersList = document.getElementById(`reminders-list-${relayIndex}`);
   
         if (remindersList) {
           // Clear the current reminders list
@@ -64,14 +77,14 @@ consumer.subscriptions.create("MqttChannel", {
                   <th>Thao tác</th>
                 </tr>
               </thead>
-              <tbody id="reminders-tbody"></tbody>
+              <tbody id="reminders-tbody-${relayIndex}"></tbody>
             </table>
           `;
   
-          const remindersTbody = document.getElementById("reminders-tbody");
+          const remindersTbody = document.getElementById(`reminders-tbody-${relayIndex}`);
   
           // Populate the reminders table with each reminder
-          message_hash.reminders.forEach((reminder) => {
+          message_hash.relays[relayIndex].reminders.forEach((reminder) => {
             const row = document.createElement("tr");
   
             // Start Time
@@ -143,7 +156,7 @@ consumer.subscriptions.create("MqttChannel", {
       }
 
 
-      if (message_hash.reminder) {
+      message_hash.relays[relayIndex].reminders.forEach((reminder) => {
         const reminderStartTime = document.getElementById("reminder-start-time");
         const reminderDuration = document.getElementById("reminder-duration");
         const reminderRepeatType = document.getElementById("reminder-repeat-type");
@@ -152,7 +165,7 @@ consumer.subscriptions.create("MqttChannel", {
         // Kiểm tra phần tử trước khi gán giá trị
         if (reminderStartTime) {
           
-          const currentDate = new Date(message_hash.reminder.start_time);
+          const currentDate = new Date(reminder.start_time);
           const year = currentDate.getFullYear();
           const month = String(currentDate.getMonth() + 1).padStart(2, '0');
           const day = String(currentDate.getDate()).padStart(2, '0');
@@ -165,21 +178,21 @@ consumer.subscriptions.create("MqttChannel", {
         }
     
         if (reminderDuration) {
-          console.log("Duration:", message_hash.reminder.duration);
-          reminderDuration.value = message_hash.reminder.duration / 60000 || "";
+          console.log("Duration:", reminder.duration);
+          reminderDuration.value = reminder.duration / 60000 || "";
         } else {
           console.error("reminder-duration element not found");
         }
 
         // Cập nhật reminderRepeatType
         if (reminderRepeatType) {
-          const repeatTypeValue = message_hash.reminder.repeat_type || 'none';
+          const repeatTypeValue = reminder.repeat_type || 'none';
           reminderRepeatType.value = repeatTypeValue;
           console.log("Repeat Type:", repeatTypeValue);
         } else {
           console.error("reminder-repeat-type element not found");
         }
-      }
+      });
 
     }
     
@@ -228,4 +241,14 @@ function formatDateTime(timestamp) {
 
   const formattedDateTime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   return formattedDateTime;
+}
+
+function getCurrentRelayIndex() {
+  const activeTabPane = document.querySelector(".tab-pane.show.active"); // Select the active tab content
+  if (activeTabPane) {
+    const relayIndex = activeTabPane.id.split("-")[1]; // Assumes ID format "relay-<%= index %>"
+    console.log(`Current Relay Index: ${relayIndex}`);
+    return relayIndex;
+  }
+  return null; // Return null if no active tab is found
 }
