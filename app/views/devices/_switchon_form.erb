@@ -1,12 +1,13 @@
 <div class="slider-value" style="border: 1px solid grey; border-radius: 10px; padding: 20px;">
   <!-- Range slider for setting the value -->
-  <input type="range" min="1" max="10" value="1" step="1" class="slider" id="switch-slider">
+  <input type="range" min="1" max="10" value="1" step="1" class="slider" id="switch-slider-<%= relay_index %>">
 
   <%= form_tag('/devices/switchon', method: 'post') do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
+    <%= hidden_field_tag :relay_index, relay_index %>
     <!-- Hidden field for the slider value -->
-    <%= hidden_field_tag :longlast, "", id: 'switchon-message-field' %>
+    <%= hidden_field_tag :longlast, "", id: "switchon-message-field-#{relay_index}" %>
     <div style="text-align: right; margin-top: 20px;">
       <%= submit_tag 'KÍCH HOẠT', id: 'publish-button-switchon', class: 'btn btn-primary' %>
     </div>
@@ -16,16 +17,17 @@
 
 <!-- Toggle Switch Form with Grey Border -->
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-  <%= form_tag('/devices/switchon', method: 'post', id: 'toggle-form') do %>
+  <%= form_tag('/devices/switchon', method: 'post', id: "toggle-form-#{relay_index}") do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
+    <%= hidden_field_tag :relay_index, relay_index %>
     <!-- Hidden field for the toggle state as 'switch_value' parameter -->
-    <%= hidden_field_tag :switch_value, "0", id: 'toggle_state_field' %>
+    <%= hidden_field_tag :switch_value, @device_info['relays'][relay_index]['switch_value'], id: "toggle_state_field-#{relay_index}" %>
 
     <!-- Styled Toggle Switch -->
     <div class="toggle-switch">
       <label class="switch">
-        <%= check_box_tag :toggle, "1", false, id: 'toggle-switch' %>
+        <%= check_box_tag "toggle_#{relay_index}", "1", @device_info['relays'][relay_index]['switch_value'] == 1, id: "toggle-switch-#{relay_index}" %>
         <span class="slider-round"></span>
       </label>
       <span>ON / OFF</span>
@@ -33,31 +35,13 @@
   <% end %>
 </div>
 
-<script>
-  const toggleSwitch = document.getElementById('toggle-switch');
-  const toggleStateField = document.getElementById('toggle_state_field');
-  const toggleForm = document.getElementById('toggle-form');
-
-  toggleSwitch.addEventListener('change', (event) => {
-    // Cập nhật giá trị cho trường ẩn
-    toggleStateField.value = toggleSwitch.checked ? '1' : '0';
-
-    // Ngăn chặn hành động gửi form mặc định
-    event.preventDefault();
-
-    // Gửi form ngay lập tức mà không cần xác nhận
-    toggleForm.submit();
-  });
-</script>
-
-
-
 <!-- Timer Setting Form with Grey Border -->
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
   <%= form_tag('/devices/switchon', method: 'post') do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
-    
+    <%= hidden_field_tag :relay_index, relay_index %>
+
     <!-- Date and Time Input Field -->
     <div class="form-group">
       <label for="start_time">Ngày và giờ hẹn giờ:</label>
@@ -84,5 +68,57 @@
   <% end %>
 </div>
 <br>
+<br>
+<!-- Reminders List -->
+<div class="reminders-list-<%= relay_index %>", id="reminders-list-<%= relay_index %>" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+  <h3>Danh sách Hẹn giờ</h3>
+
+  <% if @device_info['relays'][relay_index]['reminders'].present? %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ngày và giờ bắt đầu</th>
+          <th>Thời gian hoạt động (phút)</th>
+          <th>Kiểu lặp lại</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @device_info['relays'][relay_index]['reminders'].each_with_index do |reminder, index| %>
+            <tr>
+            <td>
+              <% if reminder['start_time'].present? && reminder['start_time'] != "null" %>
+              <%= Time.parse(reminder['start_time']).strftime('%Y-%m-%d %H:%M:%S') %>
+              <% else %>
+                Không có thời gian
+              <% end %>
+            </td>
+            <td><%= reminder['duration'] / 60000 %> phút</td> <!-- Assuming duration is in milliseconds -->
+            <td>
+              <% case reminder['repeat_type']
+                  when 'none'
+                    'Không lặp lại'
+                  when 'daily'
+                    'Hằng ngày'
+                  when 'weekly'
+                    'Hằng tuần'
+                  when 'monthly'
+                    'Hằng tháng'
+                  else
+                    'Không xác định'
+                 end %>
+            </td>
+            <td>
+            <%= button_to 'Xoá', remove_reminder_message_devices_path(tab_index: relay_index, chip_id: @device.chip_id, start_time: reminder['start_time']), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p>Không có hẹn giờ nào được thiết lập.</p>
+  <% end %>
+</div>
 <br>
 <br>

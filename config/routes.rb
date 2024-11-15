@@ -3,7 +3,12 @@ Rails.application.routes.draw do
   mount ActionCable.server => '/cable'
 
   namespace :api do
-    post 'devices/receive_info', to: 'devices#receive_info'
+    resources :devices, only: [] do
+      collection do
+        post :receive_info
+        get :device_info  
+      end
+    end
   end
 
   get 'devices/index'
@@ -72,8 +77,11 @@ Rails.application.routes.draw do
     collection do
       get :mqtt_data
       get :latest_data
-
     end
+  end
+
+  resources :devices do
+    post 'remove_reminder_message', on: :collection
   end
   
   resources :fingers, only: [:index, :show, :new, :create, :destroy]

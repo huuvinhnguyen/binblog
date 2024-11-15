@@ -69,6 +69,7 @@ class DevicesController < ApplicationController
     message_hash["reminder"] = {} if params[:start_time].present?
   
     # Kiểm tra và thêm các tham số vào hash
+    message_hash["relay_index"] = params[:relay_index] if params[:relay_index].present?
     message_hash["reminder"]["start_time"] = params[:start_time].to_s if params[:start_time].present?
     message_hash["reminder"]["duration"] = params[:duration].to_i * 60000 if params[:duration].present?
     message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
@@ -85,6 +86,25 @@ class DevicesController < ApplicationController
     client.publish(topic, message, retain: false) if topic.present?
     client.disconnect()
   
+  end
+
+  def remove_reminder_message
+    chip_id = params[:chip_id]
+    topic = chip_id + "/switchon"
+    message = {
+        "relay_index": params[:tab_index],
+        "action": "remove_reminder",
+        "start_time": params[:start_time]
+    }.to_json
+
+    client = MQTT::Client.connect(
+        host: '103.9.77.155',
+        port: 1883,
+    )
+
+    client.publish(topic, message) if topic.present?
+    client.disconnect()
+
   end
 
   def switchon_ab
@@ -123,11 +143,12 @@ class DevicesController < ApplicationController
 
     initialize_mqtt_client
     topic = @device.chip_id.to_s
+    @device_info = @device.device_info.present? ? JSON.parse(@device.device_info) : {}
     subscribe_topic topic
     message = { "action": "ping" }.to_json
     pingTopic = topic + "/ping"
     @client.publish(pingTopic, message, retain: false) if pingTopic.present?
-    # mosquitto_pub -h 103.9.77.155 -p 1883 -t "3197470/switchon" -m '{ "switch_value": 1 }' 
+
   end
 
   def new

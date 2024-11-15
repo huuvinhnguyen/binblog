@@ -1,23 +1,46 @@
-<!-- app/views/devices/show.html.erb -->
-<h1><%= @device.name %></p></h1>
+<h1><%= @device.name %></h1>
 <%= link_to 'Danh sách thiết bị', devices_path, class: 'btn btn-secondary' %>
-<div>
+
+<div id="switch-div" style="display: block;" data-chip-id="<%= @device.chip_id %>">
   <label for="last-active">Lần hoạt động cuối:</label>
-  <span id="last-active" style="border: none;"></span>
+  <span id="last-active" style="border: none;">
+    <%= Time.at(@device_info['update_at']).strftime('%d-%m-%Y %H:%M:%S') if @device_info['update_at'].present? %>
+  </span>
 </div>
 
-
-<br>
 <br>
 <% if @device.device_type == "switch" %>
-    <div id="switch-div" style="display: block;">
-    <%= render 'switchon_form', chip_id: @device.chip_id %>
-    <div id="last-active-message-div"></div>
+<div>
+  <!-- Tabs Navigation -->
+  <% if @device_info && @device_info['relays'].present? %>
+
+    <ul class="nav nav-tabs" id="relayTabs" role="tablist">
+      <% @device_info['relays'].each_with_index do |relay, index| %>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link <%= 'active' if index == 0 %>" id="relay-tab-<%= index %>" data-bs-toggle="tab" href="#relay-<%= index %>" role="tab" aria-controls="relay-<%= index %>" aria-selected="<%= index == 0 %>">
+            Kênh <%= index + 1 %>
+          </a>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <!-- Tab Content -->
+  <% if @device_info && @device_info['relays'].present? %>
+
+    <div class="tab-content" id="relayTabContent">
+      <% @device_info['relays'].each_with_index do |relay, index| %>
+        <div class="tab-pane fade <%= 'show active' if index == 0 %>" id="relay-<%= index %>" role="tabpanel" aria-labelledby="relay-tab-<%= index %>">
+          <%= render 'switchon_form', chip_id: @device.chip_id, relay_index: index %>
+        </div>
+      <% end %>
     </div>
-<% end %>
+    </div>
+    <% end %>
+  <% end %>
 
 <% if @device.device_type == "dht" %>
-    <div class="row">
+  <div class="row">
     <%= render 'dht_form' %>
-    </div>
+  </div>
 <% end %>
