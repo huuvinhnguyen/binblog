@@ -2,8 +2,37 @@
   <%= link_to 'https://khuonvien.com', class: 'navbar-brand' do %>
     <%= image_tag('logo_1.svg', alt: 'Logo') %>
   <% end %>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+  <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
-  <!-- Các mục dẫn đến khác -->
+
+  <!-- Offcanvas Menu -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <%= link_to 'Trang chủ', 'https://khuonvien.com', class: 'nav-link' %>
+        </li>
+        <li class="nav-item">
+          <%= link_to 'Giới thiệu', "about_path", class: 'nav-link' %>
+        </li>
+        <li class="nav-item">
+          <%= link_to 'Liên hệ', "contact_path", class: 'nav-link' %>
+        </li>
+        <% if user_signed_in? %>
+          <li class="nav-item">
+            <%= link_to 'Đăng xuất', destroy_user_session_path, method: :delete, class: 'nav-link text-danger' %>
+          </li>
+        <% else %>
+          <li class="nav-item">
+            <%= link_to 'Đăng nhập', new_user_session_path, class: 'nav-link text-primary' %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
 </nav>
