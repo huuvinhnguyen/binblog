@@ -1,0 +1,11 @@
+<div class="nav-container">
+  <ul>
+    <% menu_items.each do |item| %>
+      <li>
+        <a href="<%= item[:href] %>" class="<%= 'active' if item[:active] %>">
+          <%= item[:label] %>
+        </a>
+      </li>
+    <% end %>
+  </ul>
+</div>

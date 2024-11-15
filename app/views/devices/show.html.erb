@@ -1,6 +1,7 @@
-<h1><%= @device.name %></h1>
-<%= link_to 'Danh sách thiết bị', devices_path, class: 'btn btn-secondary' %>
-
+<%= render partial: 'shared/nav_menu', locals: { menu_items: [
+  { label: 'Danh sách thiết bị', href: devices_path, active: false },
+  { label: @device.name, href: device_path(@device), active: true }
+] } %>
 <div id="switch-div" style="display: block;" data-chip-id="<%= @device.chip_id %>">
   <label for="last-active">Lần hoạt động cuối:</label>
   <span id="last-active" style="border: none;">

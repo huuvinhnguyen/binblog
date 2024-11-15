@@ -11,8 +11,51 @@
   width: 800px;
 }
 
+.offcanvas {
+  background-color: #f8f9fa; /* Màu nền của menu */
+}
+
+.offcanvas-header {
+  border-bottom: 1px solid #ddd; /* Đường kẻ dưới tiêu đề */
+}
+
+.offcanvas-body .nav-link {
+  margin: 10px 0; /* Cách đều các mục menu */
+}
+
+
 .row {
   @include make-row();
+}
+
+.nav-container {
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+  }
+  
+  li {
+    float: left;
+  }
+
+  li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+  }
+  
+  li a:hover:not(.active) {
+    background-color: #111;
+  }
+  
+  .active {
+    background-color: #04AA6D;
+  }
 }
 
 .content-main {
@@ -31,6 +74,12 @@
   margin-right: auto;
   padding-left: 10px;
   padding-right: 10px;
+
+  .navbar {
+    display: flex;
+    justify-content: flex-end; /* Căn phần tử con sang bên phải */
+    padding: 10px;
+  }
 }
 
 
