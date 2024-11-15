@@ -10,4 +10,6 @@ pin_all_from "app/javascript/channels", under: "channels"
 pin "popper", to: 'popper.js', preload: true
 pin "bootstrap", to: 'bootstrap.min.js', preload: true
 pin "gauges", to: "gauges.js", preload: true
+pin "device_switch", to: "device_switch.js", preload: true
+
 

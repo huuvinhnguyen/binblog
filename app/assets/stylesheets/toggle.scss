@@ -1,0 +1,51 @@
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Khoảng cách giữa công tắc và nhãn */
+  }
+  
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 80px; /* Tăng chiều rộng */
+    height: 40px; /* Tăng chiều cao */
+  }
+  
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider-round {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 40px; /* Bo tròn hơn */
+  }
+  
+  .slider-round:before {
+    position: absolute;
+    content: "";
+    height: 34px; /* Tăng chiều cao */
+    width: 34px; /* Tăng chiều rộng */
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .slider-round {
+    background-color: #2196F3;
+  }
+  
+  input:checked + .slider-round:before {
+    transform: translateX(38px); /* Di chuyển xa hơn để phù hợp với kích thước lớn */
+  }
+  

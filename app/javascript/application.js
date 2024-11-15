@@ -9,6 +9,7 @@ import "bootstrap"
 import "./jquery"
 import "./jquery_ujs"
 import "gauges"
+import "device_switch"
 
 // $(document).ready(function() {
 //     if ($('#dht-form-wrapper').length) {
