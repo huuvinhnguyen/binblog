@@ -28,6 +28,13 @@
   @include make-row();
 }
 
+.navbar-brand {
+  img, svg {
+    max-width: 300px;
+    min-width: 100px;
+  }
+}
+
 .nav-container {
   ul {
     list-style-type: none;
