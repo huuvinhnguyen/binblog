@@ -28,4 +28,12 @@
         toggleForm.submit();
       });
     });
+
+    document.querySelectorAll('.form-check-input').forEach((toggleSwitch) => {
+      toggleSwitch.addEventListener('change', (e) => {
+        const relayIndex = e.target.id.split('-').pop(); // Lấy relay index từ id
+        const stateField = document.getElementById(`toggle_state_field-${relayIndex}`);
+        stateField.value = e.target.checked ? '1' : '0'; // Cập nhật giá trị
+      });
+    });
 });
