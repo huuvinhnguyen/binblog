@@ -15,7 +15,7 @@
 </div>
 <!-- Toggle Switch Form with Grey Border -->
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-  <%= form_tag('/devices/switchon', method: 'post', id: "toggle-form-#{relay_index}") do %>
+  <%= form_tag('/devices/switchon', method: 'post', remote: true, id: "toggle-form-#{relay_index}") do %>
     <!-- Hidden field for chip_id -->
     <%= hidden_field_tag :chip_id, chip_id %>
     <%= hidden_field_tag :relay_index, relay_index %>
