@@ -16,19 +16,20 @@
 <!-- Toggle Switch Form with Grey Border -->
 
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-  <div class="form-check form-switch">
-    <input 
-      type="checkbox" 
-      name="toggle_<%= relay_index %>" 
-      id="toggle-switch-<%= relay_index %>" 
-      class="form-check-input" 
-      data-chip-id="<%= chip_id %>" 
-      data-relay-index="<%= relay_index %>" 
-      <%= @device_info['relays'][relay_index]['switch_value'] == 1 ? 'checked' : '' %> 
-    >
-    <label class="form-check-label" for="toggle-switch-<%= relay_index %>">ON / OFF</label>
-  </div>
+<div class="form-check form-switch large-toggle">
+  <input 
+    type="checkbox" 
+    name="toggle_<%= relay_index %>" 
+    id="toggle-switch-<%= relay_index %>" 
+    class="form-check-input" 
+    data-chip-id="<%= chip_id %>" 
+    data-relay-index="<%= relay_index %>" 
+    <%= @device_info['relays'][relay_index]['switch_value'] == 1 ? 'checked' : '' %> 
+  >
+  <label class="form-check-label" for="toggle-switch-<%= relay_index %>">ON / OFF</label>
 </div>
+</div>
+
 
 <!-- Timer Setting Form with Grey Border -->
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">

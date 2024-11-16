@@ -19,8 +19,6 @@
 
       toggle.addEventListener('change', (e) => {
         const chipId = e.target.getAttribute('data-chip-id');
-        console.log("chip id: ", chipId);
-        console.log("relay index = ", relayIndex);
         const switchValue = e.target.checked ? 1 : 0;
     
         fetch('/devices/switchon', {
