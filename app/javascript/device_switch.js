@@ -13,19 +13,33 @@
       }
     });
 
-    // Toggle switch functionality for each relay
-    document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggleSwitch) => {
-      const relayIndex = toggleSwitch.id.split('-').pop(); // Get relay index from toggle switch ID
-      const toggleStateField = document.getElementById(`toggle_state_field-${relayIndex}`);
-      const toggleForm = document.getElementById(`toggle-form-${relayIndex}`);
 
-      toggleSwitch.addEventListener('change', (event) => {
-        // Update the value of the hidden field based on toggle state
-        toggleStateField.value = toggleSwitch.checked ? '1' : '0';
+    document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggle) => {
+      const relayIndex = toggle.id.split('-').pop();
 
-        // Prevent default form submission and submit manually
-        event.preventDefault();
-        toggleForm.submit();
+      toggle.addEventListener('change', (e) => {
+        const chipId = e.target.getAttribute('data-chip-id');
+        const switchValue = e.target.checked ? 1 : 0;
+    
+        fetch('/devices/switchon', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({ chip_id: chipId, relay_index: relayIndex, switch_value: switchValue })
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Network error');
+          return response.json();
+        })
+        .then(data => {
+          alert('Switch toggled successfully!');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
       });
     });
+    
 });
