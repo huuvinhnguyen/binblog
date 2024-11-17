@@ -16,15 +16,11 @@ module Api
           :duration,
           :repeat_type
         ],
-        reminders: [
-          :start_time,
-          :duration,
-          :repeat_type
-        ],
+       
         relays: [
           :switch_value,
           :longlast,
-          :timetrigger,
+          :is_reminders_active,
           reminders: [
             :start_time,
             :duration,

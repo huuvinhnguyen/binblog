@@ -39,6 +39,14 @@ consumer.subscriptions.create("MqttChannel", {
         toggleSwitch.checked = false;
       }
     });
+
+    document.querySelectorAll('[id^="toggle-reminders-active"]').forEach((toggleSwitch) => {
+      if (message_hash.relays[relayIndex].switch_value === 1) {
+        toggleSwitch.checked = true;
+      } else if (message_hash.relays[relayIndex].switch_value === 0) {
+        toggleSwitch.checked = false;
+      }
+    });
     
     if (message_hash.device_type === "switch") {
       
@@ -67,18 +75,30 @@ consumer.subscriptions.create("MqttChannel", {
         if (remindersList) {
           // Clear the current reminders list
           remindersList.innerHTML = `
-            <h3>Danh sách Hẹn giờ</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Ngày và giờ bắt đầu</th>
-                  <th>Thời gian hoạt động (phút)</th>
-                  <th>Kiểu lặp lại</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="reminders-tbody-${relayIndex}"></tbody>
-            </table>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3>Danh sách Hẹn giờ</h3>
+                <div class="form-check form-switch large-toggle">
+                  <input 
+                    type="checkbox" 
+                    id="toggle-reminders-active-${relayIndex}" 
+                    class="form-check-input" 
+                    data-chip-id="${message_hash.device_id}" 
+                    data-relay-index="${relayIndex}" 
+                    ${message_hash.relays[relayIndex].is_reminders_active ? "checked" : ""}
+                  >
+                </div>
+              </div>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Ngày và giờ bắt đầu</th>
+                      <th>Thời gian hoạt động (phút)</th>
+                      <th>Kiểu lặp lại</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reminders-tbody-${relayIndex}"></tbody>
+                </table>
           `;
   
           const remindersTbody = document.getElementById(`reminders-tbody-${relayIndex}`);

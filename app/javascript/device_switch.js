@@ -41,5 +41,33 @@
         });
       });
     });
+
+    document.querySelectorAll('[id^="toggle-reminders-active-"]').forEach((toggle) => {
+      const relayIndex = toggle.id.split('-').pop();
+
+      toggle.addEventListener('change', (e) => {
+        const chipId = e.target.getAttribute('data-chip-id');
+        const toggleValue = e.target.checked ? 1 : 0;
+    
+        fetch('/devices/switchon', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({ chip_id: chipId, relay_index: relayIndex, is_reminders_active: toggleValue })
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Network error');
+          return response.json();
+        })
+        .then(data => {
+          alert('Switch toggled successfully!');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      });
+    });
     
 });

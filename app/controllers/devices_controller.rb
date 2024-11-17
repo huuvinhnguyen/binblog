@@ -75,6 +75,7 @@ class DevicesController < ApplicationController
     message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
     message_hash["longlast"] = params[:longlast].to_i * 1000 if params[:longlast].present?
     message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
+    message_hash["is_reminders_active"] = params[:is_reminders_active].to_i if params[:is_reminders_active].present?
     # Chuyển đổi hash thành JSON
     message = message_hash.to_json
   
