@@ -91,7 +91,7 @@
             </td>
             <td><%= reminder['duration'] / 60000 %> phút</td> <!-- Assuming duration is in milliseconds -->
             <td>
-              <% case reminder['repeat_type']
+              <%= case reminder['repeat_type']
                   when 'none'
                     'Không lặp lại'
                   when 'daily'
