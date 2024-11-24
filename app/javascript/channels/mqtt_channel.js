@@ -51,14 +51,14 @@ consumer.subscriptions.create("MqttChannel", {
     if (message_hash.device_type === "switch") {
       
 
-      const toggleSwitch = document.getElementById("toggle-switch");
+      // const toggleSwitch = document.getElementById("toggle-switch");
 
-      // Update toggle switch based on switch_value
-      if (message_hash.switch_value === 1) {
-        toggleSwitch.checked = true;
-      } else if (message_hash.switch_value === 0) {
-        toggleSwitch.checked = false;
-      }
+      // // Update toggle switch based on switch_value
+      // if (message_hash.switch_value === 1) {
+      //   toggleSwitch.checked = true;
+      // } else if (message_hash.switch_value === 0) {
+      //   toggleSwitch.checked = false;
+      // }
 
       // Cập nhật last active từ update_at
       const lastActiveElement = document.getElementById("last-active");
