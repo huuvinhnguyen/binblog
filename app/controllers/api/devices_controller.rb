@@ -55,12 +55,14 @@ module Api
 
     def device_info
       # Find the device by device_id parameter
-      device = Device.find_by(chip_id: params[:device_id])
+      device_id = params[:device_id]
+      device = Device.find_by(chip_id: device_id.to_s)
 
       # Check if the device exists
       if device
         # Return the device_info
-        render json: { status: 'success', device_info: JSON.parse(device.device_info) }, status: :ok
+        device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+        render json: { status: 'success', device_info: device_info }, status: :ok
       else
         # Return an error if device is not found
         render json: { status: 'error', message: 'Device not found' }, status: :not_found

@@ -40,10 +40,10 @@ consumer.subscriptions.create("MqttChannel", {
       }
     });
 
-    document.querySelectorAll('[id^="toggle-reminders-active"]').forEach((toggleSwitch) => {
-      if (message_hash.relays[relayIndex].switch_value === 1) {
+    document.querySelectorAll('[id^="toggle-reminders-active-"]').forEach((toggleSwitch, index) => {
+      if (message_hash.relays[index].is_reminders_active === 1) {
         toggleSwitch.checked = true;
-      } else if (message_hash.relays[relayIndex].switch_value === 0) {
+      } else if (message_hash.relays[index].is_reminders_active === 0) {
         toggleSwitch.checked = false;
       }
     });
