@@ -32,10 +32,10 @@ consumer.subscriptions.create("MqttChannel", {
       });
     });
    
-    document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggleSwitch) => {
-      if (message_hash.relays[relayIndex].switch_value === 1) {
+    document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggleSwitch, index) => {
+      if (message_hash.relays[index].switch_value === 1) {
         toggleSwitch.checked = true;
-      } else if (message_hash.relays[relayIndex].switch_value === 0) {
+      } else if (message_hash.relays[index].switch_value === 0) {
         toggleSwitch.checked = false;
       }
     });
