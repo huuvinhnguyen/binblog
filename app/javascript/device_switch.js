@@ -58,6 +58,7 @@
           body: JSON.stringify({ chip_id: chipId, relay_index: relayIndex, is_reminders_active: toggleValue })
         })
         .then(response => {
+          console.log('Raw response:', response);
           if (!response.ok) throw new Error('Network error');
           return response.json();
         })

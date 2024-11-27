@@ -78,6 +78,7 @@ class DevicesController < ApplicationController
     message_hash["is_reminders_active"] = params[:is_reminders_active].to_i if params[:is_reminders_active].present?
     # Chuyển đổi hash thành JSON
     message = message_hash.to_json
+    puts "#message json: #{message}"
   
     client = MQTT::Client.connect(
       host: '103.9.77.155',

@@ -66,13 +66,14 @@
 <br>
 <br>
 <!-- Reminders List -->
-<div class="reminders-list-<%= relay_index %>" id="reminders-list-<%= relay_index %>" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+<div class="reminders>" id="reminders" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h3>Danh sách Hẹn giờ</h3>
     <!-- Toggle for Enabling/Disabling Reminders -->
     <div class="form-check form-switch large-toggle">
       <input 
         type="checkbox" 
+        name="toggle_reminders_<%= relay_index %>"
         id="toggle-reminders-active-<%= relay_index %>" 
         class="form-check-input" 
         data-chip-id="<%= chip_id %>" 
@@ -80,53 +81,55 @@
         <%= @device_info['relays'][relay_index]['is_reminders_active'] ? 'checked' : '' %> 
         
       >
-      <label class="form-check-label" for="toggle-reminders-active-<%= relay_index %>">ON / OFF</label>
+      <label class="form-check-label" style="display: none" for="toggle-reminders-active-<%= relay_index %>">ON / OFF</label>
 
     </div>
   </div>
 
   <% if @device_info['relays'][relay_index]['reminders'].present? %>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Ngày và giờ bắt đầu</th>
-          <th>Thời gian hoạt động (phút)</th>
-          <th>Kiểu lặp lại</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @device_info['relays'][relay_index]['reminders'].each_with_index do |reminder, index| %>
+    <div class="reminders-list-<%= relay_index %>" id="reminders-list-<%= relay_index %>">
+      <table class="table">
+        <thead>
           <tr>
-            <td>
-              <% if reminder['start_time'].present? && reminder['start_time'] != "null" %>
-                <%= Time.parse(reminder['start_time']).strftime('%Y-%m-%d %H:%M:%S') %>
-              <% else %>
-                Không có thời gian
-              <% end %>
-            </td>
-            <td><%= reminder['duration'] / 60000 %> phút</td> <!-- Assuming duration is in milliseconds -->
-            <td>
-              <%= case reminder['repeat_type']
-                  when 'none'
-                    'Không lặp lại'
-                  when 'daily'
-                    'Hằng ngày'
-                  when 'weekly'
-                    'Hằng tuần'
-                  when 'monthly'
-                    'Hằng tháng'
-                  else
-                    'Không xác định'
-                 end %>
-            </td>
-            <td>
-              <%= button_to 'Xoá', remove_reminder_message_devices_path(tab_index: relay_index, chip_id: @device.chip_id, start_time: reminder['start_time']), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
-            </td>
+            <th>Ngày và giờ bắt đầu</th>
+            <th>Thời gian hoạt động (phút)</th>
+            <th>Kiểu lặp lại</th>
+            <th>Thao tác</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% @device_info['relays'][relay_index]['reminders'].each_with_index do |reminder, index| %>
+            <tr>
+              <td>
+                <% if reminder['start_time'].present? && reminder['start_time'] != "null" %>
+                  <%= Time.parse(reminder['start_time']).strftime('%Y-%m-%d %H:%M:%S') %>
+                <% else %>
+                  Không có thời gian
+                <% end %>
+              </td>
+              <td><%= reminder['duration'] / 60000 %> phút</td> <!-- Assuming duration is in milliseconds -->
+              <td>
+                <%= case reminder['repeat_type']
+                    when 'none'
+                      'Không lặp lại'
+                    when 'daily'
+                      'Hằng ngày'
+                    when 'weekly'
+                      'Hằng tuần'
+                    when 'monthly'
+                      'Hằng tháng'
+                    else
+                      'Không xác định'
+                  end %>
+              </td>
+              <td>
+                <%= button_to 'Xoá', remove_reminder_message_devices_path(tab_index: relay_index, chip_id: @device.chip_id, start_time: reminder['start_time']), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   <% else %>
     <p>Không có hẹn giờ nào được thiết lập.</p>
   <% end %>
