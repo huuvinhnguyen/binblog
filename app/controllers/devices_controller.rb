@@ -132,12 +132,12 @@ class DevicesController < ApplicationController
     device = Device.find_by(chip_id: chip_id)
 
     slack_message = "Xin chào!:\n" \
-                      "Thiết bị: #{device.name}"
-                      "Chip ID: #{chip_id}\n" \
-                      "Model: #{model}"
-                      "Tin nhắn: #{message}\n" \
-                      "Thời gian lúc: #{time}\n" \
-                      "Trạng thái: #{relay_state}\n" \
+                    "Thiết bị: #{device.name}\n" \
+                    "Chip ID: #{chip_id}\n" \
+                    "Model: #{model}\n" \
+                    "Tin nhắn: #{message}\n" \
+                    "Thời gian lúc: #{time}\n" \
+                    "Trạng thái: #{relay_state}\n" \
 
     users = device.users
     notify_users(users, slack_message) 
