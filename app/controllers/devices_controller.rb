@@ -128,13 +128,16 @@ class DevicesController < ApplicationController
     # time = Time.at(json_data['time'])
     time = Time.current
     model = json_data['model']
+    relay_state = json_data['relay_state']
     device = Device.find_by(chip_id: chip_id)
 
-    slack_message = "Received data from ESP32:\n" \
+    slack_message = "Xin chào!:\n" \
+                      "Thiết bị: #{device.name}"
                       "Chip ID: #{chip_id}\n" \
-                      "Message: #{message}\n" \
-                      "Time: #{time}\n" \
                       "Model: #{model}"
+                      "Tin nhắn: #{message}\n" \
+                      "Thời gian lúc: #{time}\n" \
+                      "Trạng thái: #{relay_state}\n" \
 
     users = device.users
     notify_users(users, slack_message) 
