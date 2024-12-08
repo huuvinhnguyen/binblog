@@ -11,32 +11,55 @@ module Api
         :update_at,
         :longlast,
         :timetrigger,
-        reminder: [
-          :start_time,
-          :duration,
-          :repeat_type
-        ],
-       
         relays: [
           :switch_value,
           :longlast,
           :is_reminders_active,
+          reminders: [
+            :start_time,
+            :duration,
+            :repeat_type
+          ]
         ]
       )
-
+    
       puts "message received: #{message}"
-
+    
       # Find the device by device_id, or create a new one if it doesn't exist
       device = Device.find_or_initialize_by(chip_id: message[:device_id])
-
-      # Update the device_info column with the received message
-      device.device_info = message.to_json
-
+    
+      # Parse current device_info to retain existing reminders
+      current_device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+      current_relays = current_device_info["relays"] || []
+    
+      # Merge new relays while keeping old reminders
+      updated_relays = message[:relays].map.with_index do |relay, index|
+        old_relay = current_relays[index] || {}
+        {
+          switch_value: relay[:switch_value] || old_relay["switch_value"],
+          longlast: relay[:longlast] || old_relay["longlast"],
+          is_reminders_active: relay[:is_reminders_active] || old_relay["is_reminders_active"],
+          reminders: old_relay["reminders"] || [] # Keep old reminders if no new reminders provided
+        }
+      end
+    
+      # Update device_info with merged data
+      device.device_info = {
+        device_type: message[:device_type],
+        topic_type: message[:topic_type],
+        device_id: message[:device_id],
+        switch_value: message[:switch_value],
+        update_at: message[:update_at],
+        longlast: message[:longlast],
+        timetrigger: message[:timetrigger],
+        relays: updated_relays
+      }.to_json
+    
       # Save the device record
       if device.save
         # Broadcast the message to the MQTT channel
         ActionCable.server.broadcast('mqtt_channel', message)
-
+    
         # Send a success response
         render json: { status: 'success', message: 'Device information received and saved' }, status: :ok
       else
@@ -45,7 +68,7 @@ module Api
       end
     rescue => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
-    end
+    end    
 
     def add_reminder
       # Receive and process data from ESP8266
