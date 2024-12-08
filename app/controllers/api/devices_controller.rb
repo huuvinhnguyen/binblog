@@ -21,11 +21,6 @@ module Api
           :switch_value,
           :longlast,
           :is_reminders_active,
-          reminders: [
-            :start_time,
-            :duration,
-            :repeat_type
-          ]
         ]
       )
 
