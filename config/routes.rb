@@ -6,6 +6,7 @@ Rails.application.routes.draw do
     resources :devices, only: [] do
       collection do
         post :receive_info
+        post :add_reminder
         get :device_info  
       end
     end

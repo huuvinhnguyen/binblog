@@ -75,8 +75,10 @@ class DevicesController < ApplicationController
     message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
     message_hash["longlast"] = params[:longlast].to_i * 1000 if params[:longlast].present?
     message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
+    message_hash["is_reminders_active"] = params[:is_reminders_active].to_i if params[:is_reminders_active].present?
     # Chuyển đổi hash thành JSON
     message = message_hash.to_json
+    puts "#message json: #{message}"
   
     client = MQTT::Client.connect(
       host: '103.9.77.155',
@@ -126,13 +128,16 @@ class DevicesController < ApplicationController
     # time = Time.at(json_data['time'])
     time = Time.current
     model = json_data['model']
+    relay_state = json_data['relay_state']
     device = Device.find_by(chip_id: chip_id)
 
-    slack_message = "Received data from ESP32:\n" \
-                      "Chip ID: #{chip_id}\n" \
-                      "Message: #{message}\n" \
-                      "Time: #{time}\n" \
-                      "Model: #{model}"
+    slack_message = "Xin chào!:\n" \
+                    "Thiết bị: #{device.name}\n" \
+                    "Chip ID: #{chip_id}\n" \
+                    "Model: #{model}\n" \
+                    "Tin nhắn: #{message}\n" \
+                    "Thời gian lúc: #{time}\n" \
+                    "Trạng thái: #{relay_state}\n" \
 
     users = device.users
     notify_users(users, slack_message) 

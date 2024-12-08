@@ -32,26 +32,25 @@ consumer.subscriptions.create("MqttChannel", {
       });
     });
    
-    document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggleSwitch) => {
-      if (message_hash.relays[relayIndex].switch_value === 1) {
+    document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggleSwitch, index) => {
+      if (message_hash.relays[index].switch_value === 1) {
         toggleSwitch.checked = true;
-      } else if (message_hash.relays[relayIndex].switch_value === 0) {
+      } else if (message_hash.relays[index].switch_value === 0) {
+        toggleSwitch.checked = false;
+      }
+    });
+
+    document.querySelectorAll('[id^="toggle-reminders-active-"]').forEach((toggleSwitch, index) => {
+    
+      if (message_hash.relays[index].is_reminders_active === true) {
+        toggleSwitch.checked = true;
+      } else if (message_hash.relays[index].is_reminders_active === false) {
         toggleSwitch.checked = false;
       }
     });
     
     if (message_hash.device_type === "switch") {
       
-
-      const toggleSwitch = document.getElementById("toggle-switch");
-
-      // Update toggle switch based on switch_value
-      if (message_hash.switch_value === 1) {
-        toggleSwitch.checked = true;
-      } else if (message_hash.switch_value === 0) {
-        toggleSwitch.checked = false;
-      }
-
       // Cập nhật last active từ update_at
       const lastActiveElement = document.getElementById("last-active");
       if (lastActiveElement && message_hash.update_at) {
@@ -61,99 +60,103 @@ consumer.subscriptions.create("MqttChannel", {
         console.error("last-active element or update_at not found");
       }
 
-      if (message_hash.relays[relayIndex].reminders && Array.isArray(message_hash.relays[relayIndex].reminders)) {
-        const remindersList = document.getElementById(`reminders-list-${relayIndex}`);
-  
-        if (remindersList) {
-          // Clear the current reminders list
-          remindersList.innerHTML = `
-            <h3>Danh sách Hẹn giờ</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Ngày và giờ bắt đầu</th>
-                  <th>Thời gian hoạt động (phút)</th>
-                  <th>Kiểu lặp lại</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="reminders-tbody-${relayIndex}"></tbody>
-            </table>
-          `;
-  
-          const remindersTbody = document.getElementById(`reminders-tbody-${relayIndex}`);
-  
-          // Populate the reminders table with each reminder
-          message_hash.relays[relayIndex].reminders.forEach((reminder) => {
-            const row = document.createElement("tr");
-  
-            // Start Time
-            const startTimeCell = document.createElement("td");
-            if (reminder.start_time) {
-              const formattedStartTime = formatDateTime(new Date(reminder.start_time) / 1000); // Assuming timestamp is in ms
-              startTimeCell.innerText = formattedStartTime;
+      if (message_hash.relays && Array.isArray(message_hash.relays)) {
+        message_hash.relays.forEach((relay, index) => {
+          if (relay.reminders && Array.isArray(relay.reminders)) {
+            const remindersList = document.getElementById(`reminders-list-${index}`);
+        
+            if (remindersList) {
+              // Xóa danh sách hẹn giờ hiện tại
+              remindersList.innerHTML = `
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Ngày và giờ bắt đầu</th>
+                      <th>Thời gian hoạt động (phút)</th>
+                      <th>Kiểu lặp lại</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reminders-tbody-${index}"></tbody>
+                </table>
+              `;
+        
+              const remindersTbody = document.getElementById(`reminders-tbody-${index}`);
+        
+              // Thêm từng hẹn giờ vào danh sách
+              relay.reminders.forEach((reminder) => {
+                const row = document.createElement("tr");
+        
+                // Ngày giờ bắt đầu
+                const startTimeCell = document.createElement("td");
+                if (reminder.start_time) {
+                  const formattedStartTime = formatDateTime(new Date(reminder.start_time) / 1000); // Giả định timestamp là ms
+                  startTimeCell.innerText = formattedStartTime;
+                } else {
+                  startTimeCell.innerText = "Không có thời gian";
+                }
+                row.appendChild(startTimeCell);
+        
+                // Thời gian hoạt động
+                const durationCell = document.createElement("td");
+                durationCell.innerText = `${reminder.duration / 60000} phút`; // Giả định duration là ms
+                row.appendChild(durationCell);
+        
+                // Kiểu lặp lại
+                const repeatTypeCell = document.createElement("td");
+                let repeatTypeText;
+                switch (reminder.repeat_type) {
+                  case 'none':
+                    repeatTypeText = 'Không lặp lại';
+                    break;
+                  case 'daily':
+                    repeatTypeText = 'Hằng ngày';
+                    break;
+                  case 'weekly':
+                    repeatTypeText = 'Hằng tuần';
+                    break;
+                  case 'monthly':
+                    repeatTypeText = 'Hằng tháng';
+                    break;
+                  default:
+                    repeatTypeText = 'Không xác định';
+                }
+                repeatTypeCell.innerText = repeatTypeText;
+                row.appendChild(repeatTypeCell);
+        
+                // Hành động - Nút xoá
+                const actionCell = document.createElement("td");
+                const deleteButton = document.createElement("button");
+                deleteButton.classList.add("btn", "btn-danger");
+                deleteButton.innerText = "Xoá";
+                deleteButton.onclick = function () {
+                  if (confirm("Bạn có chắc chắn muốn xoá?")) {
+                    fetch(`/devices/remove_reminder_message?chip_id=${message_hash.device_id}&start_time=${reminder.start_time}`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                      }
+                    }).then(response => {
+                      if (!response.ok) {
+                        throw new Error('Failed to delete reminder');
+                      }
+                      console.log("Reminder deleted");
+                    }).catch(error => console.error("Error:", error));
+                  }
+                };
+                actionCell.appendChild(deleteButton);
+                row.appendChild(actionCell);
+        
+                remindersTbody.appendChild(row);
+              });
             } else {
-              startTimeCell.innerText = "Không có thời gian";
+              console.error(`reminders-list-${index} element not found`);
             }
-            row.appendChild(startTimeCell);
-  
-            // Duration
-            const durationCell = document.createElement("td");
-            durationCell.innerText = `${reminder.duration / 60000} phút`; // Assuming duration is in ms
-            row.appendChild(durationCell);
-  
-            // Repeat Type
-            const repeatTypeCell = document.createElement("td");
-            let repeatTypeText;
-            switch (reminder.repeat_type) {
-              case 'none':
-                repeatTypeText = 'Không lặp lại';
-                break;
-              case 'daily':
-                repeatTypeText = 'Hằng ngày';
-                break;
-              case 'weekly':
-                repeatTypeText = 'Hằng tuần';
-                break;
-              case 'monthly':
-                repeatTypeText = 'Hằng tháng';
-                break;
-              default:
-                repeatTypeText = 'Không xác định';
-            }
-            repeatTypeCell.innerText = repeatTypeText;
-            row.appendChild(repeatTypeCell);
-  
-            // Action - Delete Button
-            const actionCell = document.createElement("td");
-            const deleteButton = document.createElement("button");
-            deleteButton.classList.add("btn", "btn-danger");
-            deleteButton.innerText = "Xoá";
-            deleteButton.onclick = function () {
-              if (confirm("Bạn có chắc chắn muốn xoá?")) {
-                fetch(`/devices/remove_reminder_message?chip_id=${message_hash.device_id}&start_time=${reminder.start_time}`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                  }
-                }).then(response => {
-                  if (!response.ok) {
-                    throw new Error('Failed to delete reminder');
-                  }
-                  console.log("Reminder deleted");
-                }).catch(error => console.error("Error:", error));
-              }
-            };
-            actionCell.appendChild(deleteButton);
-            row.appendChild(actionCell);
-  
-            remindersTbody.appendChild(row);
-          });
-        } else {
-          console.error("reminders-list element not found");
-        }
+          }
+        });
       }
+      
 
 
       message_hash.relays[relayIndex].reminders.forEach((reminder) => {
