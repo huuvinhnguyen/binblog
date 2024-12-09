@@ -13,7 +13,8 @@ class DevicesController < ApplicationController
   end
 
   def index
-    @devices = Device.all
+    # @devices = Device.all
+    @devices = current_user.devices_for_current_user
 
   end
 
@@ -129,14 +130,17 @@ class DevicesController < ApplicationController
     time = Time.current
     model = json_data['model']
     relay_state = json_data['relay_state']
+    relay_index = json_data['relay_index']
+
     device = Device.find_by(chip_id: chip_id)
 
-    slack_message = "Xin chào!:\n" \
+    slack_message = "Xin chào!\n" \
                     "Thiết bị: #{device.name}\n" \
                     "Chip ID: #{chip_id}\n" \
                     "Model: #{model}\n" \
                     "Tin nhắn: #{message}\n" \
                     "Thời gian lúc: #{time}\n" \
+                    "Kênh: #{relay_index}\n" \
                     "Trạng thái: #{relay_state}\n" \
 
     users = device.users
