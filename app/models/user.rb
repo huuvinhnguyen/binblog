@@ -1,5 +1,9 @@
 class User < ActiveRecord::Base
   rolify
+
+  def devices_for_current_user
+    has_role?(:admin) ? Device.all : devices
+  end
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
