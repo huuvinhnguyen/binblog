@@ -1,28 +1,15 @@
 
-<div id="dht-form-wrapper">
-    <div class="dht-value">
-        <div>
-            <div id="dht-value-temperature"></div>
+<div id="dht-form-wrapper"></div>
+<div id="dht-container">
+    <div>
+        <div class="gauge-section">
+            <h3>Độ ẩm</h3>
+            <div id="hum" class="gauge"></div>
         </div>
-        <div>
-        <div id="dht-value-humidity"></div>
+        <div class="gauge-section">
+            <h3>Nhiệt độ</h3>
+            <div id="temp" class="gauge"></div>
         </div>
-        <%= form_with url: connect_dht_devices_path, method: :post, local: true do %>
-            <%= submit_tag 'Connect DHT', class: 'btn btn-secondary' %>
-        <% end %>
     </div>
-
-    
 </div>
 
-<h1>Weather Station</h1>
-	<div>
-		<div class="gauge-section">
-			<h3>Humidity</h3>
-			<div id="hum" class="gauge"></div>
-		</div>
-		<div class="gauge-section">
-			<h3>Temperature</h3>
-			<div id="temp" class="gauge"></div>
-		</div>
-	</div>

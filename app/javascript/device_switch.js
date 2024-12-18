@@ -1,4 +1,7 @@
 
+import { createVerGauge, getTempColor, createRadGauge, getHumColor  }  from "gauges";
+
+  
   document.addEventListener("turbo:load", () => {
     // Slider functionality
     document.querySelectorAll('.slider').forEach((sliderInput) => {
@@ -72,3 +75,45 @@
     });
     
 });
+
+document.addEventListener("turbo:load", function() {
+
+  if ($('#dht-container').length) {
+    function loadDHT() {
+
+      var tempGauge = createVerGauge('temp', -20, 60, ' °C').setVal(0).setColor(getTempColor(0));
+      tempGauge.setVal(50).setColor(getTempColor(60));
+      var humGauge = createRadGauge('hum', 0, 100, '%').setVal(50).setColor(getHumColor(50));
+      humGauge.setVal(50).setColor(getHumColor(50)); // Giá trị mặc định khi load trang
+    }
+
+    loadDHT();
+
+  }
+
+});
+
+document.addEventListener("turbo:load", function() {
+  if (document.querySelector('#dht-form-wrapper')) {
+
+      function sendConnectDhtRequest() {
+          $.ajax({
+              url: "devices/connect_dht", // Ensure this matches the route in your Rails app
+              type: "POST",
+              dataType: "script", // Expect JavaScript response if needed
+              success: function(response) {
+                  console.log("Request successful");
+                  // Handle the response if needed
+              },
+              error: function(xhr, status, error) {
+                  console.error("Request failed:", error);
+              }
+          });
+      }
+
+      sendConnectDhtRequest();
+  }
+});
+
+
+
