@@ -131,7 +131,7 @@ consumer.subscriptions.create("MqttChannel", {
                 deleteButton.innerText = "Xoá";
                 deleteButton.onclick = function () {
                   if (confirm("Bạn có chắc chắn muốn xoá?")) {
-                    fetch(`/devices/remove_reminder_message?chip_id=${message_hash.device_id}&start_time=${reminder.start_time}`, {
+                    fetch(`/devices/remove_reminder_message?tab_index=${index}&chip_id=${message_hash.device_id}&start_time=${reminder.start_time}`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
