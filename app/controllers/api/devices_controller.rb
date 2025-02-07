@@ -139,5 +139,41 @@ module Api
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
 
+    def trigger
+      # Lấy JSON từ body của request
+      # raw_body = request.body.read
+    
+      begin
+
+        device = Device.find_by(chip_id: params[:chip_id])
+        trigger_device device
+        
+        render json: { status: 'success', message: 'Message sent successfully' }, status: :ok
+      rescue JSON::ParserError
+        render json: { status: 'error', message: 'Invalid JSON format' }, status: :unprocessable_entity
+      rescue StandardError => e
+        render json: { status: 'error', message: e.message }, status: :internal_server_error
+      end
+    end
+
+    private
+    def trigger_device device
+      raw_message_trigger = device.trigger
+      json_params = JSON.parse(raw_message_trigger)
+  
+      # Tạo topic từ chip_id
+      topic = "#{json_params['chip_id']}/switchon"
+      raise "chip_id is missing" unless json_params['chip_id'].present?
+  
+      # Gửi raw JSON (message) qua MQTT
+      client = MQTT::Client.connect(
+        host: '103.9.77.155',
+        port: 1883
+      )
+      
+      client.publish(topic, raw_message_trigger, retain: false) if topic.present?
+      client.disconnect
+
+    end
   end
 end
