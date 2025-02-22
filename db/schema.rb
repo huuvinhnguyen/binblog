@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_12_08_164605) do
+ActiveRecord::Schema[7.0].define(version: 2025_01_26_081209) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -33,6 +33,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_08_164605) do
     t.datetime "updated_at", null: false
     t.string "device_type"
     t.text "device_info"
+    t.text "trigger"
     t.index ["chip_id"], name: "index_devices_on_chip_id", unique: true
   end
 
