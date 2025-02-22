@@ -13,6 +13,26 @@
     </div>
   <% end %>
 </div>
+
+<div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+  <%= form_tag('/devices/switchon', method: 'post', class: 'd-flex align-items-center gap-2') do %>
+    <!-- Hidden field for chip_id -->
+    <%= hidden_field_tag :chip_id, chip_id %>
+    <%= hidden_field_tag :relay_index, relay_index %>
+    <!-- Hidden field for longlast (in seconds) -->
+    <%= hidden_field_tag :longlast, 60, id: "switchon-message-field-#{relay_index}" %>
+
+    <!-- Input field for duration in minutes -->
+    <input type="number" id="longlast-input-<%= relay_index %>" min="1" max="60" step="1" 
+      class="form-control" placeholder="Nhập phút kích hoạt"
+      oninput="document.getElementById('switchon-message-field-<%= relay_index %>').value = this.value * 60">
+
+    <!-- Submit button -->
+    <%= submit_tag 'KÍCH HOẠT', class: 'btn btn-primary' %>
+  <% end %>
+</div>
+
+
 <!-- Toggle Switch Form with Grey Border -->
 
 <div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
