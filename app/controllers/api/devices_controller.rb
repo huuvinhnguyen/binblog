@@ -20,7 +20,11 @@ module Api
             :duration,
             :repeat_type
           ]
+        ],
+        device: [
+          :device_type
         ]
+
       )
     
       puts "message received: #{message}"

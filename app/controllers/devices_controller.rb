@@ -156,7 +156,7 @@ class DevicesController < ApplicationController
     subscribe_topic topic
     message = { "action": "ping" }.to_json
     pingTopic = topic + "/ping"
-    @client.publish(pingTopic, message, retain: false) if pingTopic.present?
+    # @client.publish(pingTopic, message, retain: false) if pingTopic.present?
 
   end
 
