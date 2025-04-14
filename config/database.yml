@@ -3,8 +3,8 @@ development:
   encoding: utf8mb4
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   username: u200682234_bin1
-  password: edEaQJ2A71cw#pgA
-  host: srv545.hstgr.io
+  password: Pleiku@2025
+  host: srv612.hstgr.io
   database: u200682234_bin1
   port: 3306
 
