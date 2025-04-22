@@ -75,73 +75,102 @@ module Api
     end    
 
     def add_reminder
-      # Receive and process data from ESP8266
+      # Cho phép các params cần thiết
       message = params.permit(
-        :device_type,
-        :topic_type,
         :device_id,
-        :switch_value,
-        :update_at,
-        :longlast,
-        :timetrigger,
+        :relay_index,
         reminder: [
           :start_time,
           :duration,
           :repeat_type
-        ],
-       
-        relays: [
-          :switch_value,
-          :longlast,
-          :is_reminders_active,
-          reminders: [
-            :start_time,
-            :duration,
-            :repeat_type
-          ]
         ]
       )
-
+    
       puts "message received: #{message}"
-
-      # Find the device by device_id, or create a new one if it doesn't exist
-      device = Device.find_or_initialize_by(chip_id: message[:device_id])
-
-      # Update the device_info column with the received message
-      device.device_info = message.to_json
-
-      # Save the device record
+    
+      # Tìm thiết bị theo chip_id
+      device = Device.find_by(chip_id: message[:device_id])
+    
+      unless device
+        return render json: { status: 'error', message: 'Device not found' }, status: :not_found
+      end
+    
+      # Parse device_info JSON hiện tại
+      device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+      relays = device_info["relays"] || []
+    
+      # Xác định chỉ số relay cần cập nhật
+      relay_index = message[:relay_index].to_i
+      reminder_data = message[:reminder].to_h
+    
+      # Kiểm tra index tồn tại
+      if relay_index >= relays.length
+        return render json: { status: 'error', message: "Invalid relay index: #{relay_index}" }, status: :bad_request
+      end
+    
+      # Thêm reminder mới vào relay tương ứng
+      relays[relay_index]["reminders"] ||= []
+      relays[relay_index]["reminders"] << reminder_data
+    
+      # Gán lại relays vào device_info và cập nhật lại
+      device_info["relays"] = relays
+      device.device_info = device_info.to_json
+    
       if device.save
-        # Broadcast the message to the MQTT channel
-        ActionCable.server.broadcast('mqtt_channel', message)
+        # ActionCable.server.broadcast('mqtt_channel', device_info)
+        refresh message[:device_id]
+        redirect_to device_path(device), notice: "Updated successfully."
 
-        # Send a success response
-        render json: { status: 'success', message: 'Device information received and saved' }, status: :ok
+        # render json: { status: 'success', message: 'Reminder added successfully' }, status: :ok
       else
-        # Send an error response if saving fails
         render json: { status: 'error', message: device.errors.full_messages.to_sentence }, status: :unprocessable_entity
       end
     rescue => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
 
-    def device_info
-      # Find the device by device_id parameter
-      device_id = params[:device_id]
-      device = Device.find_by(chip_id: device_id.to_s)
-
-      # Check if the device exists
-      if device
-        # Return the device_info
-        device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
-        render json: { status: 'success', device_info: device_info }, status: :ok
+    def remove_reminder
+      message = params.permit(:device_id, :relay_index, :reminder_index)
+    
+      device = Device.find_by(chip_id: message[:device_id])
+      unless device
+        return render json: { status: 'error', message: 'Device not found' }, status: :not_found
+      end
+    
+      device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+      relays = device_info["relays"] || []
+    
+      relay_index = message[:relay_index].to_i
+      reminder_index = message[:reminder_index].to_i
+    
+      if relay_index >= relays.length
+        return render json: { status: 'error', message: "Invalid relay index: #{relay_index}" }, status: :bad_request
+      end
+    
+      reminders = relays[relay_index]["reminders"] || []
+    
+      if reminder_index >= reminders.length
+        return render json: { status: 'error', message: "Invalid reminder index: #{reminder_index}" }, status: :bad_request
+      end
+    
+      # Xóa reminder
+      reminders.delete_at(reminder_index)
+      relays[relay_index]["reminders"] = reminders
+      device_info["relays"] = relays
+      device.device_info = device_info.to_json
+    
+      if device.save
+        refresh message[:device_id]
+        redirect_to device_path(device), notice: "Reminder removed successfully."
+        # render json: { status: 'success', message: 'Reminder removed successfully' }, status: :ok
       else
-        # Return an error if device is not found
-        render json: { status: 'error', message: 'Device not found' }, status: :not_found
+        render json: { status: 'error', message: device.errors.full_messages.to_sentence }, status: :unprocessable_entity
       end
     rescue => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
+    
+    
 
     def trigger
       # Lấy JSON từ body của request
@@ -178,6 +207,21 @@ module Api
       client.publish(topic, raw_message_trigger, retain: false) if topic.present?
       client.disconnect
 
+    end
+
+    def refresh chip_id
+      topic = chip_id
+  
+      client = MQTT::Client.connect(
+          host: '103.9.77.155',
+          port: 1883,
+      )
+
+      message = { "action": "ping" }.to_json
+  
+      client.publish(topic, message) if topic.present?
+      client.disconnect()
+  
     end
   end
 end

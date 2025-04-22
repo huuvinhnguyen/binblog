@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       collection do
         post :receive_info
         post :add_reminder
+        post :remove_reminder
         get :device_info  
         post :trigger
       end
