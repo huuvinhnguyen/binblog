@@ -1,17 +1,5 @@
 
 document.addEventListener("turbo:load", () => {
-  // Slider functionality
-  document.querySelectorAll('.slider').forEach((sliderInput) => {
-    const relayIndex = sliderInput.id.split('-').pop(); // Get relay index from slider ID
-    const messageField = document.getElementById(`switchon-message-field-${relayIndex}`);
-
-    if (sliderInput && messageField) {
-      sliderInput.addEventListener('input', () => {
-        console.log(`Slider value for relay ${relayIndex} = `, sliderInput.value);
-        messageField.value = sliderInput.value;
-      });
-    }
-  });
 
   // Handle switch toggle (turn ON/OFF relay)
   document.querySelectorAll('[id^="toggle-switch-"]').forEach((toggle) => {

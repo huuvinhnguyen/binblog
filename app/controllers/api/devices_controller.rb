@@ -220,7 +220,25 @@ module Api
       else
         render json: { status: 'error', message: 'Failed to switch' }, status: :unprocessable_entity
       end
-    end    
+    end
+    
+    def set_longlast
+      message = params.permit(:device_id, :longlast, :relay_index)
+    
+      success = SwitchOnService.new(
+        message[:device_id],
+        longlast: message[:longlast]&.to_i,
+        relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil
+      ).call
+    
+      if success
+        refresh message[:device_id]
+        render json: { status: 'success', message: 'Longlast set successfully' }, status: :ok
+      else
+        render json: { status: 'error', message: 'Failed to set longlast' }, status: :unprocessable_entity
+      end
+    end
+    
 
     private
     def trigger_device device
