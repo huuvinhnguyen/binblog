@@ -170,7 +170,23 @@ module Api
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
     
-    
+    def device_info
+      # Find the device by device_id parameter
+      device_id = params[:device_id]
+      device = Device.find_by(chip_id: device_id.to_s)
+
+      # Check if the device exists
+      if device
+        # Return the device_info
+        device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+        render json: { status: 'success', device_info: device_info }, status: :ok
+      else
+        # Return an error if device is not found
+        render json: { status: 'error', message: 'Device not found' }, status: :not_found
+      end
+    rescue => e
+      render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+    end
 
     def trigger
       # Lấy JSON từ body của request
@@ -210,14 +226,17 @@ module Api
     end
 
     def refresh chip_id
-      topic = chip_id
+      topic = "#{chip_id}/refresh"
   
       client = MQTT::Client.connect(
           host: '103.9.77.155',
           port: 1883,
       )
 
-      message = { "action": "ping" }.to_json
+      message = {
+          "action": "ping",
+          "sent_time": Time.current
+       }.to_json
   
       client.publish(topic, message) if topic.present?
       client.disconnect()
