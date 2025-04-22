@@ -205,6 +205,23 @@ module Api
       end
     end
 
+    def switchon
+      message = params.permit(:device_id, :switch_value, :relay_index)
+    
+      success = SwitchOnService.new(
+        message[:device_id],
+        switch_value: message[:switch_value].to_i,
+        relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil
+      ).call
+    
+      if success
+        refresh message[:device_id]
+        render json: { status: 'success', message: 'Switched successfully' }, status: :ok
+      else
+        render json: { status: 'error', message: 'Failed to switch' }, status: :unprocessable_entity
+      end
+    end    
+
     private
     def trigger_device device
       raw_message_trigger = device.trigger

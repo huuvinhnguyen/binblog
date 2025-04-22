@@ -10,6 +10,7 @@ Rails.application.routes.draw do
         post :remove_reminder
         get :device_info  
         post :trigger
+        post :switchon
       end
     end
   end
@@ -24,7 +25,7 @@ Rails.application.routes.draw do
   get 'devices/destroy'
   post 'devices/publish'
   post 'devices/connect'
-  post 'devices/switchon'
+  # post 'devices/switchon'
   post 'devices/connect_dht', to: 'devices#connect_dht', as: 'connect_dht_devices'
   post 'devices/disconnect_mqtt', to: 'devices#disconnect_mqtt', as: 'disconnect_mqtt_devices'
   post 'devices/notify', to: 'devices#notify'
