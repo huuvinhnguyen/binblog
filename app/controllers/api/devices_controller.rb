@@ -235,7 +235,7 @@ module Api
 
       message = {
           "action": "ping",
-          "sent_time": Time.current
+          "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
        }.to_json
   
       client.publish(topic, message) if topic.present?
