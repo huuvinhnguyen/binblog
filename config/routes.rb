@@ -12,12 +12,13 @@ Rails.application.routes.draw do
         post :trigger
         post :switchon
         post :set_longlast
+        post :restart
+        post :update_last_seen
       end
     end
   end
 
   get 'devices/index'
-  get 'devices/switchon_ab'
   get 'devices/show'
   get 'devices/new'
   get 'devices/create'
