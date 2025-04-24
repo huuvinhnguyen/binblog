@@ -1,0 +1,9 @@
+default: &default
+  host: 103.9.77.155
+  port: 1883
+
+development:
+  <<: *default
+
+production:
+  <<: *default

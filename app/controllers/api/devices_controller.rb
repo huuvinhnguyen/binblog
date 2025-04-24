@@ -238,36 +238,77 @@ module Api
         render json: { status: 'error', message: 'Failed to set longlast' }, status: :unprocessable_entity
       end
     end
-    
 
+    def restart
+      topic = "#{params[:chip_id]}/restart"
+      client = mqtt_client
+      message = {
+          "action": "restart",
+          "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+       }.to_json
+  
+      client.publish(topic, message) if topic.present?
+      client.disconnect()
+      render json: { status: 'ok', message: 'Restart command sent' }
+    end
+
+    def update_last_seen
+      device = Device.find_by(chip_id: params[:chip_id])
+    
+      unless device
+        return render json: { status: 'error', message: 'Device not found' }, status: :not_found
+      end
+    
+      # Cập nhật trường updated_at để đánh dấu "last seen"
+      device.touch
+    
+      # Parse device_info JSON hiện tại
+      device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+      device_info["last_seen"] = Time.current.to_s
+      device.update(device_info: device_info.to_json)
+    
+      render json: {
+        status: 'success',
+        message: 'Device last seen time updated',
+        last_seen: device.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+      }, status: :ok
+    rescue => e
+      render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+    end
+    
+    
     private
+
+    def mqtt_client
+      MQTT::Client.connect(
+        host: MQTT_CONFIG["host"],
+        port: MQTT_CONFIG["port"]
+      )
+    end
+    
     def trigger_device device
       raw_message_trigger = device.trigger
       json_params = JSON.parse(raw_message_trigger)
-  
+    
       # Tạo topic từ chip_id
       topic = "#{json_params['chip_id']}/switchon"
       raise "chip_id is missing" unless json_params['chip_id'].present?
-  
+    
+      # Thêm sent_time
+      json_params["sent_time"] = Time.current.strftime('%Y-%m-%d %H:%M:%S')
+      message_with_timestamp = json_params.to_json
+    
       # Gửi raw JSON (message) qua MQTT
-      client = MQTT::Client.connect(
-        host: '103.9.77.155',
-        port: 1883
-      )
-      
-      client.publish(topic, raw_message_trigger, retain: false) if topic.present?
+      client = mqtt_client
+    
+      client.publish(topic, message_with_timestamp, retain: false) if topic.present?
       client.disconnect
-
     end
 
     def refresh chip_id
       topic = "#{chip_id}/refresh"
   
-      client = MQTT::Client.connect(
-          host: '103.9.77.155',
-          port: 1883,
-      )
-
+      client = mqtt_client
       message = {
           "action": "ping",
           "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
