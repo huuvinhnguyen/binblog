@@ -72,7 +72,46 @@ module Api
       end
     rescue => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
-    end    
+    end
+    
+    def set_reminders_active
+      message = params.permit(:device_id, :relay_index, :is_reminders_active)
+    
+      device = Device.find_by(chip_id: message[:device_id])
+    
+      unless device
+        return render json: { status: 'error', message: 'Device not found' }, status: :not_found
+      end
+    
+      # Parse device_info hiện tại
+      device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+      relays = device_info["relays"] || []
+    
+      relay_index = message[:relay_index].to_i
+    
+      # Kiểm tra index hợp lệ
+      if relay_index >= relays.length
+        return render json: { status: 'error', message: "Invalid relay index: #{relay_index}" }, status: :bad_request
+      end
+    
+      # Cập nhật is_reminders_active
+      is_active = ActiveModel::Type::Boolean.new.cast(message[:is_reminders_active])
+      relays[relay_index]["is_reminders_active"] = is_active
+    
+      # Lưu lại device_info mới
+      device_info["relays"] = relays
+      device.device_info = device_info.to_json
+    
+      if device.save
+        refresh message[:device_id]
+        render json: { status: 'success', message: 'is_reminders_active updated successfully' }, status: :ok
+      else
+        render json: { status: 'error', message: device.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      end
+    rescue => e
+      render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+    end
+    
 
     def add_reminder
       # Cho phép các params cần thiết

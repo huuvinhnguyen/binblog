@@ -8,6 +8,7 @@ Rails.application.routes.draw do
         post :receive_info
         post :add_reminder
         post :remove_reminder
+        post :set_reminders_active
         get :device_info  
         post :trigger
         post :switchon

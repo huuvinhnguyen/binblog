@@ -2,46 +2,68 @@
   { label: 'Danh sách thiết bị', href: devices_path, active: false },
   { label: @device.name, href: device_path(@device), active: true }
 ] } %>
-<div id="switch-div" style="display: block;" data-chip-id="<%= @device.chip_id %>">
-  <label for="last-active">Lần hoạt động cuối:</label>
-  <span id="last-active" style="border: none;">
-    <%= Time.at(@device_info['update_at']).strftime('%d-%m-%Y %H:%M:%S') if @device_info['update_at'].present? %>
-  </span>
-</div>
 
-<br>
-<% if @device.device_type == "switch" %>
-<div>
-  <!-- Tabs Navigation -->
-  <% if @device_info && @device_info['relays'].present? %>
-
-    <ul class="nav nav-tabs" id="relayTabs" role="tablist">
-      <% @device_info['relays'].each_with_index do |relay, index| %>
-        <li class="nav-item" role="presentation">
-          <a class="nav-link <%= 'active' if index == 0 %>" id="relay-tab-<%= index %>" data-bs-toggle="tab" href="#relay-<%= index %>" role="tab" aria-controls="relay-<%= index %>" aria-selected="<%= index == 0 %>">
-            Kênh <%= index + 1 %>
-          </a>
-        </li>
-      <% end %>
-    </ul>
-  <% end %>
-
-  <!-- Tab Content -->
-  <% if @device_info && @device_info['relays'].present? %>
-
-    <div class="tab-content" id="relayTabContent">
-      <% @device_info['relays'].each_with_index do |relay, index| %>
-        <div class="tab-pane fade <%= 'show active' if index == 0 %>" id="relay-<%= index %>" role="tabpanel" aria-labelledby="relay-tab-<%= index %>">
-          <%= render 'switchon_form', chip_id: @device.chip_id, relay_index: index %>
-        </div>
-      <% end %>
+<div class="mt-4">
+  <!-- Thông tin thiết bị -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-primary"><strong>Thiết bị: <%= @device.name %></strong></h5>
+      <p class="card-text">
+        <strong>Lần hoạt động cuối:</strong>
+        <span class="text-muted">
+          <%= Time.parse(@device_info['last_seen']).strftime('%d/%m/%Y %H:%M:%S') if @device_info['last_seen'].present? %>
+        </span>
+      </p>
     </div>
-    </div>
-    <% end %>
-  <% end %>
-
-<% if @device.device_type == "dht" %>
-  <div class="row">
-    <%= render 'dht_form' %>
   </div>
-<% end %>
+
+  <!-- Switch -->
+  <% if @device.device_type == "switch" && @device_info&.dig("relays").present? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title text-success">Điều khiển thiết bị</h5>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" id="relayTabs" role="tablist">
+          <% @device_info['relays'].each_with_index do |relay, index| %>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link <%= 'active' if index == 0 %>" id="relay-tab-<%= index %>"
+                 data-bs-toggle="tab" href="#relay-<%= index %>" role="tab"
+                 aria-controls="relay-<%= index %>" aria-selected="<%= index == 0 %>">
+                Kênh <%= index + 1 %>
+              </a>
+            </li>
+          <% end %>
+        </ul>
+
+        <!-- Tabs Content -->
+        <div class="tab-content" id="relayTabContent">
+          <% @device_info['relays'].each_with_index do |relay, index| %>
+            <div class="tab-pane fade <%= 'show active' if index == 0 %>" id="relay-<%= index %>"
+                 role="tabpanel" aria-labelledby="relay-tab-<%= index %>">
+              <%= render 'switchon_form', chip_id: @device.chip_id, relay_index: index %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- DHT -->
+  <% if @device.device_type == "dht" %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title text-info">Thông tin cảm biến DHT</h5>
+        <%= render 'dht_form' %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Nút Khởi động lại -->
+  <div class="text-center mt-4">
+    <%= button_to "🔁 Khởi động lại thiết bị", "/api/devices/restart", method: :post,
+                  params: { chip_id: @device.chip_id },
+                  data: { confirm: "Bạn có chắc muốn khởi động lại thiết bị không?" },
+                  class: "btn btn-lg btn-danger px-5 py-2" %>
+  </div>
+</div>

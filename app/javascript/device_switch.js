@@ -38,7 +38,7 @@ document.addEventListener("turbo:load", () => {
       const chipId = e.target.getAttribute('data-chip-id');
       const toggleValue = e.target.checked ? 1 : 0;
 
-      fetch('/api/devices/switchon', { // 🔥 sửa lại path đúng
+      fetch('/api/devices/set_reminders_active', { // 🔥 sửa lại path đúng
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ document.addEventListener("turbo:load", () => {
         return response.json();
       })
       .then(data => {
-        alert('Reminder toggled successfully!');
+        // alert('Reminder toggled successfully!');
       })
       .catch(error => {
         console.error('Error:', error);
