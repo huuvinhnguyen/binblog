@@ -1,105 +1,91 @@
-<div class="slider-value" style="border: 1px solid grey; border-radius: 10px; padding: 20px;">
-  <!-- Range slider for setting the value -->
-  <input type="range" min="1" max="10" value="1" step="1" class="slider" id="switch-slider-<%= relay_index %>">
-
-  <%= form_tag('/devices/switchon', method: 'post') do %>
-    <!-- Hidden field for chip_id -->
-    <%= hidden_field_tag :chip_id, chip_id %>
-    <%= hidden_field_tag :relay_index, relay_index %>
-    <!-- Hidden field for the slider value -->
-    <%= hidden_field_tag :longlast, "", id: "switchon-message-field-#{relay_index}" %>
-    <div style="text-align: right; margin-top: 20px;">
-      <%= submit_tag 'KÍCH HOẠT', id: 'publish-button-switchon', class: 'btn btn-primary' %>
-    </div>
-  <% end %>
+<!-- Công tắc BẬT/TẮT -->
+<div style="border: 2px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 30px; background-color: #f8f9fa;">
+  <div class="form-check form-switch" style="display: flex; align-items: center; justify-content: center; font-size: 28px;">
+    <input 
+      type="checkbox" 
+      name="toggle_<%= relay_index %>" 
+      id="toggle-switch-<%= relay_index %>" 
+      class="form-check-input" 
+      data-chip-id="<%= chip_id %>" 
+      data-relay-index="<%= relay_index %>" 
+      style="width: 80px; height: 40px;" 
+      <%= @device_info['relays'][relay_index]['switch_value'] == 1 ? 'checked' : '' %> 
+    >
+    <label class="form-check-label" for="toggle-switch-<%= relay_index %>" style="margin-left: 20px; font-weight: bold;">BẬT / TẮT</label>
+  </div>
 </div>
 
-<div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-  <%= form_tag('/devices/switchon', method: 'post', class: 'd-flex align-items-center gap-2', onsubmit: "updateLonglast(this)") do %>
-    <!-- Hidden field for chip_id -->
+<!-- Form KÍCH HOẠT theo thời gian -->
+<div style="border: 2px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 30px; background-color: #f8f9fa;">
+  <%= form_tag('/devices/switchon', method: 'post', onsubmit: "return updateLonglast(this, #{relay_index})") do %>
     <%= hidden_field_tag :chip_id, chip_id %>
     <%= hidden_field_tag :relay_index, relay_index %>
-    
-    <!-- Hidden field for the actual longlast value in seconds -->
     <%= hidden_field_tag :longlast, "", id: "longlast-hidden-#{relay_index}" %>
 
-    <!-- Input field for duration in minutes -->
-    <input type="number" id="longlast-input-<%= relay_index %>" min="1" max="60" step="1"
-      class="form-control" placeholder="Nhập phút kích hoạt">
+    <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+      
+      <input 
+        type="number" 
+        id="longlast-input-<%= relay_index %>" 
+        min="1" 
+        class="form-control" 
+        placeholder="Nhập thời gian..." 
+        style="font-size: 24px; padding: 15px; width: 80%; text-align: center;"
+      >
 
-    <!-- Submit button -->
-    <%= submit_tag 'KÍCH HOẠT', class: 'btn btn-primary' %>
+      <select 
+        id="longlast-unit-<%= relay_index %>" 
+        class="form-select" 
+        style="font-size: 24px; padding: 15px; width: 80%; text-align: center;"
+      >
+        <option value="seconds">Giây</option>
+        <option value="minutes" selected>Phút</option>
+      </select>
+
+      <%= submit_tag 'KÍCH HOẠT', class: 'btn btn-primary', style: 'font-size: 28px; padding: 15px 30px; border-radius: 10px;' %>
+
+    </div>
   <% end %>
 </div>
 
-<script>
-  function updateLonglast(form) {
-    let inputField = form.querySelector("[id^='longlast-input']");
-    let hiddenField = form.querySelector("[id^='longlast-hidden']");
-    if (inputField && hiddenField) {
-      hiddenField.value = inputField.value * 60;
-    }
-  }
-</script>
-
-
-<!-- Toggle Switch Form with Grey Border -->
-
-<div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-<div class="form-check form-switch large-toggle">
-  <input 
-    type="checkbox" 
-    name="toggle_<%= relay_index %>" 
-    id="toggle-switch-<%= relay_index %>" 
-    class="form-check-input" 
-    data-chip-id="<%= chip_id %>" 
-    data-relay-index="<%= relay_index %>" 
-    <%= @device_info['relays'][relay_index]['switch_value'] == 1 ? 'checked' : '' %> 
-  >
-  <label class="form-check-label" for="toggle-switch-<%= relay_index %>">ON / OFF</label>
-</div>
-</div>
-
-
-<!-- Timer Setting Form with Grey Border -->
-<div style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-  <%= form_tag('/devices/switchon', method: 'post') do %>
-    <!-- Hidden field for chip_id -->
-    <%= hidden_field_tag :chip_id, chip_id %>
+<!-- Form hẹn giờ -->
+<div style="border: 1px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 20px; background-color: #f9f9f9;">
+  <%= form_tag('/api/devices/add_reminder', method: 'post', onsubmit: "return updateDuration(this, #{relay_index})") do %>
+    <%= hidden_field_tag :device_id, chip_id %>
     <%= hidden_field_tag :relay_index, relay_index %>
 
-    <!-- Date and Time Input Field -->
-    <div class="form-group">
-      <label for="start_time">Ngày và giờ hẹn giờ:</label>
-      <%= datetime_local_field_tag :start_time, nil, id: 'reminder-start-time', class: 'form-control' %>
-    </div>
-    
-    <!-- Duration Input Field -->
-    <div class="form-group">
-      <label for="duration">Thời gian hoạt động (phút):</label>
-      <%= number_field_tag :duration, nil, id: 'reminder-duration', class: 'form-control', min: 1, step: 1 %>
+    <div class="form-group" style="margin-bottom: 20px;">
+      <%= datetime_local_field_tag 'reminder[start_time]', nil, id: "reminder-start-time-#{relay_index}", class: 'form-control form-control-lg', style: 'font-size: 18px;' %>
     </div>
 
-    <!-- Repeat Type Select Field -->
-    <div class="form-group">
-      <label for="repeat_type">Kiểu lặp lại:</label>
-      <%= select_tag :repeat_type, options_for_select([['Không lặp lại', 'none'], ['Hằng ngày', 'daily'], ['Hằng tuần', 'weekly'], ['Hằng tháng', 'monthly']]), id: 'reminder-repeat-type', class: 'form-control' %>
+    <div class="form-group" style="margin-bottom: 20px; display: flex; align-items: center;">
+      <div style="flex: 1; margin-right: 10px;">
+        <input type="number" id="reminder-duration-input-<%= relay_index %>" min="1" class="form-control form-control-lg" placeholder="Nhập thời gian" style="font-size: 18px;">
+      </div>
+      <div style="flex: 1;">
+        <select id="reminder-duration-unit-<%= relay_index %>" class="form-select form-select-lg" style="font-size: 18px;">
+          <option value="seconds">Giây</option>
+          <option value="minutes" selected>Phút</option>
+        </select>
+      </div>
     </div>
-    
-    <!-- Submit Button for Timer -->
-    <br><br>
-    <div style="text-align: right; margin-top: 20px;">
-      <%= submit_tag 'Hẹn giờ', class: 'btn btn-success' %>
+
+    <%= hidden_field_tag 'reminder[duration]', nil, id: "reminder-duration-#{relay_index}" %>
+
+    <div class="form-group" style="margin-bottom: 20px;">
+      <%= select_tag 'reminder[repeat_type]', options_for_select([['Không lặp lại', 'none'], ['Hằng ngày', 'daily'], ['Hằng tuần', 'weekly'], ['Hằng tháng', 'monthly']], 'daily'), id: "reminder-repeat-type-#{relay_index}", class: 'form-select form-select-lg', style: 'font-size: 18px;' %>
+    </div>
+
+    <div style="text-align: right; margin-top: 30px;">
+      <%= submit_tag 'Hẹn giờ', class: 'btn btn-success btn-lg', style: 'font-size: 18px; padding: 10px 20px;' %>
     </div>
   <% end %>
 </div>
-<br>
-<br>
-<!-- Reminders List -->
-<div class="reminders>" id="reminders" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+
+<!-- Danh sách Hẹn giờ -->
+<div class="reminders" id="reminders" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h3>Danh sách Hẹn giờ</h3>
-    <!-- Toggle for Enabling/Disabling Reminders -->
     <div class="form-check form-switch large-toggle">
       <input 
         type="checkbox" 
@@ -109,10 +95,7 @@
         data-chip-id="<%= chip_id %>" 
         data-relay-index="<%= relay_index %>" 
         <%= @device_info['relays'][relay_index]['is_reminders_active'] ? 'checked' : '' %> 
-        
       >
-      <label class="form-check-label" style="display: none" for="toggle-reminders-active-<%= relay_index %>">ON / OFF</label>
-
     </div>
   </div>
 
@@ -122,7 +105,7 @@
         <thead>
           <tr>
             <th>Ngày và giờ bắt đầu</th>
-            <th>Thời gian hoạt động (phút)</th>
+            <th>Thời gian hoạt động</th>
             <th>Kiểu lặp lại</th>
             <th>Thao tác</th>
           </tr>
@@ -132,28 +115,34 @@
             <tr>
               <td>
                 <% if reminder['start_time'].present? && reminder['start_time'] != "null" %>
-                  <%= Time.parse(reminder['start_time']).strftime('%Y-%m-%d %H:%M:%S') %>
+                  <%= Time.parse(reminder['start_time']).strftime('%d/%m/%Y %H:%M:%S') %>
                 <% else %>
                   Không có thời gian
                 <% end %>
               </td>
-              <td><%= reminder['duration'] / 60000 %> phút</td> <!-- Assuming duration is in milliseconds -->
+              <td>
+                <% duration_ms = reminder['duration'].to_i %>
+                <% hours = duration_ms / (1000 * 60 * 60) %>
+                <% minutes = (duration_ms / (1000 * 60)) % 60 %>
+                <% seconds = (duration_ms / 1000) % 60 %>
+                <%= "#{hours} giờ, #{minutes} phút, #{seconds} giây" %>
+              </td>
               <td>
                 <%= case reminder['repeat_type']
-                    when 'none'
-                      'Không lặp lại'
-                    when 'daily'
-                      'Hằng ngày'
-                    when 'weekly'
-                      'Hằng tuần'
-                    when 'monthly'
-                      'Hằng tháng'
-                    else
-                      'Không xác định'
+                    when 'none' then 'Không lặp lại'
+                    when 'daily' then 'Hằng ngày'
+                    when 'weekly' then 'Hằng tuần'
+                    when 'monthly' then 'Hằng tháng'
+                    else 'Không xác định'
                   end %>
               </td>
               <td>
-                <%= button_to 'Xoá', remove_reminder_message_devices_path(tab_index: relay_index, chip_id: @device.chip_id, start_time: reminder['start_time']), method: :post, data: { confirm: 'Bạn có chắc chắn muốn xoá?' }, class: 'btn btn-danger' %>
+                <%= form_tag('/api/devices/remove_reminder', method: :post) do %>
+                  <%= hidden_field_tag :device_id, chip_id %>
+                  <%= hidden_field_tag :relay_index, relay_index %>
+                  <%= hidden_field_tag :reminder_index, index %>
+                  <%= submit_tag 'Xóa', class: 'btn btn-danger btn-sm' %>
+                <% end %>
               </td>
             </tr>
           <% end %>
@@ -165,4 +154,59 @@
   <% end %>
 </div>
 
-<br>
+<!-- Scripts -->
+<script>
+function updateLonglast(form, relayIndex) {
+  const inputField = document.getElementById(`longlast-input-${relayIndex}`);
+  const unitField = document.getElementById(`longlast-unit-${relayIndex}`);
+  const hiddenField = document.getElementById(`longlast-hidden-${relayIndex}`);
+
+  if (inputField && unitField && hiddenField) {
+    const rawValue = inputField.value.trim();
+    if (!rawValue) {
+      alert("Vui lòng nhập thời gian!");
+      return false;
+    }
+
+    const value = parseInt(rawValue, 10);
+    if (isNaN(value) || value <= 0) {
+      alert("Thời gian phải là số nguyên dương!");
+      return false;
+    }
+
+    const multiplier = unitField.value === 'minutes' ? 60 : 1;
+    hiddenField.value = value * multiplier; 
+    return true;
+  }
+
+  alert("Lỗi khi xử lý dữ liệu, vui lòng thử lại.");
+  return false;
+}
+
+function updateDuration(form, relayIndex) {
+  const inputField = document.getElementById(`reminder-duration-input-${relayIndex}`);
+  const unitField = document.getElementById(`reminder-duration-unit-${relayIndex}`);
+  const hiddenField = document.getElementById(`reminder-duration-${relayIndex}`);
+
+  if (inputField && unitField && hiddenField) {
+    const rawValue = inputField.value.trim();
+    if (!rawValue) {
+      alert("Vui lòng nhập thời gian hoạt động!");
+      return false;
+    }
+
+    const value = parseInt(rawValue, 10);
+    if (isNaN(value) || value <= 0) {
+      alert("Thời gian phải là số nguyên dương!");
+      return false;
+    }
+
+    const multiplier = unitField.value === 'minutes' ? 60 : 1;
+    hiddenField.value = value * multiplier * 1000;
+    return true;
+  }
+
+  alert("Lỗi khi xử lý dữ liệu, vui lòng thử lại.");
+  return false;
+}
+</script>

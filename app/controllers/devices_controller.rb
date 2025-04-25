@@ -77,6 +77,7 @@ class DevicesController < ApplicationController
     message_hash["longlast"] = params[:longlast].to_i * 1000 if params[:longlast].present?
     message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
     message_hash["is_reminders_active"] = params[:is_reminders_active].to_i if params[:is_reminders_active].present?
+    message_hash["sent_time"] = Time.current.strftime('%Y-%m-%d %H:%M:%S')
     # Chuyển đổi hash thành JSON
     message = message_hash.to_json
     puts "#message json: #{message}"
@@ -203,7 +204,6 @@ class DevicesController < ApplicationController
         current_message = JSON.generate(message)
         if json_message.to_s != current_message.to_s
           ActionCable.server.broadcast('mqtt_channel', current_message)
-          puts "$$$$$$$$$$$$$$$$$"
           json_message = current_message
           handle_device_init(JSON.parse(json_message))
         end

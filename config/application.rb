@@ -16,6 +16,8 @@ module RubyGettingStarted
     
     # Ensure Active Record stores times in the database in UTC, but uses local time elsewhere
     config.active_record.default_timezone = :local
+    config.i18n.default_locale = :vi
+
 
     # Configuration for the application, engines, and railties goes here.
     #

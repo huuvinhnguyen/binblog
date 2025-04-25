@@ -1,26 +1,39 @@
-
 <%= render partial: 'shared/nav_menu', locals: { menu_items: [
   { label: 'Danh sách thiết bị', href: '#home', active: true },
 ] } %>
 
-<div>
-  <table class = "table">
-  <thead>
-    <th>Tên</th>  
-    <th>ID</th>  
-    <th>Thao tác</th>
-  </thead>
+<div class="mt-4">
+  <h2 class="mb-4 text-center">Danh sách thiết bị</h2>
 
-  <% @devices.each do |device| %>
-    <tr>
-      <td><%= link_to device.name, device_path(device) %></td>
-      <td><%= device.chip_id%></td>
-      <td>Truy cập</td>
-    </tr>
-  <% end %>
-  <tr>
-</tr>
-</table>
-
+  <table class="table table-bordered table-hover shadow-sm">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">📱 Tên thiết bị</th>   
+        <th scope="col">🕒 Hoạt động</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @devices.each do |device| %>
+        <% info = device.device_info.present? ? JSON.parse(device.device_info) : {} %>
+        <tr>
+          <td>
+            <%= link_to device.name, device_path(device), class: "text-decoration-none fw-bold text-primary" %>
+            <small class="text-muted d-block"><%= device.chip_id %></small>
+          </td>
+          <td>
+            <span class="text-muted">
+              <% if info['last_seen'].present? %>
+                <%= time_ago_in_words(Time.parse(info['last_seen'])) %> trước
+              <% else %>
+                Không rõ
+              <% end %>
+            </span>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>
+
+
 

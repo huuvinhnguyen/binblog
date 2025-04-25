@@ -7,14 +7,19 @@ Rails.application.routes.draw do
       collection do
         post :receive_info
         post :add_reminder
+        post :remove_reminder
+        post :set_reminders_active
         get :device_info  
         post :trigger
+        post :switchon
+        post :set_longlast
+        post :restart
+        post :update_last_seen
       end
     end
   end
 
   get 'devices/index'
-  get 'devices/switchon_ab'
   get 'devices/show'
   get 'devices/new'
   get 'devices/create'

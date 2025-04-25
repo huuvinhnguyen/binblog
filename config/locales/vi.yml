@@ -36,4 +36,40 @@ vi:
           present: Có mặt
           absent: Vắng mặt
           late: Đi trễ
+  datetime:
+    distance_in_words:
+      half_a_minute: "nửa phút"
+      less_than_x_seconds:
+        one: "1 giây"
+        other: "%{count} giây"
+      x_seconds:
+        one: "1 giây"
+        other: "%{count} giây"
+      less_than_x_minutes:
+        one: "1 phút"
+        other: "%{count} phút"
+      x_minutes:
+        one: "1 phút"
+        other: "%{count} phút"
+      about_x_hours:
+        one: "khoảng 1 giờ"
+        other: "khoảng %{count} giờ"
+      x_days:
+        one: "1 ngày"
+        other: "%{count} ngày"
+      about_x_months:
+        one: "khoảng 1 tháng"
+        other: "khoảng %{count} tháng"
+      x_months:
+        one: "1 tháng"
+        other: "%{count} tháng"
+      about_x_years:
+        one: "khoảng 1 năm"
+        other: "khoảng %{count} năm"
+      over_x_years:
+        one: "hơn 1 năm"
+        other: "hơn %{count} năm"
+      almost_x_years:
+        one: "gần 1 năm"
+        other: "gần %{count} năm"
 
