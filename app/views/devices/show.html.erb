@@ -59,6 +59,11 @@
     </div>
   <% end %>
 
+  <div>
+    <span>🆔 </span>  
+    <small class="text-muted "><%= @device.chip_id %></small>
+  </div>
+
   <!-- Nút Khởi động lại -->
   <div class="text-center mt-4">
     <%= button_to "🔁 Khởi động lại thiết bị", "/api/devices/restart", method: :post,

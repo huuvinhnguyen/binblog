@@ -8,9 +8,8 @@
   <table class="table table-bordered table-hover shadow-sm">
     <thead class="thead-light">
       <tr>
-        <th scope="col">📱 Tên thiết bị</th>  
-        <th scope="col">🆔 Chip ID</th>  
-        <th scope="col">🕒 Lần hoạt động cuối</th>
+        <th scope="col">📱 Tên thiết bị</th>   
+        <th scope="col">🕒 Hoạt động</th>
       </tr>
     </thead>
     <tbody>
@@ -19,8 +18,8 @@
         <tr>
           <td>
             <%= link_to device.name, device_path(device), class: "text-decoration-none fw-bold text-primary" %>
+            <small class="text-muted d-block"><%= device.chip_id %></small>
           </td>
-          <td><%= device.chip_id %></td>
           <td>
             <span class="text-muted">
               <% if info['last_seen'].present? %>
