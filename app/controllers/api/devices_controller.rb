@@ -291,6 +291,19 @@ module Api
       render json: { status: 'ok', message: 'Restart command sent' }
     end
 
+    def set_offline_mode
+      topic = "#{params[:chip_id]}/set_offline_mode"
+      client = mqtt_client
+      message = {
+          "action": "set_offline_mode",
+          "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+       }.to_json
+  
+      client.publish(topic, message) if topic.present?
+      client.disconnect()
+      render json: { status: 'ok', message: 'Set offline command sent' }
+    end
+
     def update_last_seen
       device = Device.find_by(chip_id: params[:chip_id])
     
