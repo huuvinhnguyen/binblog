@@ -58,3 +58,12 @@ gem 'slack-notifier'
 gem 'devise'
 gem 'rolify'
 
+group :development, :test do
+    gem 'rspec-rails'
+end  
+
+group :test do
+    gem 'sqlite3', '~> 1.4'
+end
+
+  
