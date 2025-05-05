@@ -68,17 +68,18 @@ class Reminder < ActiveRecord::Base
 
     def cancel_scheduled_job!
       return unless job_jid.present?
-
+    
       scheduled_set = Sidekiq::ScheduledSet.new
-      scheduled_set.each do |job|
-        if job.jid == job_jid
-          job.delete
-          puts "Đã huỷ job #{job_jid} cho reminder #{id}"
-          break
-        end
+      job = scheduled_set.find { |j| j.jid == job_jid }
+    
+      if job
+        job.delete
+        Rails.logger.info "Đã huỷ job #{job_jid} cho reminder #{id}"
+      else
+        Rails.logger.warn "Không tìm thấy job #{job_jid} để huỷ cho reminder #{id}"
       end
-      update(job_jid: nil)
     end
+    
 
     
     private
