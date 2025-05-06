@@ -134,10 +134,16 @@ module Api
         return render json: { error: "Device not found" }, status: :not_found
       end
 
+      # Phân tích start_time theo múi giờ của ứng dụng
+      start_time = Time.zone.parse(params[:start_time]) rescue nil
+      unless start_time
+        return render json: { error: "Invalid start_time format" }, status: :unprocessable_entity
+      end
+
       reminder = Reminder.new(
         device: device,
         relay_index: params[:relay_index],
-        start_time: params[:start_time],
+        start_time: start_time,
         duration: params[:duration],
         repeat_type: params[:repeat_type]
       )
@@ -191,7 +197,7 @@ module Api
           device_info['relays'].each_with_index do |relay, index|
             reminders = Reminder.where(device_id: device.id, relay_index: index).map do |reminder|
               {
-                start_time: reminder.start_time&.strftime('%Y-%m-%dT%H:%M'),
+                start_time: reminder.start_time&.in_time_zone('Asia/Ho_Chi_Minh')&.strftime('%Y-%m-%dT%H:%M'),
                 duration: reminder.duration,
                 repeat_type: reminder.repeat_type
               }
@@ -202,7 +208,12 @@ module Api
           end
         end
         
-        render json: { status: 'success', device_info: device_info }, status: :ok
+        render json: {
+          status: 'success',
+          server_time: Time.current.in_time_zone('Asia/Ho_Chi_Minh').iso8601,
+          device_info: device_info
+        }, status: :ok
+
       else
         render json: { status: 'error', message: 'Device not found' }, status: :not_found
       end
@@ -246,8 +257,28 @@ module Api
     
     def set_longlast
       message = params.permit(:device_id, :longlast, :relay_index)
+
+      topic = "#{message[:device_id]}/switchon"
+      message_hash = {}
     
-      success = SwitchOnService.new(
+      # Kiểm tra và thêm các tham số vào hash
+      message_hash["relay_index"] = message[:relay_index] if message[:relay_index].present?
+      message_hash["longlast"] = message[:longlast].to_i if message[:longlast].present?
+      message_hash["sent_time"] = Time.current.strftime('%Y-%m-%d %H:%M:%S')
+      # Chuyển đổi hash thành JSON
+      message_json = message_hash.to_json
+      puts "#message json: #{message}"
+    
+      client = MQTT::Client.connect(
+        host: '103.9.77.155',
+        port: 1883
+      )
+    
+      client.publish(topic, message_json, retain: false) if topic.present?
+      client.disconnect()
+      
+    
+      success = SwitchOnDurationService.new(
         message[:device_id],
         longlast: message[:longlast]&.to_i,
         relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil

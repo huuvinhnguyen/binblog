@@ -17,8 +17,8 @@
 
 <!-- Form KÍCH HOẠT theo thời gian -->
 <div style="border: 2px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 30px; background-color: #f8f9fa;">
-  <%= form_tag('/devices/switchon', method: 'post', onsubmit: "return updateLonglast(this, #{relay_index})") do %>
-    <%= hidden_field_tag :chip_id, chip_id %>
+  <%= form_tag('/api/devices/set_longlast', method: 'post', onsubmit: "return updateLonglast(this, #{relay_index})") do %>
+    <%= hidden_field_tag :device_id, chip_id %>
     <%= hidden_field_tag :relay_index, relay_index %>
     <%= hidden_field_tag :longlast, "", id: "longlast-hidden-#{relay_index}" %>
 
@@ -171,7 +171,7 @@ function updateLonglast(form, relayIndex) {
     }
 
     const multiplier = unitField.value === 'minutes' ? 60 : 1;
-    hiddenField.value = value * multiplier; 
+    hiddenField.value = value * multiplier * 1000; 
     return true;
   }
 

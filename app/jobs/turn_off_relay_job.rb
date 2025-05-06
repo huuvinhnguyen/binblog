@@ -17,28 +17,28 @@ class TurnOffRelayJob
       device.update(device_info: device_info.to_json)
   
       puts "TurnOffRelayJob: Đã tắt relay #{relay_index} của thiết bị #{device_id}"
-      refresh device_id
+      # refresh device_id
     end
 
-    private
-    def mqtt_client
-      MQTT::Client.connect(
-        host: MQTT_CONFIG["host"],
-        port: MQTT_CONFIG["port"]
-      )
-    end
+    # private
+    # def mqtt_client
+    #   MQTT::Client.connect(
+    #     host: MQTT_CONFIG["host"],
+    #     port: MQTT_CONFIG["port"]
+    #   )
+    # end
 
-    def refresh chip_id
-      topic = "#{chip_id}/refresh"
+    # def refresh chip_id
+    #   topic = "#{chip_id}/refresh"
   
-      client = mqtt_client
-      message = {
-          "action": "refresh",
-          "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
-       }.to_json
+    #   client = mqtt_client
+    #   message = {
+    #       "action": "refresh",
+    #       "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+    #    }.to_json
   
-      client.publish(topic, message) if topic.present?
-      client.disconnect()
+    #   client.publish(topic, message) if topic.present?
+    #   client.disconnect()
   
-    end
+    # end
 end
