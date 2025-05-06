@@ -55,7 +55,8 @@
     <%= hidden_field_tag :relay_index, relay_index %>
 
     <div class="form-group" style="margin-bottom: 20px;">
-      <%= datetime_local_field_tag :start_time, nil, id: "reminder-start-time-#{relay_index}", class: 'form-control form-control-lg', style: 'font-size: 18px;' %>
+      <%= datetime_local_field_tag :start_time, Time.current.in_time_zone('Asia/Ho_Chi_Minh').strftime('%Y-%m-%dT%H:%M'), id: "reminder-start-time-#{relay_index}", class: 'form-control form-control-lg', style: 'font-size: 18px;' %>
+
     </div>
 
     <div class="form-group" style="margin-bottom: 20px; display: flex; align-items: center;">

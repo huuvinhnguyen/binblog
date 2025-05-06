@@ -197,7 +197,7 @@ module Api
           device_info['relays'].each_with_index do |relay, index|
             reminders = Reminder.where(device_id: device.id, relay_index: index).map do |reminder|
               {
-                start_time: reminder.start_time&.in_time_zone('Asia/Ho_Chi_Minh')&.strftime('%Y-%m-%dT%H:%M'),
+                start_time: reminder.start_time&.in_time_zone('Asia/Ho_Chi_Minh')&.iso8601,
                 duration: reminder.duration,
                 repeat_type: reminder.repeat_type
               }
