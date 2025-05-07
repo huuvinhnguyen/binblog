@@ -209,8 +209,8 @@ module Api
         end
         
         render json: {
-          status: 'success',
-          server_time: Time.current.in_time_zone('Asia/Ho_Chi_Minh').iso8601,
+          status: 'success',          
+          server_time: Time.current.strftime('%Y-%m-%dT%H:%M:%S'),
           device_info: device_info
         }, status: :ok
 
