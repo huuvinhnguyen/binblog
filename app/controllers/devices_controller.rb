@@ -111,15 +111,6 @@ class DevicesController < ApplicationController
 
   end
 
-  def switchon_ab
-    notifier = Slack::Notifier.new "https://abc.com" do
-      defaults channel: "general",
-               username: "khuonvien"
-    end
-    
-    notifier.ping "Hello default"
-  end
-
   def notify 
     # Parse JSON từ request body
     json_data = JSON.parse(request.body.read)
