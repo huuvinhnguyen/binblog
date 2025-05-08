@@ -318,6 +318,8 @@ module Api
       # Parse device_info JSON hiện tại
       device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
       device_info["last_seen"] = Time.current.to_s
+      device_info["local_ip"] = params["local_ip"] || ""
+      device_info["build_version"] = params["build_version"] || ""
       device.update(device_info: device_info.to_json)
     
       render json: {
