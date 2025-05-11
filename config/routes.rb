@@ -15,6 +15,7 @@ Rails.application.routes.draw do
         post :set_longlast
         post :restart
         post :update_last_seen
+        post :update_version
       end
     end
   end

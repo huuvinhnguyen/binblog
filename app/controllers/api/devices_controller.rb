@@ -193,7 +193,7 @@ module Api
     
       if device
         device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
-        device_info['update_url'] = "http://khuonvien.vn/esp/lastest.bin"
+        device_info['update_url'] = "http://khuonvien.com/lastest_version.bin"
         if device_info['relays'].present?
           device_info['relays'].each_with_index do |relay, index|
             reminders = Reminder.where(device_id: device.id, relay_index: index).map do |reminder|
@@ -333,8 +333,21 @@ module Api
     rescue => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
-    
-    
+
+    def update_version
+      topic = "#{params[:chip_id]}/update_version"
+      client = mqtt_client
+      message = {
+          "action": "update_version",
+          "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+       }.to_json
+  
+      client.publish(topic, message) if topic.present?
+      client.disconnect()
+      render json: { status: 'ok', message: 'Update version command sent', topic: topic, message: message }
+      
+    end
+  
     private
 
     def mqtt_client
