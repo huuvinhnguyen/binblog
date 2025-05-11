@@ -135,6 +135,7 @@ module Api
       end
 
       # Phân tích start_time theo múi giờ của ứng dụng
+      
       start_time = Time.zone.parse(params[:start_time]) rescue nil
       unless start_time
         return render json: { error: "Invalid start_time format" }, status: :unprocessable_entity
@@ -192,7 +193,7 @@ module Api
     
       if device
         device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
-    
+        device_info['update_url'] = "http://khuonvien.vn/esp/lastest.bin"
         if device_info['relays'].present?
           device_info['relays'].each_with_index do |relay, index|
             reminders = Reminder.where(device_id: device.id, relay_index: index).map do |reminder|
@@ -319,13 +320,15 @@ module Api
       device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
       device_info["last_seen"] = Time.current.to_s
       device_info["local_ip"] = params["local_ip"] || ""
-      device_info["build_version"] = params["build_version"] || ""
+      device_info["build_version"] = params[:build_version] || 0
+      device_info["app_version"] = params[:app_version] || ""
       device.update(device_info: device_info.to_json)
     
       render json: {
         status: 'success',
         message: 'Device last seen time updated',
-        last_seen: device.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+        last_seen: device.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+
       }, status: :ok
     rescue => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
