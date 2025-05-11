@@ -193,7 +193,7 @@ module Api
     
       if device
         device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
-        device_info['update_url'] = "http://khuonvien.com/lastest_version.bin"
+        device_info['update_url'] = "https://khuonvien.com/latest_version.bin"
         if device_info['relays'].present?
           device_info['relays'].each_with_index do |relay, index|
             reminders = Reminder.where(device_id: device.id, relay_index: index).map do |reminder|
