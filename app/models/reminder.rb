@@ -9,8 +9,9 @@ class Reminder < ActiveRecord::Base
     validates :repeat_type, presence: true, inclusion: { in: REPEAT_TYPES }
     validates :duration, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   
-    before_save :parse_start_time_to_next_trigger
+    after_create :schedule_immediate_job_if_soon
     before_destroy :cancel_scheduled_job!
+    
 
     # after_commit :schedule_job, on: [:create, :update]
   
@@ -59,9 +60,12 @@ class Reminder < ActiveRecord::Base
 
     # Public
     def schedule_next_job!
+      return unless enabled?
+      return if job_jid.present?
+    
       next_time = next_trigger_time
       return unless next_time
-
+    
       jid = ActivateRelayJob.perform_at(next_time, id)
       update(job_jid: jid)
     end
@@ -79,20 +83,34 @@ class Reminder < ActiveRecord::Base
         Rails.logger.warn "Không tìm thấy job #{job_jid} để huỷ cho reminder #{id}"
       end
     end
-    
 
+    def turn_off_time
+      return nil if duration.blank? || duration <= 0
+  
+      trigger_time = next_trigger_time
+      return nil unless trigger_time
+  
+      trigger_time + duration.seconds
+    end
     
     private
 
-    def schedule_job
-        ReminderSchedulerService.new(self).schedule!
+    def schedule_turn_off_job!
+      return unless enabled?
+      return unless next_trigger_time && duration && duration > 0
+    
+      off_time = next_trigger_time + duration.seconds
+      return if off_time < Time.zone.now
+    
+      TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index)
     end
-  
-    def parse_start_time_to_next_trigger
-      return if repeat_type == "once"
-  
-      self.last_triggered_at = next_trigger_time
+
+    def schedule_immediate_job_if_soon
+      if next_trigger_time.present? && next_trigger_time <= 5.minutes.from_now
+        schedule_next_job!
+      end
     end
+    
 
   end
   
