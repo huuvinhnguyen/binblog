@@ -78,7 +78,6 @@ module Api
       message = params.permit(:device_id, :relay_index, :is_reminders_active)
     
       device = Device.find_by(chip_id: message[:device_id])
-    
       unless device
         return render json: { status: 'error', message: 'Device not found' }, status: :not_found
       end
@@ -103,22 +102,20 @@ module Api
       device.device_info = device_info.to_json
     
       if device.save
-
-        # Bật hoặc tắt các reminders tương ứng
-        if is_active
-          # BẬT lại các reminders chưa có job (đã từng bị tắt)
-          device.reminders.where(relay_index: relay_index).find_each do |reminder|
-            # Kiểm tra nếu chưa có job_jid thì lên lịch lại
-            next if reminder.job_jid.present?
-            reminder.schedule_next_job!
-          end
-        else
-          # TẮT các reminders đang hoạt động (xóa job hiện tại)
-          device.reminders.where(relay_index: relay_index).find_each do |reminder|
+        # Cập nhật reminders
+        device.reminders.where(relay_index: relay_index).find_each do |reminder|
+          if is_active
+            unless reminder.enabled?
+              reminder.update(enabled: true)
+              reminder.schedule_next_job! unless reminder.job_jid.present?
+              reminder.schedule_turn_off_job!
+            end
+          else
             reminder.cancel_scheduled_job!
+            reminder.update(enabled: false)
           end
         end
-
+    
         refresh message[:device_id]
         render json: { status: 'success', message: 'is_reminders_active updated successfully' }, status: :ok
       else
@@ -127,6 +124,7 @@ module Api
     rescue => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
+    
     
     def add_reminder
       device = Device.find_by(chip_id: params[:device_id])

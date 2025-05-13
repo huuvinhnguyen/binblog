@@ -1,6 +1,11 @@
+require 'sidekiq/web'
+require 'sidekiq/cron/web' # <- Dòng này để hiện tab "Cron"
+
 Rails.application.routes.draw do
   devise_for :users
   mount ActionCable.server => '/cable'
+  # mount Sidekiq::Web => '/sidekiq'
+  mount Sidekiq::Web => '/sidekiq'
 
   namespace :api do
     resources :devices, only: [] do

@@ -4,6 +4,9 @@ require 'active_support/testing/time_helpers'
 
 RSpec.describe Reminder, type: :model do
   let(:device) { Device.create!(name: "Test Device", chip_id: SecureRandom.hex(4)) }
+  include ActiveSupport::Testing::TimeHelpers
+
+  let(:reminder) { create(:reminder, device: device) }
 
 
   around do |example|
@@ -124,6 +127,14 @@ RSpec.describe Reminder, type: :model do
       )
 
       expect(reminder.next_trigger_time).to be_nil
+    end
+
+    context "when start_time is invalid" do
+        it "returns nil if start_time is not a valid time" do
+          reminder.update(start_time: nil)
+          next_time = reminder.next_trigger_time
+          expect(next_time).to be_nil
+        end
     end
   end
 end
