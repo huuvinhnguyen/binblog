@@ -71,16 +71,26 @@ class Reminder < ActiveRecord::Base
     end
 
     def cancel_scheduled_job!
-      return unless job_jid.present?
-    
       scheduled_set = Sidekiq::ScheduledSet.new
-      job = scheduled_set.find { |j| j.jid == job_jid }
-    
-      if job
-        job.delete
-        Rails.logger.info "Đã huỷ job #{job_jid} cho reminder #{id}"
-      else
-        Rails.logger.warn "Không tìm thấy job #{job_jid} để huỷ cho reminder #{id}"
+
+      if job_jid.present?
+        job = scheduled_set.find { |j| j.jid == job_jid }
+        if job
+          job.delete
+          Rails.logger.info "Đã huỷ ActivateRelayJob #{job_jid} cho reminder #{id}"
+        else
+          Rails.logger.warn "Không tìm thấy ActivateRelayJob #{job_jid} để huỷ cho reminder #{id}"
+        end
+      end
+
+      if turn_off_jid.present?
+        off_job = scheduled_set.find { |j| j.jid == turn_off_jid }
+        if off_job
+          off_job.delete
+          Rails.logger.info "Đã huỷ TurnOffRelayJob #{turn_off_jid} cho reminder #{id}"
+        else
+          Rails.logger.warn "Không tìm thấy TurnOffRelayJob #{turn_off_jid} để huỷ cho reminder #{id}"
+        end
       end
     end
 
@@ -90,27 +100,25 @@ class Reminder < ActiveRecord::Base
       trigger_time = next_trigger_time
       return nil unless trigger_time
   
-      trigger_time + duration.seconds
-    end
-    
-    private
-
-    def schedule_turn_off_job!
-      return unless enabled?
-      return unless next_trigger_time && duration && duration > 0
-    
-      off_time = next_trigger_time + duration.seconds
-      return if off_time < Time.zone.now
-    
-      TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index)
+      trigger_time + (duration / 1_000).seconds
     end
 
     def schedule_immediate_job_if_soon
+      
       if next_trigger_time.present? && next_trigger_time <= 5.minutes.from_now
         schedule_next_job!
+        schedule_turn_off_job!
       end
     end
     
+    def schedule_turn_off_job!
+    
+      off_time = next_trigger_time + (duration / 1_000).seconds
+      return if off_time < Time.zone.now
+
+      jid = TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index)
+      update(turn_off_jid: jid)
+    end
 
   end
   
