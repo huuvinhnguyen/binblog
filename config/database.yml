@@ -8,4 +8,19 @@ development:
   database: u200682234_bin1
   port: 3306
 
+production:
+  adapter: mysql2
+  encoding: utf8mb4
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: u200682234_bin1
+  password: Pleiku@2025
+  host: srv612.hstgr.io
+  database: u200682234_bin1
+  port: 3306
 
+
+test:
+  adapter: sqlite3
+  database: db/test.sqlite3
+  pool: 5
+  timeout: 5000

@@ -17,8 +17,8 @@
 
 <!-- Form KÍCH HOẠT theo thời gian -->
 <div style="border: 2px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 30px; background-color: #f8f9fa;">
-  <%= form_tag('/devices/switchon', method: 'post', onsubmit: "return updateLonglast(this, #{relay_index})") do %>
-    <%= hidden_field_tag :chip_id, chip_id %>
+  <%= form_tag('/api/devices/set_longlast', method: 'post', onsubmit: "return updateLonglast(this, #{relay_index})") do %>
+    <%= hidden_field_tag :device_id, chip_id %>
     <%= hidden_field_tag :relay_index, relay_index %>
     <%= hidden_field_tag :longlast, "", id: "longlast-hidden-#{relay_index}" %>
 
@@ -55,7 +55,8 @@
     <%= hidden_field_tag :relay_index, relay_index %>
 
     <div class="form-group" style="margin-bottom: 20px;">
-      <%= datetime_local_field_tag 'reminder[start_time]', nil, id: "reminder-start-time-#{relay_index}", class: 'form-control form-control-lg', style: 'font-size: 18px;' %>
+      <%= datetime_local_field_tag :start_time, Time.current.in_time_zone('Asia/Ho_Chi_Minh').strftime('%Y-%m-%dT%H:%M'), id: "reminder-start-time-#{relay_index}", class: 'form-control form-control-lg', style: 'font-size: 18px;' %>
+
     </div>
 
     <div class="form-group" style="margin-bottom: 20px; display: flex; align-items: center;">
@@ -70,10 +71,10 @@
       </div>
     </div>
 
-    <%= hidden_field_tag 'reminder[duration]', nil, id: "reminder-duration-#{relay_index}" %>
+    <%= hidden_field_tag :duration, nil, id: "reminder-duration-#{relay_index}" %>
 
     <div class="form-group" style="margin-bottom: 20px;">
-      <%= select_tag 'reminder[repeat_type]', options_for_select([['Không lặp lại', 'none'], ['Hằng ngày', 'daily'], ['Hằng tuần', 'weekly'], ['Hằng tháng', 'monthly']], 'daily'), id: "reminder-repeat-type-#{relay_index}", class: 'form-select form-select-lg', style: 'font-size: 18px;' %>
+      <%= select_tag :repeat_type, options_for_select([['Không lặp lại', 'none'], ['Hằng ngày', 'daily'], ['Hằng tuần', 'weekly'], ['Hằng tháng', 'monthly']], 'daily'), id: "reminder-repeat-type-#{relay_index}", class: 'form-select form-select-lg', style: 'font-size: 18px;' %>
     </div>
 
     <div style="text-align: right; margin-top: 30px;">
@@ -95,11 +96,13 @@
         data-chip-id="<%= chip_id %>" 
         data-relay-index="<%= relay_index %>" 
         <%= @device_info['relays'][relay_index]['is_reminders_active'] ? 'checked' : '' %> 
+
       >
     </div>
   </div>
 
-  <% if @device_info['relays'][relay_index]['reminders'].present? %>
+  <% filtered_reminders = @device.reminders.where(relay_index: relay_index).order(:start_time) %>
+  <% if filtered_reminders.any? %>
     <div class="reminders-list-<%= relay_index %>" id="reminders-list-<%= relay_index %>">
       <table class="table">
         <thead>
@@ -111,24 +114,18 @@
           </tr>
         </thead>
         <tbody>
-          <% @device_info['relays'][relay_index]['reminders'].each_with_index do |reminder, index| %>
+          <% filtered_reminders.each do |reminder| %>
             <tr>
+              <td><%= reminder.start_time.strftime('%d/%m/%Y %H:%M:%S') %></td>
               <td>
-                <% if reminder['start_time'].present? && reminder['start_time'] != "null" %>
-                  <%= Time.parse(reminder['start_time']).strftime('%d/%m/%Y %H:%M:%S') %>
-                <% else %>
-                  Không có thời gian
-                <% end %>
-              </td>
-              <td>
-                <% duration_ms = reminder['duration'].to_i %>
+                <% duration_ms = reminder.duration.to_i %>
                 <% hours = duration_ms / (1000 * 60 * 60) %>
                 <% minutes = (duration_ms / (1000 * 60)) % 60 %>
                 <% seconds = (duration_ms / 1000) % 60 %>
                 <%= "#{hours} giờ, #{minutes} phút, #{seconds} giây" %>
               </td>
               <td>
-                <%= case reminder['repeat_type']
+                <%= case reminder.repeat_type
                     when 'none' then 'Không lặp lại'
                     when 'daily' then 'Hằng ngày'
                     when 'weekly' then 'Hằng tuần'
@@ -140,7 +137,7 @@
                 <%= form_tag('/api/devices/remove_reminder', method: :post) do %>
                   <%= hidden_field_tag :device_id, chip_id %>
                   <%= hidden_field_tag :relay_index, relay_index %>
-                  <%= hidden_field_tag :reminder_index, index %>
+                  <%= hidden_field_tag :start_time, reminder.start_time.iso8601 %>
                   <%= submit_tag 'Xóa', class: 'btn btn-danger btn-sm' %>
                 <% end %>
               </td>
@@ -175,7 +172,7 @@ function updateLonglast(form, relayIndex) {
     }
 
     const multiplier = unitField.value === 'minutes' ? 60 : 1;
-    hiddenField.value = value * multiplier; 
+    hiddenField.value = value * multiplier * 1000; 
     return true;
   }
 

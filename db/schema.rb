@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_01_26_081209) do
+ActiveRecord::Schema[7.0].define(version: 2025_05_14_072728) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -75,6 +75,21 @@ ActiveRecord::Schema[7.0].define(version: 2025_01_26_081209) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "reminders", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "device_id", null: false
+    t.integer "relay_index"
+    t.datetime "start_time"
+    t.integer "duration"
+    t.string "repeat_type"
+    t.datetime "last_triggered_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "job_jid"
+    t.boolean "enabled", default: true, null: false
+    t.string "turn_off_jid"
+    t.index ["device_id"], name: "index_reminders_on_device_id"
   end
 
   create_table "resumes", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -148,6 +163,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_01_26_081209) do
 
   add_foreign_key "attendances", "employees"
   add_foreign_key "fingers", "employees"
+  add_foreign_key "reminders", "devices"
   add_foreign_key "rewards_penalties", "employees"
   add_foreign_key "user_devices", "devices"
   add_foreign_key "user_devices", "users"

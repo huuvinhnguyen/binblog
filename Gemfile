@@ -58,3 +58,14 @@ gem 'slack-notifier'
 gem 'devise'
 gem 'rolify'
 
+group :development, :test do
+    gem 'rspec-rails'
+    gem 'factory_bot_rails'
+    gem 'webmock'  # nếu muốn mock ngoài
+end  
+
+group :test do
+    gem 'sqlite3', '~> 1.4'
+end
+
+  
