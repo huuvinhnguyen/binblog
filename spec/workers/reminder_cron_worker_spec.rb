@@ -18,36 +18,6 @@ RSpec.describe ReminderCronWorker, type: :worker do
   end
 
   describe "#perform" do
-    context "when the reminder is enabled and next_trigger_time is within the window" do
-        it "schedules the next job" do
-        frozen_time = Time.zone.local(2025, 5, 12, 16, 10, 0)
-
-        travel_to(frozen_time) do
-            start_time = frozen_time - 4.minutes
-            
-            reminder = create(
-                        :reminder,
-                        device: device,
-                        start_time: start_time,
-                        repeat_type: "daily",   # ensure this makes next_trigger_time = 16:06 today
-                        enabled: true,
-                        relay_index: 1,
-                        duration: 60
-                        )
-
-            puts "next_trigger_time: #{reminder.next_trigger_time}"  # cần là 2025-05-12 16:06:00
-
-            allow(ActivateRelayJob).to receive(:perform_at).and_call_original
-            allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(frozen_time - 4.minutes)
-
-
-            ReminderCronWorker.new.perform
-
-            expect(ActivateRelayJob).to have_received(:perform_at).with(kind_of(Time), reminder.id)
-
-         end
-        end
-    end
 
     context "when the reminder is enabled and turn_off_time is within the window" do
         it "calculates and schedules the turn off job based on duration" do

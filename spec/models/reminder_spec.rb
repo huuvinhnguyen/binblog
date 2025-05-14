@@ -137,4 +137,150 @@ RSpec.describe Reminder, type: :model do
         end
     end
   end
+
+  describe "#turn_off_time" do
+    context "when duration is nil" do
+      it "returns nil" do
+        reminder = Reminder.new(
+          device: device,
+          relay_index: 0,
+          start_time: 10.minutes.from_now,
+          repeat_type: "once",
+          duration: nil,
+          enabled: true
+        )
+
+        expect(reminder.turn_off_time).to be_nil
+      end
+    end
+
+    context "when duration is less than or equal to 0" do
+      it "returns nil" do
+        reminder = Reminder.new(
+          device: device,
+          relay_index: 0,
+          start_time: 10.minutes.from_now,
+          repeat_type: "once",
+          duration: 0,
+          enabled: true
+        )
+
+        expect(reminder.turn_off_time).to be_nil
+      end
+    end
+
+    context "when trigger time is nil" do
+      it "returns nil" do
+        reminder = Reminder.new(
+          device: device,
+          relay_index: 0,
+          start_time: nil,
+          repeat_type: "once",
+          duration: 60,
+          enabled: true
+        )
+
+        expect(reminder.turn_off_time).to be_nil
+      end
+    end
+  end
+
+  describe "#schedule_immediate_job_if_soon" do
+    context "when next_trigger_time is within 5 minutes" do
+      it "calls schedule_next_job!" do
+        reminder = Reminder.new(
+          device: device,
+          relay_index: 0,
+          start_time: 4.minutes.from_now,  # within 5 minutes
+          repeat_type: "once",
+          duration: 60,
+          enabled: true
+        )
+
+        allow(reminder).to receive(:schedule_next_job!)
+        reminder.send(:schedule_immediate_job_if_soon)
+
+        expect(reminder).to have_received(:schedule_next_job!)
+      end
+    end
+
+    context "when next_trigger_time is more than 5 minutes away" do
+      it "does not call schedule_next_job!" do
+        reminder = Reminder.new(
+          device: device,
+          relay_index: 0,
+          start_time: 10.minutes.from_now, # beyond 5 minutes
+          repeat_type: "once",
+          duration: 60,
+          enabled: true
+        )
+
+        allow(reminder).to receive(:schedule_next_job!)
+        reminder.send(:schedule_immediate_job_if_soon)
+
+        expect(reminder).not_to have_received(:schedule_next_job!)
+      end
+    end
+
+    context "when next_trigger_time is nil" do
+      it "does not call schedule_next_job!" do
+        reminder = Reminder.new(
+          device: device,
+          relay_index: 0,
+          start_time: nil,
+          repeat_type: "once",
+          duration: 60,
+          enabled: true
+        )
+
+        allow(reminder).to receive(:schedule_next_job!)
+        reminder.send(:schedule_immediate_job_if_soon)
+
+        expect(reminder).not_to have_received(:schedule_next_job!)
+      end
+    end
+  end
+
+  describe '#schedule_turn_off_job!' do
+        it 'schedules TurnOffRelayJob and sets turn_off_jid if duration is valid' do
+            reminder = Reminder.create!(
+            device: device,
+            relay_index: 0,
+            start_time: 1.minute.from_now,
+            repeat_type: 'once',
+            duration: 60_000, # 1 minute
+            enabled: true
+            )
+
+            allow(reminder).to receive(:update)
+            allow(TurnOffRelayJob).to receive(:perform_at).and_return("fake-turnoff-jid")
+
+            reminder.send(:schedule_immediate_job_if_soon)
+
+            expect(reminder).to have_received(:update).with(hash_including(turn_off_jid: "fake-turnoff-jid"))
+        end
+    end
+
+    describe '#cancel_scheduled_job!' do
+        it 'does nothing if jobs not found in Sidekiq' do
+            reminder = Reminder.create!(
+            device: device,
+            relay_index: 0,
+            start_time: 5.minutes.from_now,
+            repeat_type: 'once',
+            duration: 60_000,
+            enabled: true,
+            job_jid: "nonexistent-job-jid",
+            turn_off_jid: "nonexistent-turnoff-jid"
+            )
+
+            scheduled_set = double("Sidekiq::ScheduledSet")
+            allow(Sidekiq::ScheduledSet).to receive(:new).and_return(scheduled_set)
+            allow(scheduled_set).to receive(:find).and_return(nil)
+
+            expect {
+            reminder.cancel_scheduled_job!
+            }.not_to raise_error
+        end
+    end
 end

@@ -148,13 +148,8 @@ module Api
       )
 
       if reminder.save
-        # ReminderSchedulerService.schedule(reminder)
-        # render json: { message: "Reminder created and scheduled" }, status: :created
         refresh params[:device_id]
-        ActivateRelayJob.perform_at(reminder.next_trigger_time, reminder.id)
-        puts "next time trigger: " + reminder.next_trigger_time.to_s
         redirect_to device_path(device), notice: "Updated successfully."
-
       else
         render json: { errors: reminder.errors.full_messages }, status: :unprocessable_entity
       end

@@ -6,7 +6,7 @@ Sidekiq.configure_server do |config|
 
   schedule = {
     'reminder_cron_worker' => {
-      'cron' => '*/6 * * * *', # every 6 minutes
+      'cron' => '*/3 * * * *', # every 6 minutes
       'class' => 'ReminderCronWorker',
       'queue' => 'default'
     }
