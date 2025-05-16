@@ -4,7 +4,7 @@ class ReminderCronWorker
   
     def perform
       now = Time.zone.now
-      future_time = now + 5.minutes  
+      future_time = now + 5.minutes   
       Reminder.includes(:device).where(enabled: true).find_each do |reminder|
         
         next unless reminder.start_time.present? && reminder.relay_index.present?
@@ -14,13 +14,13 @@ class ReminderCronWorker
   
         # Bật relay
         
-        if next_time.present? && next_time.between?(now, future_time)
+        if next_time.present? && next_time.between?(now - 5.minutes, future_time)
           reminder.schedule_next_job!
 
         end
 
         # Tắt relay
-        if off_time.present? && off_time.between?(now, future_time)
+        if off_time.present? && off_time.between?(now - 5.minutes, now + 5.minutes)
           reminder.schedule_turn_off_job!
         end
       end
