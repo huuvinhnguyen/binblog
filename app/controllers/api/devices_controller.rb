@@ -186,7 +186,7 @@ module Api
     
       if device
         device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
-        device_info['update_url'] = "https://khuonvien.com/latest_version.bin"
+        device_info['update_url'] = device.url_firmware
         if device_info['relays'].present?
           device_info['relays'].each_with_index do |relay, index|
             reminders = Reminder.where(device_id: device.id, relay_index: index).map do |reminder|
@@ -233,20 +233,20 @@ module Api
     end
 
     def switchon
-      message = params.permit(:device_id, :switch_value, :relay_index)
+      # message = params.permit(:device_id, :switch_value, :relay_index)
     
-      success = SwitchOnService.new(
-        message[:device_id],
-        switch_value: message[:switch_value].to_i,
-        relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil
-      ).call
+      # success = SwitchOnService.new(
+      #   message[:device_id],
+      #   switch_value: message[:switch_value].to_i,
+      #   relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil
+      # ).call
     
-      if success
-        refresh message[:device_id]
-        render json: { status: 'success', message: 'Switched successfully' }, status: :ok
-      else
-        render json: { status: 'error', message: 'Failed to switch' }, status: :unprocessable_entity
-      end
+      # if success
+      #   refresh message[:device_id]
+      #   render json: { status: 'success', message: 'Switched successfully' }, status: :ok
+      # else
+      #   render json: { status: 'error', message: 'Failed to switch' }, status: :unprocessable_entity
+      # end
     end
     
     def set_longlast
@@ -271,7 +271,6 @@ module Api
       client.publish(topic, message_json, retain: false) if topic.present?
       client.disconnect()
       
-    
       success = SwitchOnDurationService.new(
         message[:device_id],
         longlast: message[:longlast]&.to_i,
@@ -291,13 +290,13 @@ module Api
             triggered_by: "api",
             command_source: "set_longlast",
             user_id: user_id,
-            note: "Set relay ON trong #{message[:longlast]} giây qua API"
+            note: "Set relay ON trong #{(message[:longlast].to_i / 1_000)} giây qua API"
           )
 
         unless log.persisted?
           Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
         end
-        refresh message[:device_id]
+        refresh(message[:device_id], log.id)
         render json: { status: 'success', message: 'Longlast set successfully' }, status: :ok
       else
         render json: { status: 'error', message: 'Failed to set longlast' }, status: :unprocessable_entity
@@ -358,13 +357,29 @@ module Api
       render json: { status: 'ok', message: 'Update version command sent', topic: topic, message: message }
       
     end
+
+    def reset_wifi 
+      chip_id = params[:device_id]
+      topic = "#{chip_id}/reset_wifi"
+  
+      client = mqtt_client
+      message = {
+          "action": "reset_wifi",
+          "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+       }
+
+      client.publish(topic, message.to_json) if topic.present?
+      client.disconnect()
+      render json: { status: 'ok', message: 'Reset wifi command sent', topic: topic, message: message }
+
+    end
   
     private
 
     def mqtt_client
       MQTT::Client.connect(
-        host: MQTT_CONFIG["host"],
-        port: MQTT_CONFIG["port"]
+        host: '103.9.77.155',
+        port: 1883
       )
     end
     
@@ -387,18 +402,18 @@ module Api
       client.disconnect
     end
 
-    def refresh chip_id
+    def refresh(chip_id, log_id = nil)
       topic = "#{chip_id}/refresh"
   
       client = mqtt_client
       message = {
           "action": "refresh",
           "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
-       }.to_json
-  
-      client.publish(topic, message) if topic.present?
+       }
+
+      message[:log_id] = log_id if log_id.present?
+      client.publish(topic, message.to_json) if topic.present?
       client.disconnect()
-  
     end
   end
 end
