@@ -233,20 +233,39 @@ module Api
     end
 
     def switchon
-      # message = params.permit(:device_id, :switch_value, :relay_index)
+      message = params.permit(:device_id, :switch_value, :relay_index)
     
-      # success = SwitchOnService.new(
-      #   message[:device_id],
-      #   switch_value: message[:switch_value].to_i,
-      #   relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil
-      # ).call
+      success = SwitchOnService.new(
+        message[:device_id],
+        switch_value: message[:switch_value].to_i,
+        relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil
+      ).call
     
-      # if success
-      #   refresh message[:device_id]
-      #   render json: { status: 'success', message: 'Switched successfully' }, status: :ok
-      # else
-      #   render json: { status: 'error', message: 'Failed to switch' }, status: :unprocessable_entity
-      # end
+      if success
+        user_id = current_user&.id rescue nil
+   
+        device_id = Device.id_from_chip(message[:device_id])
+
+        log = RelayLog.create(
+            device_id: device_id,
+            relay_index: message[:relay_index].to_i,
+            turn_on_at: Time.current,
+            turn_off_at: nil,
+            triggered_by: "manual",
+            command_source: "switchon",
+            user_id: user_id,
+            note: "Set relay ON forever"
+          )
+
+        unless log.persisted?
+          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        end
+
+        refresh(message[:device_id], log.id)
+        render json: { status: 'success', message: 'Switched successfully' }, status: :ok
+      else
+        render json: { status: 'error', message: 'Failed to switch' }, status: :unprocessable_entity
+      end
     end
     
     def set_longlast
