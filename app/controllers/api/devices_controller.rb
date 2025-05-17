@@ -125,7 +125,6 @@ module Api
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
     
-    
     def add_reminder
       device = Device.find_by(chip_id: params[:device_id])
       unless device
@@ -148,6 +147,7 @@ module Api
       )
 
       if reminder.save
+        # reminder.schedule_immediate_job_if_soon
         refresh params[:device_id]
         redirect_to device_path(device), notice: "Updated successfully."
       else
@@ -279,6 +279,24 @@ module Api
       ).call
     
       if success
+        user_id = current_user&.id rescue nil
+   
+        device_id = Device.id_from_chip(message[:device_id])
+
+        log = RelayLog.create(
+            device_id: device_id,
+            relay_index: message[:relay_index].to_i,
+            turn_on_at: Time.current,
+            turn_off_at: message[:longlast].present? ? Time.current + message[:longlast].to_i.seconds : nil,
+            triggered_by: "api",
+            command_source: "set_longlast",
+            user_id: user_id,
+            note: "Set relay ON trong #{message[:longlast]} giây qua API"
+          )
+
+        unless log.persisted?
+          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        end
         refresh message[:device_id]
         render json: { status: 'success', message: 'Longlast set successfully' }, status: :ok
       else
