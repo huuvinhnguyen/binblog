@@ -147,8 +147,27 @@ module Api
       )
 
       if reminder.save
-        # reminder.schedule_immediate_job_if_soon
-        refresh params[:device_id]
+
+        user_id = current_user&.id rescue nil
+
+        log = RelayLog.create(
+            device_id: params[:device_id],
+            relay_index: params[:relay_index].to_i,
+            turn_on_at: Time.current,
+            turn_off_at: nil,
+            triggered_by: "reminder_1st",
+            command_source: "add_reminder",
+            user_id: user_id,
+            note: "Set relay ON trong #{(params[:duration].to_i / 1_000)} giây qua API"
+            
+          )
+
+        unless log.persisted?
+          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        end
+
+        reminder.schedule_immediate_job_if_soon
+        refresh(params[:device_id], log.id)
         redirect_to device_path(device), notice: "Updated successfully."
       else
         render json: { errors: reminder.errors.full_messages }, status: :unprocessable_entity

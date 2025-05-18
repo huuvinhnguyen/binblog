@@ -25,7 +25,7 @@ class ReminderCronWorker
               turn_off_at: nil,
               triggered_by: "ReminderCronWorker",
               command_source: "reminder",
-              user_id: user_id,
+              user_id: nil,
               note: "Set relay ON trong #{(reminder.duration / 1_000)} giây qua Reminder"
             )
 
@@ -63,28 +63,6 @@ class ReminderCronWorker
     end
 
     private
-
-    def refresh_device(reminder)
-
-      user_id = current_user&.id rescue nil
-
-        log = RelayLog.create(
-            device_id: reminder.device.id,
-            relay_index: reminder.relay_index,
-            turn_on_at: next_time,
-            turn_off_at: off_time,
-            triggered_by: "ReminderCronWorker",
-            command_source: "reminder",
-            user_id: user_id,
-            note: "Set relay ON trong #{(reminder.duration / 1_000)} giây qua Reminder"
-          )
-
-        unless log.persisted?
-          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
-        end
-        refresh(reminder.device.chip_id, log.id)
-
-    end
 
   def refresh(chip_id, log_id = nil)
     topic = "#{chip_id}/refresh"
