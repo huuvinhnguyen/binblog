@@ -1,8 +1,5 @@
 module Api
   class Api::DevicesController < ApplicationController
-
-    def receive_info
-    end
     
     def set_reminders_active
       message = params.permit(:device_id, :relay_index, :is_reminders_active)
