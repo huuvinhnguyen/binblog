@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_05_14_072728) do
+ActiveRecord::Schema[7.0].define(version: 2025_05_14_143123) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -34,6 +34,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_14_072728) do
     t.string "device_type"
     t.text "device_info"
     t.text "trigger"
+    t.string "url_firmware", comment: "URL dùng để tải firmware mới cho thiết bị"
+    t.text "note", comment: "Ghi chú thêm cho thiết bị"
     t.index ["chip_id"], name: "index_devices_on_chip_id", unique: true
   end
 
@@ -75,6 +77,27 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_14_072728) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "relay_logs", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "device_id", null: false
+    t.integer "relay_index", null: false, comment: "Chỉ số relay trên thiết bị"
+    t.datetime "turn_on_at", comment: "Thời điểm bật relay"
+    t.datetime "turn_off_at", comment: "Thời điểm tắt relay"
+    t.string "triggered_by", comment: "Ai hoặc cái gì đã kích hoạt (user, schedule, mqtt)"
+    t.string "command_source", comment: "Nguồn gửi lệnh thực tế (web_ui, api, fingerprint...)"
+    t.boolean "relay_status", comment: "Trạng thái sau khi tác vụ xảy ra (true=bật, false=tắt)"
+    t.bigint "user_id", comment: "Nếu có người dùng thao tác"
+    t.text "note", comment: "Ghi chú thêm"
+    t.boolean "processed", default: false, comment: "Đã xử lý xong chưa (dùng cho đồng bộ)"
+    t.text "error_message", comment: "Lưu lỗi nếu có"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "confirmed_turn_on_at"
+    t.datetime "confirmed_turn_off_at"
+    t.index ["device_id", "relay_index"], name: "index_relay_logs_on_device_id_and_relay_index"
+    t.index ["device_id"], name: "index_relay_logs_on_device_id"
+    t.index ["user_id"], name: "index_relay_logs_on_user_id"
   end
 
   create_table "reminders", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -163,6 +186,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_14_072728) do
 
   add_foreign_key "attendances", "employees"
   add_foreign_key "fingers", "employees"
+  add_foreign_key "relay_logs", "devices"
+  add_foreign_key "relay_logs", "users"
   add_foreign_key "reminders", "devices"
   add_foreign_key "rewards_penalties", "employees"
   add_foreign_key "user_devices", "devices"
