@@ -6,7 +6,7 @@ gem 'rails', '~> 7.0.4'
 # Use postgresql as the database for Active Record
 # gem 'pg', '~> 1.3.5'
 gem 'mysql2', '>= 0.4.4'
-gem 'rails_admin', '3.1.4'
+gem 'rails_admin', '3.2.0'
 
 # Use SCSS for stylesheets
 gem 'sass-rails'
@@ -69,3 +69,4 @@ group :test do
 end
 
   
+gem "cssbundling-rails"
