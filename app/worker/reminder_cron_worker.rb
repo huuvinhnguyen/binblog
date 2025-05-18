@@ -16,7 +16,7 @@ class ReminderCronWorker
         # Bật relay
         if next_time.present? && next_time.between?(now - 5.minutes, future_time)
           reminder.schedule_next_job!
-          user_id = current_user&.id rescue nil
+          puts "schedule_next_job "
 
           log = RelayLog.create(
               device_id: reminder.device.id,
@@ -39,7 +39,6 @@ class ReminderCronWorker
         # Tắt relay
         if off_time.present? && off_time.between?(now - 5.minutes, now + 5.minutes)
           reminder.schedule_turn_off_job!
-          user_id = current_user&.id rescue nil
 
           log = RelayLog.create(
               device_id: reminder.device.id,
@@ -48,7 +47,7 @@ class ReminderCronWorker
               turn_off_at: off_time,
               triggered_by: "ReminderCronWorker",
               command_source: "reminder",
-              user_id: user_id,
+              user_id: nil,
               note: "Set relay ON trong #{(reminder.duration / 1_000)} giây qua Reminder"
             )
 
