@@ -324,7 +324,7 @@ module Api
     end
 
     def reset_wifi 
-      chip_id = params[:device_id]
+      chip_id = params[:chip_id]
       topic = "#{chip_id}/reset_wifi"
   
       client = mqtt_client
@@ -336,6 +336,13 @@ module Api
       client.publish(topic, message.to_json) if topic.present?
       client.disconnect()
       render json: { status: 'ok', message: 'Reset wifi command sent', topic: topic, message: message }
+
+    end
+
+    def refresh_device
+      chip_id = params[:device_id]
+      refresh chip_id
+      render json: { status: 'ok', message: 'Refresh command sent' }
 
     end
   
@@ -368,6 +375,7 @@ module Api
     end
 
     def refresh(chip_id, log_id = nil)
+      puts "refreshing....."
       topic = "#{chip_id}/refresh"
   
       client = mqtt_client
@@ -377,6 +385,9 @@ module Api
        }
 
       message[:log_id] = log_id if log_id.present?
+      puts "topic: #{topic}"
+      puts "message: #{message}"
+
       client.publish(topic, message.to_json) if topic.present?
       client.disconnect()
     end
