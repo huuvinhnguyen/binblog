@@ -33,8 +33,8 @@ class TurnOffRelayJob
       else
 
         turn_off_at = Time.current
-        log = create_log(device_id, relay_index, turn_off_at)
-        refresh(device_id, log&.id)
+        # log = create_log(device_id, relay_index, turn_off_at)
+        refresh(device_id)
         note = "Turn off relay"
 
       end
