@@ -340,10 +340,9 @@ module Api
     end
 
     def refresh_device
-      chip_id = params[:device_id]
+      chip_id = params[:chip_id]
       refresh chip_id
-      render json: { status: 'ok', message: 'Refresh command sent' }
-
+      render json: { status: 'ok', message: 'Refresh command sent', topic: "#{chip_id}/refresh_device" }
     end
   
     private
