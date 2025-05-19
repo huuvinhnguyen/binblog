@@ -54,7 +54,7 @@ RSpec.describe Api::DevicesController, type: :controller do
 
     it 'publishes MQTT message and returns success JSON' do
       post :reset_wifi,  params: {
-        device_id: device_id,
+        chip_id: device_id,
        
       }, format: :json
 
@@ -65,6 +65,37 @@ RSpec.describe Api::DevicesController, type: :controller do
       expect(json['topic']).to eq("#{device_id}/reset_wifi")
       expect(json['message']).to be_a(Hash)
       expect(json['message']['action']).to eq('reset_wifi')
+      expect(mqtt_client).to have_received(:disconnect)
+    end 
+  end
+
+  describe 'POST #refresh_device' do
+    let(:device_id) { 'ABC123' }
+    let(:mqtt_client) { double('MQTT::Client') }
+
+    before do
+      # Giả lập phương thức chip_id được gọi trong controller
+      # allow(controller).to receive(:device_id).and_return(device_id)
+
+      # Giả lập mqtt_client method
+      allow(controller).to receive(:mqtt_client).and_return(mqtt_client)
+
+      # Cho phép publish và disconnect
+      allow(mqtt_client).to receive(:publish)
+      allow(mqtt_client).to receive(:disconnect)
+    end
+
+    it 'refresh action - publishes MQTT message and returns success JSON' do
+      post :refresh_device,  params: {
+        chip_id: device_id,
+      
+      }, format: :json
+
+      expect(response).to have_http_status(:ok)
+
+      json = JSON.parse(response.body)
+      expect(json['status']).to eq('ok')
+      expect(json['topic']).to eq("#{device_id}/refresh_device")
       expect(mqtt_client).to have_received(:disconnect)
     end
   end

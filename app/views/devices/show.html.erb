@@ -18,7 +18,7 @@
         </span>
 
         <%= button_to "🔄 Làm mới", "/api/devices/refresh_device", method: :post,
-              params: { device_id: @device.chip_id },
+              params: { chip_id: @device.chip_id },
               class: "btn btn-sm btn-outline-secondary",
               form_class: "d-inline" %>
       </div>

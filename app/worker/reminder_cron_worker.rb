@@ -14,7 +14,10 @@ class ReminderCronWorker
         
   
         # Bật relay
-        if next_time.present? && next_time.between?(now - 5.minutes, future_time)
+        
+        should_trigger = reminder.last_triggered_at.nil? || reminder.last_triggered_at < next_time
+        if should_trigger && next_time.present? && next_time.between?(now - 5.minutes, future_time)
+          reminder.update(last_triggered_at: next_time)
           reminder.schedule_next_job!
           puts "schedule_next_job "
 
