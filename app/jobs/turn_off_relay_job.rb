@@ -14,18 +14,26 @@ class TurnOffRelayJob
       relay["switch_value"] = 0
       device_info["update_at"] = Time.zone.now.to_i
       device_info["relays"][relay_index] = relay
-  
-      device.update(device_info: device_info.to_json)
+
+      # device.update!(device_info: device_info.to_json)
+      success = device.update(device_info: device_info.to_json)
+
+      unless success
+        puts "⚠️ Không thể cập nhật device_info cho thiết bị #{device_id}"
+        puts device.errors.full_messages.join(", ")
+
+        note = device.errors.full_messages.join(", ").to_s
+        log = create_log(device_id, relay_index, reminder.turn_on_at, reminder.turn_off_at, note)
+        return
+      end
   
       puts "TurnOffRelayJob: Đã tắt relay #{relay_index} của thiết bị #{device_id}"
-
-       
 
       reminder = Reminder.find_by(id: reminder_id)
       if reminder.present? 
 
         turn_off_at = Time.current
-        note = "Set relay ON trong #{(reminder.duration / 1_000)} giây qua Reminder"
+        note = "Set relay OFF sau #{(reminder.duration / 1_000)} giây qua Reminder"
         log = create_log(device_id, relay_index, reminder.turn_on_at, reminder.turn_off_at, note)
         refresh(device_id, log.id)
       
@@ -50,7 +58,7 @@ class TurnOffRelayJob
                 turn_on_at: turn_on_at,
                 turn_off_at: turn_off_at,
                 triggered_by: "ReminderCronWorker",
-                command_source: "reminder",
+                command_source: "reminder off",
                 user_id: nil,
                 note: note
               )

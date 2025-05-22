@@ -21,6 +21,8 @@ class SwitchOnDurationService
       device_info["update_at"] = Time.now.to_i
   
       device.update(device_info: device_info.to_json)
+      trigger_time = Time.current
+      log = create_log(device.id, @relay_index, trigger_time, @longlast)
   
       puts "Đã bật relay #{@relay_index} cho thiết bị #{device.chip_id}"
   
@@ -33,6 +35,24 @@ class SwitchOnDurationService
         puts "Lên lịch tắt relay trong #{duration_ms / 1000} giây"
         TurnOffRelayJob.perform_in(duration_ms / 1000, device.chip_id, @relay_index)
       end
+    end
+
+    def create_log(device_id, relay_index, trigger_time, duration)
+      log = RelayLog.create(
+                device_id: device_id,
+                relay_index: relay_index,
+                turn_on_at: trigger_time,
+                turn_off_at: nil,
+                triggered_by: "SwitchOnDurationService",
+                command_source: "switch on",
+                user_id: nil,
+                note: "Set relay ON trong #{(duration / 1_000)} giây qua Reminder"
+              )
+  
+      unless log.persisted?
+        Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+      end
+      log
     end
   end
   
