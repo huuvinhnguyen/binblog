@@ -142,12 +142,12 @@ class DevicesController < ApplicationController
   
   def show
 
-    initialize_mqtt_client
-    topic = @device.chip_id.to_s
+    # initialize_mqtt_client
+    # topic = @device.chip_id.to_s
     @device_info = @device.device_info.present? ? JSON.parse(@device.device_info) : {}
-    subscribe_topic topic
-    message = { "action": "ping" }.to_json
-    pingTopic = topic + "/ping"
+    # subscribe_topic topic
+    # message = { "action": "ping" }.to_json
+    # pingTopic = topic + "/ping"
     # @client.publish(pingTopic, message, retain: false) if pingTopic.present?
 
   end

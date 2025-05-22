@@ -29,6 +29,8 @@ class SwitchOnService
       device_info["relays"] = relays
       device.device_info = device_info.to_json
       device.save
+      # puts "relay info: " + device_info["relays"].to_s
+
     end
   end
   

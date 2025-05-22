@@ -20,5 +20,49 @@ class ActivateRelayJob
     device_info["relays"][relay_index] = relay
     device_info["update_at"] = Time.now.to_i
     device.update(device_info: device_info.to_json)
+    log = create_log reminder
+    refresh(reminder.device.chip_id, log.id)
+
+  end
+
+  private
+
+  def create_log reminder
+    log = RelayLog.create(
+              device_id: reminder.device.id,
+              relay_index: reminder.relay_index,
+              turn_on_at: reminder.next_trigger_time,
+              turn_off_at: nil,
+              triggered_by: "ReminderCronWorker",
+              command_source: "reminder",
+              user_id: nil,
+              note: "Set relay ON trong #{(reminder.duration / 1_000)} giây qua Reminder"
+            )
+
+    unless log.persisted?
+      Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+    end
+    log
+  end
+
+  def refresh(chip_id, log_id = nil)
+    topic = "#{chip_id}/refresh"
+
+    client = mqtt_client
+    message = {
+        "action": "refresh",
+        "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+     }
+
+    message[:log_id] = log_id if log_id.present?
+    client.publish(topic, message.to_json) if topic.present?
+    client.disconnect()
+  end
+
+  def mqtt_client
+    MQTT::Client.connect(
+      host: "103.9.77.155",
+      port: 1883
+    )
   end
 end

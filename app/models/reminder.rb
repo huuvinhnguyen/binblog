@@ -125,7 +125,7 @@ class Reminder < ActiveRecord::Base
       # return if turn_off_jid.present? # Nếu đã có job ID thì không lên lịch lại
 
       off_time = next_trigger_time + (duration / 1_000).seconds
-      return if off_time < Time.zone.now
+      # return if off_time < Time.zone.now
 
       jid = TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index)
       update(turn_off_jid: jid)

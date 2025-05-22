@@ -243,25 +243,25 @@ module Api
       ).call
     
       if success
-        user_id = current_user&.id rescue nil
+        # user_id = current_user&.id rescue nil
    
-        device_id = Device.id_from_chip(message[:device_id])
+        # device_id = Device.id_from_chip(message[:device_id])
 
-        log = RelayLog.create(
-            device_id: device_id,
-            relay_index: message[:relay_index].to_i,
-            turn_on_at: Time.current,
-            turn_off_at: message[:longlast].present? ? Time.current + message[:longlast].to_i.seconds : nil,
-            triggered_by: "api",
-            command_source: "set_longlast",
-            user_id: user_id,
-            note: "Set relay ON trong #{(message[:longlast].to_i / 1_000)} giây qua API"
-          )
+        # log = RelayLog.create(
+        #     device_id: device_id,
+        #     relay_index: message[:relay_index].to_i,
+        #     turn_on_at: Time.current,
+        #     turn_off_at: message[:longlast].present? ? Time.current + message[:longlast].to_i.seconds : nil,
+        #     triggered_by: "api",
+        #     command_source: "set_longlast",
+        #     user_id: user_id,
+        #     note: "Set relay ON trong #{(message[:longlast].to_i / 1_000)} giây qua API"
+        #   )
 
-        unless log.persisted?
-          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
-        end
-        refresh(message[:device_id], log.id)
+        # unless log.persisted?
+        #   Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        # end
+        # refresh(message[:device_id], log.id)
         render json: { status: 'success', message: 'Longlast set successfully' }, status: :ok
       else
         render json: { status: 'error', message: 'Failed to set longlast' }, status: :unprocessable_entity
@@ -374,7 +374,6 @@ module Api
     end
 
     def refresh(chip_id, log_id = nil)
-      puts "refreshing....."
       topic = "#{chip_id}/refresh"
   
       client = mqtt_client
@@ -384,8 +383,6 @@ module Api
        }
 
       message[:log_id] = log_id if log_id.present?
-      puts "topic: #{topic}"
-      puts "message: #{message}"
 
       client.publish(topic, message.to_json) if topic.present?
       client.disconnect()
