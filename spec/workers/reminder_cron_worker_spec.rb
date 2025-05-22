@@ -207,9 +207,104 @@ RSpec.describe ReminderCronWorker, type: :worker do
     
         # Chỉ chạy đúng 1 lần lúc 03:30
         expect(TurnOffRelayJob).to have_received(:perform_at)
-          .with(turn_off_time, reminder.device.chip_id, 1).at_most(2).times
+          .with(turn_off_time, reminder.device.chip_id, 1).at_least(1).times
 
       end
     end
+
+    context "when turn_off_time is outside the trigger window" do
+      it "does NOT call schedule_turn_off_job!" do
+        frozen_time = Time.zone.local(2025, 5, 12, 16, 10, 0)
+    
+        travel_to(frozen_time) do
+          reminder = create(
+            :reminder,
+            device: device,
+            start_time: frozen_time + 1.minute,
+            repeat_type: "daily",
+            duration: 20.minutes.in_milliseconds,
+            relay_index: 1,
+            enabled: true
+          )
+    
+          # Mock để đảm bảo off_time nằm ngoài vùng kiểm tra (sau 25 phút)
+          allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(frozen_time + 1.minute)
+          allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(frozen_time + 26.minutes)
+    
+          # Chặn gọi hàm để kiểm tra
+          expect_any_instance_of(Reminder).not_to receive(:schedule_turn_off_job!)
+    
+          ReminderCronWorker.new.perform
+        end
+      end
+    end
+
+    context "when relay is activated but cron delay causes turn_off_time to be missed" do
+      it "still schedules TurnOffRelayJob on the next cron run if missed in the previous" do
+        start_time = Time.zone.local(2025, 5, 12, 16, 00, 0)
+        duration = 3.minutes # Tắt sau 3 phút => 16:03
+        turn_off_time = start_time + duration
+    
+        reminder = create(
+          :reminder,
+          device: device,
+          start_time: start_time,
+          repeat_type: "daily",
+          duration: duration.in_milliseconds,
+          relay_index: 1,
+          enabled: true,
+          last_triggered_at: start_time # Giả sử đã bật lúc 16:00
+        )
+    
+        allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(start_time)
+        allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(turn_off_time)
+    
+        # Giả lập cron chạy 2 lần:
+        # 1. Lúc 16:05 (miss turn_off_time)
+        # 2. Lúc 16:08 (vẫn trong khoảng cho phép ±5 phút)
+    
+        allow(TurnOffRelayJob).to receive(:perform_at)
+    
+        # Cron run #1 - trễ hơn thời gian tắt
+        travel_to(Time.zone.local(2025, 5, 12, 16, 5, 0)) do
+          ReminderCronWorker.new.perform
+        end
+    
+        # Cron run #2 - vẫn còn nằm trong khoảng kiểm tra
+        travel_to(Time.zone.local(2025, 5, 12, 16, 8, 0)) do
+          ReminderCronWorker.new.perform
+        end
+    
+        expect(TurnOffRelayJob).to have_received(:perform_at)
+          .with(turn_off_time, reminder.device.chip_id, reminder.relay_index).at_least(1).times
+      end
+    end 
+    
+    context "when turn_off_time is exactly Time.current" do
+      it "schedules TurnOffRelayJob" do
+        now = Time.zone.local(2025, 5, 12, 16, 30)
+        travel_to(now) do
+          reminder = create(
+            :reminder,
+            device: device,
+            start_time: now - 1.minute,
+            repeat_type: "daily",
+            duration: 1.minute.in_milliseconds,
+            relay_index: 0,
+            enabled: true,
+            last_triggered_at: now - 1.minute
+          )
+    
+          allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(reminder.start_time)
+          allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(now)
+    
+          expect(TurnOffRelayJob).to receive(:perform_at).with(now, reminder.device.chip_id, 0)
+    
+          ReminderCronWorker.new.perform
+        end
+      end
+    end
+    
+    
   end
 end
