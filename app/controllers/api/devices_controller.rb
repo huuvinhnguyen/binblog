@@ -78,7 +78,7 @@ module Api
         user_id = current_user&.id rescue nil
 
         log = RelayLog.create(
-            device_id: params[:device_id],
+            device_id: device.id,
             relay_index: params[:relay_index].to_i,
             turn_on_at: Time.current,
             turn_off_at: nil,

@@ -34,16 +34,18 @@ class TurnOffRelayJob
 
         turn_off_at = Time.current
         note = "Set relay OFF sau #{(reminder.duration / 1_000)} giây qua Reminder"
-        log = create_log(device_id, relay_index, reminder.turn_on_at, reminder.turn_off_at, note)
+        log = create_log(device.id, relay_index, reminder.turn_on_at, reminder.turn_off_at, nil, note)
         refresh(device_id, log.id)
+        puts note
       
 
       else
 
         turn_off_at = Time.current
-        # log = create_log(device_id, relay_index, turn_off_at)
         refresh(device_id)
         note = "Turn off relay"
+        log = create_log(device.id, relay_index,nil, turn_off_at, nil, note)
+        puts note
 
       end
       
