@@ -138,7 +138,7 @@ RSpec.describe ReminderCronWorker, type: :worker do
           allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(Time.zone.local(2025, 5, 12, 16, 32, 0))
     
           expected_turn_off_time = reminder.start_time + 120_000 / 1000 # => 03:30 ngày hôm sau
-          expect(TurnOffRelayJob).to receive(:perform_at).with(expected_turn_off_time, reminder.device.chip_id, 1)
+          expect(TurnOffRelayJob).to receive(:perform_at).with(expected_turn_off_time, reminder.device.chip_id, 1, 1)
     
           ReminderCronWorker.new.perform
         end
@@ -147,7 +147,7 @@ RSpec.describe ReminderCronWorker, type: :worker do
 
     context "when the reminder is daily at 17:30 and turn off after 10 hours, and current time is 17:31" do
       it "schedules TurnOffRelayJob at 3:30" do
-        frozen_time = Time.zone.local(2025, 5, 12, 17, 29, 0)
+        frozen_time = Time.zone.local(2025, 5, 13, 03, 29, 0)
     
         travel_to(frozen_time) do
           reminder = create(
@@ -164,9 +164,10 @@ RSpec.describe ReminderCronWorker, type: :worker do
           expected_turn_off_time = reminder.start_time + 36_000_000 / 1000 # => 03:30 ngày hôm sau
 
           allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(Time.zone.local(2025, 5, 12, 17, 30, 0))
-          allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(Time.zone.local(2025, 5, 12, 17, 32, 0))
-    
-          expect(TurnOffRelayJob).to receive(:perform_at).with(expected_turn_off_time, reminder.device.chip_id, 1)
+          # allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(Time.zone.local(2025, 5, 13, 03, 30, 0))
+          allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(expected_turn_off_time)
+
+          expect(TurnOffRelayJob).to receive(:perform_at).with(expected_turn_off_time, reminder.device.chip_id, 1, 1)
     
           ReminderCronWorker.new.perform
         end
@@ -207,7 +208,7 @@ RSpec.describe ReminderCronWorker, type: :worker do
     
         # Chỉ chạy đúng 1 lần lúc 03:30
         expect(TurnOffRelayJob).to have_received(:perform_at)
-          .with(turn_off_time, reminder.device.chip_id, 1).at_least(1).times
+          .with(turn_off_time, reminder.device.chip_id, 1, 1).at_least(1).times
 
       end
     end
@@ -274,9 +275,9 @@ RSpec.describe ReminderCronWorker, type: :worker do
         travel_to(Time.zone.local(2025, 5, 12, 16, 8, 0)) do
           ReminderCronWorker.new.perform
         end
-    
+        reminder_id = 1
         expect(TurnOffRelayJob).to have_received(:perform_at)
-          .with(turn_off_time, reminder.device.chip_id, reminder.relay_index).at_least(1).times
+          .with(turn_off_time, reminder.device.chip_id, reminder.relay_index, reminder_id).at_least(1).times
       end
     end 
     
@@ -297,8 +298,8 @@ RSpec.describe ReminderCronWorker, type: :worker do
     
           allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(reminder.start_time)
           allow_any_instance_of(Reminder).to receive(:turn_off_time).and_return(now)
-    
-          expect(TurnOffRelayJob).to receive(:perform_at).with(now, reminder.device.chip_id, 0)
+          reminder_id = 1
+          expect(TurnOffRelayJob).to receive(:perform_at).with(now, reminder.device.chip_id, 0, reminder_id)
     
           ReminderCronWorker.new.perform
         end

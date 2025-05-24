@@ -20,6 +20,7 @@ class ActivateRelayJob
     device_info["relays"][relay_index] = relay
     device_info["update_at"] = Time.now.to_i
     device.update(device_info: device_info.to_json)
+    reminder.update(last_triggered_at: Time.zone.now)
     log = create_log reminder
     refresh(reminder.device.chip_id, log.id)
 

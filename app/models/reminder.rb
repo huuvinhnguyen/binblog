@@ -104,13 +104,21 @@ class Reminder < ActiveRecord::Base
       end
     end
 
+    # def turn_off_time
+    #   return nil if duration.blank? || duration <= 0
+  
+    #   trigger_time = next_trigger_time
+    #   return nil unless trigger_time
+  
+    #   trigger_time + (duration / 1_000).seconds
+    # end
+
     def turn_off_time
       return nil if duration.blank? || duration <= 0
-  
-      trigger_time = next_trigger_time
-      return nil unless trigger_time
-  
-      trigger_time + (duration / 1_000).seconds
+    
+      return nil unless last_triggered_at.present?
+    
+      last_triggered_at + (duration / 1_000).seconds
     end
 
     def schedule_immediate_job_if_soon
@@ -124,10 +132,10 @@ class Reminder < ActiveRecord::Base
     def schedule_turn_off_job!
       # return if turn_off_jid.present? # Nếu đã có job ID thì không lên lịch lại
 
-      off_time = next_trigger_time + (duration / 1_000).seconds
+      off_time = turn_off_time
       # return if off_time < Time.zone.now
 
-      jid = TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index)
+      jid = TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index, id)
       update(turn_off_jid: jid)
     end
 

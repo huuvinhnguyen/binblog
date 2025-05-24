@@ -18,7 +18,7 @@ class SwitchOnDurationService
       relays[@relay_index] = relay  # ✅ Cập nhật relay đã chỉnh sửa
   
       device_info["relays"] = relays
-      device_info["update_at"] = Time.now.to_i
+      device_info["update_at"] = Time.zone.now.to_i
   
       device.update(device_info: device_info.to_json)
       trigger_time = Time.current
