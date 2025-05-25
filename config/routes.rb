@@ -21,6 +21,8 @@ Rails.application.routes.draw do
         post :restart
         post :update_last_seen
         post :update_version
+        post :reset_wifi
+        post :refresh_device
       end
     end
   end

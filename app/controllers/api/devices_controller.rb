@@ -1,78 +1,5 @@
 module Api
   class Api::DevicesController < ApplicationController
-
-    def receive_info
-      # Receive and process data from ESP8266
-      message = params.permit(
-        :device_type,
-        :topic_type,
-        :device_id,
-        :switch_value,
-        :update_at,
-        :longlast,
-        :timetrigger,
-        relays: [
-          :switch_value,
-          :longlast,
-          :is_reminders_active,
-          reminders: [
-            :start_time,
-            :duration,
-            :repeat_type
-          ]
-        ],
-        device: [
-          :device_type
-        ]
-
-      )
-    
-      puts "message received: #{message}"
-    
-      # Find the device by device_id, or create a new one if it doesn't exist
-      device = Device.find_or_initialize_by(chip_id: message[:device_id])
-    
-      # Parse current device_info to retain existing reminders
-      current_device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
-      current_relays = current_device_info["relays"] || []
-    
-      # Merge new relays while keeping old reminders
-      updated_relays = message[:relays].map.with_index do |relay, index|
-        old_relay = current_relays[index] || {}
-        {
-          switch_value: relay[:switch_value] || old_relay["switch_value"],
-          longlast: relay[:longlast] || old_relay["longlast"],
-          is_reminders_active: relay[:is_reminders_active] || old_relay["is_reminders_active"],
-          reminders: old_relay["reminders"] || [] # Keep old reminders if no new reminders provided
-        }
-      end
-    
-      # Update device_info with merged data
-      device.device_info = {
-        device_type: message[:device_type],
-        topic_type: message[:topic_type],
-        device_id: message[:device_id],
-        switch_value: message[:switch_value],
-        update_at: message[:update_at],
-        longlast: message[:longlast],
-        timetrigger: message[:timetrigger],
-        relays: updated_relays
-      }.to_json
-    
-      # Save the device record
-      if device.save
-        # Broadcast the message to the MQTT channel
-        ActionCable.server.broadcast('mqtt_channel', message)
-    
-        # Send a success response
-        render json: { status: 'success', message: 'Device information received and saved' }, status: :ok
-      else
-        # Send an error response if saving fails
-        render json: { status: 'error', message: device.errors.full_messages.to_sentence }, status: :unprocessable_entity
-      end
-    rescue => e
-      render json: { status: 'error', message: e.message }, status: :unprocessable_entity
-    end
     
     def set_reminders_active
       message = params.permit(:device_id, :relay_index, :is_reminders_active)
@@ -125,7 +52,6 @@ module Api
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
     
-    
     def add_reminder
       device = Device.find_by(chip_id: params[:device_id])
       unless device
@@ -148,7 +74,27 @@ module Api
       )
 
       if reminder.save
-        refresh params[:device_id]
+
+        user_id = current_user&.id rescue nil
+
+        log = RelayLog.create(
+            device_id: device.id,
+            relay_index: params[:relay_index].to_i,
+            turn_on_at: Time.current,
+            turn_off_at: nil,
+            triggered_by: "reminder_1st",
+            command_source: "add_reminder",
+            user_id: user_id,
+            note: "Set relay ON trong #{(params[:duration].to_i / 1_000)} giây qua API"
+            
+          )
+
+        unless log.persisted?
+          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        end
+
+        reminder.schedule_immediate_job_if_soon
+        refresh(params[:device_id], log.id)
         redirect_to device_path(device), notice: "Updated successfully."
       else
         render json: { errors: reminder.errors.full_messages }, status: :unprocessable_entity
@@ -186,7 +132,7 @@ module Api
     
       if device
         device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
-        device_info['update_url'] = "https://khuonvien.com/latest_version.bin"
+        device_info['update_url'] = device.url_firmware
         if device_info['relays'].present?
           device_info['relays'].each_with_index do |relay, index|
             reminders = Reminder.where(device_id: device.id, relay_index: index).map do |reminder|
@@ -242,7 +188,26 @@ module Api
       ).call
     
       if success
-        refresh message[:device_id]
+        user_id = current_user&.id rescue nil
+   
+        device_id = Device.id_from_chip(message[:device_id])
+
+        log = RelayLog.create(
+            device_id: device_id,
+            relay_index: message[:relay_index].to_i,
+            turn_on_at: Time.current,
+            turn_off_at: nil,
+            triggered_by: "manual",
+            command_source: "switchon",
+            user_id: user_id,
+            note: "Set relay ON forever"
+          )
+
+        unless log.persisted?
+          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        end
+
+        refresh(message[:device_id], log.id)
         render json: { status: 'success', message: 'Switched successfully' }, status: :ok
       else
         render json: { status: 'error', message: 'Failed to switch' }, status: :unprocessable_entity
@@ -271,7 +236,6 @@ module Api
       client.publish(topic, message_json, retain: false) if topic.present?
       client.disconnect()
       
-    
       success = SwitchOnDurationService.new(
         message[:device_id],
         longlast: message[:longlast]&.to_i,
@@ -279,7 +243,25 @@ module Api
       ).call
     
       if success
-        refresh message[:device_id]
+        # user_id = current_user&.id rescue nil
+   
+        # device_id = Device.id_from_chip(message[:device_id])
+
+        # log = RelayLog.create(
+        #     device_id: device_id,
+        #     relay_index: message[:relay_index].to_i,
+        #     turn_on_at: Time.current,
+        #     turn_off_at: message[:longlast].present? ? Time.current + message[:longlast].to_i.seconds : nil,
+        #     triggered_by: "api",
+        #     command_source: "set_longlast",
+        #     user_id: user_id,
+        #     note: "Set relay ON trong #{(message[:longlast].to_i / 1_000)} giây qua API"
+        #   )
+
+        # unless log.persisted?
+        #   Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        # end
+        # refresh(message[:device_id], log.id)
         render json: { status: 'success', message: 'Longlast set successfully' }, status: :ok
       else
         render json: { status: 'error', message: 'Failed to set longlast' }, status: :unprocessable_entity
@@ -340,13 +322,35 @@ module Api
       render json: { status: 'ok', message: 'Update version command sent', topic: topic, message: message }
       
     end
+
+    def reset_wifi 
+      chip_id = params[:chip_id]
+      topic = "#{chip_id}/reset_wifi"
+  
+      client = mqtt_client
+      message = {
+          "action": "reset_wifi",
+          "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+       }
+
+      client.publish(topic, message.to_json) if topic.present?
+      client.disconnect()
+      render json: { status: 'ok', message: 'Reset wifi command sent', topic: topic, message: message }
+
+    end
+
+    def refresh_device
+      chip_id = params[:chip_id]
+      refresh chip_id
+      render json: { status: 'ok', message: 'Refresh command sent', topic: "#{chip_id}/refresh_device" }
+    end
   
     private
 
     def mqtt_client
       MQTT::Client.connect(
-        host: MQTT_CONFIG["host"],
-        port: MQTT_CONFIG["port"]
+        host: '103.9.77.155',
+        port: 1883
       )
     end
     
@@ -369,18 +373,19 @@ module Api
       client.disconnect
     end
 
-    def refresh chip_id
+    def refresh(chip_id, log_id = nil)
       topic = "#{chip_id}/refresh"
   
       client = mqtt_client
       message = {
           "action": "refresh",
           "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
-       }.to_json
-  
-      client.publish(topic, message) if topic.present?
+       }
+
+      message[:log_id] = log_id if log_id.present?
+
+      client.publish(topic, message.to_json) if topic.present?
       client.disconnect()
-  
     end
   end
 end

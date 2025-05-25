@@ -65,30 +65,30 @@ class DevicesController < ApplicationController
     # Đường dẫn đến mã nguồn gốc
     # https://github.com/huuvinhnguyen/kvxduino/pull/4/files#diff-72403d98b2706b2110d12c0b98c93d5febf832c7ca1b2ab17fc2935f88943b45
   
-    topic = "#{params[:chip_id]}/switchon"
-    message_hash = {}
-    message_hash["reminder"] = {} if params[:start_time].present?
+    # topic = "#{params[:chip_id]}/switchon"
+    # message_hash = {}
+    # message_hash["reminder"] = {} if params[:start_time].present?
   
-    # Kiểm tra và thêm các tham số vào hash
-    message_hash["relay_index"] = params[:relay_index] if params[:relay_index].present?
-    message_hash["reminder"]["start_time"] = params[:start_time].to_s if params[:start_time].present?
-    message_hash["reminder"]["duration"] = params[:duration].to_i * 60000 if params[:duration].present?
-    message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
-    message_hash["longlast"] = params[:longlast].to_i * 1000 if params[:longlast].present?
-    message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
-    message_hash["is_reminders_active"] = params[:is_reminders_active].to_i if params[:is_reminders_active].present?
-    message_hash["sent_time"] = Time.current.strftime('%Y-%m-%d %H:%M:%S')
-    # Chuyển đổi hash thành JSON
-    message = message_hash.to_json
-    puts "#message json: #{message}"
+    # # Kiểm tra và thêm các tham số vào hash
+    # message_hash["relay_index"] = params[:relay_index] if params[:relay_index].present?
+    # message_hash["reminder"]["start_time"] = params[:start_time].to_s if params[:start_time].present?
+    # message_hash["reminder"]["duration"] = params[:duration].to_i * 60000 if params[:duration].present?
+    # message_hash["reminder"]["repeat_type"] = params[:repeat_type].to_s if params[:repeat_type].present?
+    # message_hash["longlast"] = params[:longlast].to_i * 1000 if params[:longlast].present?
+    # message_hash["switch_value"] = params[:switch_value].to_i if params[:switch_value].present?
+    # message_hash["is_reminders_active"] = params[:is_reminders_active].to_i if params[:is_reminders_active].present?
+    # message_hash["sent_time"] = Time.current.strftime('%Y-%m-%d %H:%M:%S')
+    # # Chuyển đổi hash thành JSON
+    # message = message_hash.to_json
+    # puts "#message json: #{message}"
   
-    client = MQTT::Client.connect(
-      host: '103.9.77.155',
-      port: 1883
-    )
+    # client = MQTT::Client.connect(
+    #   host: '103.9.77.155',
+    #   port: 1883
+    # )
   
-    client.publish(topic, message, retain: false) if topic.present?
-    client.disconnect()
+    # client.publish(topic, message, retain: false) if topic.present?
+    # client.disconnect()
   
   end
 
@@ -142,12 +142,12 @@ class DevicesController < ApplicationController
   
   def show
 
-    initialize_mqtt_client
-    topic = @device.chip_id.to_s
+    # initialize_mqtt_client
+    # topic = @device.chip_id.to_s
     @device_info = @device.device_info.present? ? JSON.parse(@device.device_info) : {}
-    subscribe_topic topic
-    message = { "action": "ping" }.to_json
-    pingTopic = topic + "/ping"
+    # subscribe_topic topic
+    # message = { "action": "ping" }.to_json
+    # pingTopic = topic + "/ping"
     # @client.publish(pingTopic, message, retain: false) if pingTopic.present?
 
   end

@@ -7,15 +7,24 @@
   <!-- Thông tin thiết bị -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <h5 class="card-title text-primary"><strong>Thiết bị: <%= @device.name %></strong></h5>
-      <p class="card-text">
-        <strong>Lần hoạt động cuối:</strong>
-        <span class="text-muted">
+      <h5 class="card-title text-primary">
+        <strong>Thiết bị: <%= @device.name %></strong>
+      </h5>
+
+      <div class="d-flex align-items-center">
+        <strong class="me-2">Lần kết nối lần cuối:</strong>
+        <span class="text-muted me-3">
           <%= Time.parse(@device_info['last_seen']).strftime('%d/%m/%Y %H:%M:%S') if @device_info['last_seen'].present? %>
         </span>
-      </p>
+
+        <%= button_to "🔄 Làm mới", "/api/devices/refresh_device", method: :post,
+              params: { chip_id: @device.chip_id },
+              class: "btn btn-sm btn-outline-secondary",
+              form_class: "d-inline" %>
+      </div>
     </div>
   </div>
+
 
   <!-- Switch -->
   <% if @device.device_type == "switch" && @device_info&.dig("relays").present? %>
@@ -89,5 +98,13 @@
                   params: { chip_id: @device.chip_id },
                   data: { confirm: "Bạn có chắc muốn khởi động lại thiết bị không?" },
                   class: "btn btn-lg btn-danger px-5 py-2" %>
+  </div>
+
+  <!-- Nút Thay đổi WiFi -->
+  <div class="text-center mt-3">
+    <%= button_to "📶 Thay đổi WiFi", "/api/devices/reset_wifi", method: :post,
+                  params: { chip_id: @device.chip_id },
+                  data: { confirm: "Thiết bị sẽ xóa WiFi cũ và chuyển sang chế độ cấu hình mới. Bạn có chắc không?" },
+                  class: "btn btn-lg btn-warning px-5 py-2" %>
   </div>
 </div>

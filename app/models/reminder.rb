@@ -9,7 +9,7 @@ class Reminder < ActiveRecord::Base
     validates :repeat_type, presence: true, inclusion: { in: REPEAT_TYPES }
     validates :duration, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   
-    after_create :schedule_immediate_job_if_soon
+    # after_create :schedule_immediate_job_if_soon
     before_destroy :cancel_scheduled_job!
     
 
@@ -61,14 +61,24 @@ class Reminder < ActiveRecord::Base
     # Public
     def schedule_next_job!
       return unless enabled?
-      return if job_jid.present?
+    
+      # Hủy job cũ nếu đã có
+      scheduled_set = Sidekiq::ScheduledSet.new
+      if job_jid.present?
+        old_job = scheduled_set.find { |j| j.jid == job_jid }
+        if old_job
+          old_job.delete
+          Rails.logger.info "Đã huỷ ActivateRelayJob cũ (#{job_jid}) cho reminder #{id}"
+        end
+      end
     
       next_time = next_trigger_time
       return unless next_time
     
+      # Lên lịch job mới
       jid = ActivateRelayJob.perform_at(next_time, id)
       update(job_jid: jid)
-    end
+    end    
 
     def cancel_scheduled_job!
       scheduled_set = Sidekiq::ScheduledSet.new
@@ -94,13 +104,21 @@ class Reminder < ActiveRecord::Base
       end
     end
 
+    # def turn_off_time
+    #   return nil if duration.blank? || duration <= 0
+  
+    #   trigger_time = next_trigger_time
+    #   return nil unless trigger_time
+  
+    #   trigger_time + (duration / 1_000).seconds
+    # end
+
     def turn_off_time
       return nil if duration.blank? || duration <= 0
-  
-      trigger_time = next_trigger_time
-      return nil unless trigger_time
-  
-      trigger_time + (duration / 1_000).seconds
+    
+      return nil unless last_triggered_at.present?
+    
+      last_triggered_at + (duration / 1_000).seconds
     end
 
     def schedule_immediate_job_if_soon
@@ -112,11 +130,12 @@ class Reminder < ActiveRecord::Base
     end
     
     def schedule_turn_off_job!
-    
-      off_time = next_trigger_time + (duration / 1_000).seconds
-      return if off_time < Time.zone.now
+      # return if turn_off_jid.present? # Nếu đã có job ID thì không lên lịch lại
 
-      jid = TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index)
+      off_time = turn_off_time
+      # return if off_time < Time.zone.now
+
+      jid = TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index, id)
       update(turn_off_jid: jid)
     end
 
