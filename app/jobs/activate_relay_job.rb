@@ -18,11 +18,16 @@ class ActivateRelayJob
     relay = relays[relay_index]
     relay["switch_value"] = 1
     device_info["relays"][relay_index] = relay
-    device_info["update_at"] = Time.now.to_i
-    device.update(device_info: device_info.to_json)
-    reminder.update(last_triggered_at: Time.zone.now)
-    log = create_log reminder
-    refresh(reminder.device.chip_id, log.id)
+    device_info["update_at"] = Time.zone.now.to_i
+    updated = device.update(device_info: device_info.to_json)
+    if updated
+      # 👉 Chỉ update reminder và tạo log nếu update device thành công
+      reminder.update(last_triggered_at: Time.zone.now)
+      log = create_log(reminder)
+      refresh(device.chip_id, log.id)
+    else
+      Rails.logger.error("[ActivateRelayJob] Failed to update device_info for device #{device.id}")
+    end
 
   end
 
