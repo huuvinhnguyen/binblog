@@ -1,0 +1,6 @@
+# config/sidekiq_scheduler.yml
+reminder_cron_worker:
+  cron: "*/3 * * * *" # mỗi phút
+  class: "ReminderCronWorker"
+  queue: default
+  timezone: "Asia/Ho_Chi_Minh"

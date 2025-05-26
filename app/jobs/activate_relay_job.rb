@@ -22,7 +22,7 @@ class ActivateRelayJob
     updated = device.update(device_info: device_info.to_json)
     if updated
       # 👉 Chỉ update reminder và tạo log nếu update device thành công
-      reminder.update(last_triggered_at: Time.zone.now)
+      reminder.update(last_triggered_at: Time.current)
       log = create_log(reminder)
       refresh(device.chip_id, log.id)
     else

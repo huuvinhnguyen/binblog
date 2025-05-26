@@ -27,6 +27,7 @@ gem 'slim'
 gem 'mqtt', :github => 'njh/ruby-mqtt'
 gem 'sidekiq'
 gem 'sidekiq-cron'
+gem 'sidekiq-scheduler'
 gem 'actioncable'
 gem 'redis'
 # Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
