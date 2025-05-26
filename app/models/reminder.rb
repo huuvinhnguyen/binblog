@@ -104,15 +104,6 @@ class Reminder < ActiveRecord::Base
       end
     end
 
-    # def turn_off_time
-    #   return nil if duration.blank? || duration <= 0
-  
-    #   trigger_time = next_trigger_time
-    #   return nil unless trigger_time
-  
-    #   trigger_time + (duration / 1_000).seconds
-    # end
-
     def turn_off_time
       return nil if duration.blank? || duration <= 0
     
@@ -137,6 +128,19 @@ class Reminder < ActiveRecord::Base
 
       jid = TurnOffRelayJob.perform_at(off_time, device.chip_id, relay_index, id)
       update(turn_off_jid: jid)
+    end
+
+    def should_turn_on?(now = Time.current)
+      return false unless next_trigger_time
+  
+      not_triggered_yet = last_triggered_at.nil? || last_triggered_at < next_trigger_time
+      in_time_window = next_trigger_time.between?(now - 5.minutes, now + 5.minutes)
+      not_triggered_yet && in_time_window
+    end
+  
+    def should_turn_off?(now = Time.current)
+      return false unless turn_off_time
+      turn_off_time.between?(now - 5.minutes, now + 5.minutes)
     end
 
   end

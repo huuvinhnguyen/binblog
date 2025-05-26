@@ -5,6 +5,8 @@ development:
   username: u200682234_bin1
   password: Pleiku@2025
   host: srv612.hstgr.io
+  variables:
+    time_zone: '+07:00'  
   database: u200682234_bin1
   port: 3306
 
@@ -15,6 +17,8 @@ production:
   username: u200682234_bin1
   password: Pleiku@2025
   host: srv612.hstgr.io
+  variables:
+    time_zone: '+07:00'  # Hoặc 'Asia/Ho_Chi_Minh' nếu MySQL hỗ trợ
   database: u200682234_bin1
   port: 3306
 

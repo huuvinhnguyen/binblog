@@ -283,4 +283,165 @@ RSpec.describe Reminder, type: :model do
             }.not_to raise_error
         end
     end
+
+    describe '#cancel_scheduled_job!' do
+      let(:reminder) {
+        Reminder.create!(
+          device: device,
+          relay_index: 0,
+          start_time: 1.minute.from_now,
+          repeat_type: 'once',
+          duration: 60_000,
+          enabled: true,
+          job_jid: 'fake-activate-jid',
+          turn_off_jid: 'fake-turnoff-jid'
+        )
+      }
+
+      let(:scheduled_set) { instance_double(Sidekiq::ScheduledSet) }
+      let(:fake_activate_job) { instance_double(Sidekiq::JobRecord, jid: 'fake-activate-jid', delete: true) }
+      let(:fake_turnoff_job) { instance_double(Sidekiq::JobRecord, jid: 'fake-turnoff-jid', delete: true) }
+
+      before do
+        allow(Sidekiq::ScheduledSet).to receive(:new).and_return([fake_activate_job, fake_turnoff_job])
+        allow(Rails.logger).to receive(:info)
+        allow(Rails.logger).to receive(:warn)
+      end
+
+      it 'deletes the scheduled ActivateRelayJob if it exists' do
+        reminder.cancel_scheduled_job!
+        expect(Rails.logger).to have_received(:info).with("Đã huỷ ActivateRelayJob fake-activate-jid cho reminder #{reminder.id}")
+      end
+
+      it 'deletes the scheduled TurnOffRelayJob if it exists' do
+        reminder.cancel_scheduled_job!
+        expect(Rails.logger).to have_received(:info).with("Đã huỷ TurnOffRelayJob fake-turnoff-jid cho reminder #{reminder.id}")
+      end
+
+      context 'when jobs are not found in the scheduled set' do
+        before do
+          allow(Sidekiq::ScheduledSet).to receive(:new).and_return([])
+        end
+
+        it 'logs warning for missing ActivateRelayJob' do
+          reminder.cancel_scheduled_job!
+          expect(Rails.logger).to have_received(:warn).with("Không tìm thấy ActivateRelayJob fake-activate-jid để huỷ cho reminder #{reminder.id}")
+        end
+
+        it 'logs warning for missing TurnOffRelayJob' do
+          reminder.cancel_scheduled_job!
+          expect(Rails.logger).to have_received(:warn).with("Không tìm thấy TurnOffRelayJob fake-turnoff-jid để huỷ cho reminder #{reminder.id}")
+        end
+      end
+    end
+
+    describe '#should_turn_on?' do
+      let(:now) { Time.zone.local(2025, 5, 25, 12, 0, 0) }
+
+      before { travel_to(now) }
+      after { travel_back }
+
+      shared_examples 'returns true' do
+        it 'returns true' do
+          expect(reminder.should_turn_on?(now)).to be true
+        end
+      end
+
+      shared_examples 'returns false' do
+        it 'returns false' do
+          expect(reminder.should_turn_on?(now)).to be false
+        end
+      end
+
+      context 'when repeat_type is once' do
+        context 'within 5-minute window and not triggered' do
+          let(:reminder) do
+            Reminder.new(start_time: now, repeat_type: 'once', last_triggered_at: nil)
+          end
+          include_examples 'returns true'
+        end
+
+        context 'outside 5-minute window' do
+          let(:reminder) do
+            Reminder.new(start_time: now + 10.minutes, repeat_type: 'once', last_triggered_at: nil)
+          end
+          include_examples 'returns false'
+        end
+
+        context 'already triggered' do
+          let(:reminder) do
+            Reminder.new(start_time: now, repeat_type: 'once', last_triggered_at: now)
+          end
+          include_examples 'returns false'
+        end
+      end
+
+      context 'when repeat_type is daily' do
+        context 'start_time matches now time, and not triggered' do
+          let(:reminder) do
+            Reminder.new(start_time: now.change(hour: 12, min: 0), repeat_type: 'daily', last_triggered_at: nil)
+          end
+          include_examples 'returns true'
+        end
+
+        context 'already triggered today' do
+          let(:reminder) do
+            Reminder.new(
+              start_time: now.change(hour: 12, min: 0),
+              repeat_type: 'daily',
+              last_triggered_at: now
+            )
+          end
+          include_examples 'returns false'
+        end
+      end
+
+      context 'when repeat_type is weekly' do
+        context 'start_time matches current weekday and time' do
+          let(:start_time) { now.change(hour: 12, min: 0).advance(days: -(now.wday)) }
+          let(:reminder) do
+            Reminder.new(start_time: start_time, repeat_type: 'weekly', last_triggered_at: nil)
+          end
+          include_examples 'returns true'
+        end
+
+        context 'already triggered for this week' do
+          let(:start_time) { now.change(hour: 12, min: 0).advance(days: -(now.wday)) }
+          let(:reminder) do
+            Reminder.new(start_time: start_time, repeat_type: 'weekly', last_triggered_at: now)
+          end
+          include_examples 'returns false'
+        end
+      end
+
+      # context 'when repeat_type is monthly' do
+      #   let(:start_time) { Time.zone.local(2025, 5, 25, 12, 0, 0) }
+      
+      #   let(:now) { Time.zone.local(2025, 6, 25, 12, 0, 0) } # next month, same day/time
+      
+      #   let(:reminder) do
+      #     Reminder.new(
+      #       start_time: start_time,
+      #       repeat_type: 'monthly',
+      #       last_triggered_at: nil
+      #     )
+      #   end
+      
+      #   it 'returns true' do
+      #     puts "Start time: #{start_time}"
+      #     puts "Now: #{now}"
+      #     puts "Next trigger: #{reminder.next_trigger_time}"
+      #     expect(reminder.should_turn_on?(now)).to be true
+      #   end
+      # end
+      
+      
+
+      context 'when start_time is not a valid time object' do
+        let(:reminder) do
+          Reminder.new(start_time: 'invalid', repeat_type: 'daily', last_triggered_at: nil)
+        end
+        include_examples 'returns false'
+      end
+    end
 end

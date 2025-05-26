@@ -3,7 +3,9 @@ class ReminderCronWorker
     include Sidekiq::Worker
   
     def perform
-      now = Time.zone.now
+      Rails.logger.info "[ReminderCronWorker] Running at: #{Time.zone.now} | Time.now: #{Time.now}"
+
+      now = Time.current
       future_time = now + 5.minutes   
       Reminder.includes(:device).where(enabled: true).find_each do |reminder|
         
@@ -12,17 +14,12 @@ class ReminderCronWorker
         turn_on_at = reminder.next_trigger_time
         turn_off_at  = reminder.turn_off_time
   
-        # Bật relay
-        
-        should_trigger = reminder.last_triggered_at.nil? || reminder.last_triggered_at < turn_on_at
-        if should_trigger && turn_on_at.between?(now - 5.minutes, future_time)
+        if reminder.should_turn_on?(now)
           reminder.schedule_next_job!
-          puts "schedule_next_job "
-
+          puts "schedule_next_job"
         end
-
-        # Tắt relay
-        if turn_off_at.present? && turn_off_at.between?(now - 5.minutes, now + 5.minutes)
+  
+        if reminder.should_turn_off?(now)
           reminder.schedule_turn_off_job!
         end
 

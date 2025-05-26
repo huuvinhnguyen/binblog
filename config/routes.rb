@@ -1,5 +1,6 @@
 require 'sidekiq/web'
-require 'sidekiq/cron/web' # <- Dòng này để hiện tab "Cron"
+# require 'sidekiq/cron/web' # <- Dòng này để hiện tab "Cron"
+# require 'sidekiq-scheduler/web'
 
 Rails.application.routes.draw do
   devise_for :users

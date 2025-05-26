@@ -305,7 +305,76 @@ RSpec.describe ReminderCronWorker, type: :worker do
         end
       end
     end
+
+    context "when next_trigger_time is too far in the future" do
+      it "does not schedule ActivateRelayJob" do
+        reminder = create(:reminder, device: device, enabled: true)
+        
+        allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(10.minutes.from_now)
+        allow(ActivateRelayJob).to receive(:perform_at)
+        
+        ReminderCronWorker.new.perform
+        
+        expect(ActivateRelayJob).not_to have_received(:perform_at)
+      end
+    end
+
+    context "when reminder was already triggered at next_trigger_time" do
+      it "does not schedule ActivateRelayJob again" do
+        frozen_now = Time.zone.local(2025, 5, 12, 16, 0, 0)
     
+        travel_to(frozen_now) do
+          reminder = create(
+            :reminder,
+            device: device,
+            start_time: frozen_now,
+            repeat_type: "daily",
+            enabled: true,
+            last_triggered_at: frozen_now # đã bật rồi
+          )
+    
+          allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(frozen_now)
+          allow(ActivateRelayJob).to receive(:perform_at)
+    
+          ReminderCronWorker.new.perform
+    
+          expect(ActivateRelayJob).not_to have_received(:perform_at)
+        end
+      end
+    end
+
+    context "when reminder was already triggered at next_trigger_time" do
+      it "test daily at 6h:30 to active relay" do
+        frozen_now = Time.zone.local(2025, 5, 27, 06, 30, 0)
+        trigger_at = Time.zone.local(2025, 5, 25, 06, 30, 0)
+
+        last_trigger = Time.zone.local(2025, 5, 26, 06, 30, 0)
+
+    
+        travel_to(frozen_now) do
+          reminder = create(
+            :reminder,
+            device: device,
+            start_time: trigger_at,
+            repeat_type: "daily",
+            enabled: true,
+            last_triggered_at: last_trigger # đã bật rồi
+          )
+    
+          allow_any_instance_of(Reminder).to receive(:next_trigger_time).and_return(reminder.next_trigger_time)
+
+          allow(ActivateRelayJob).to receive(:perform_at) do |*args|
+            puts "ActivateRelayJob.perform_at called with: #{args.inspect}"
+          end
+
+          puts "#should_turn_on = #{reminder.should_turn_on?(frozen_now)}"
+    
+          ReminderCronWorker.new.perform
+    
+          expect(ActivateRelayJob).to have_received(:perform_at)
+        end
+      end
+    end
     
   end
 end
