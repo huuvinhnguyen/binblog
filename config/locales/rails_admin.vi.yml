@@ -1,0 +1,73 @@
+vi:
+  admin:
+    dashboard:
+      title: "Bảng điều khiển"
+      menu: "Bảng điều khiển"
+    actions:
+      index:
+        title: "Danh sách"
+        menu: "Danh sách"
+      show:
+        title: "Chi tiết %{model_label}"
+        menu: "Xem"
+      new:
+        title: "Thêm %{model_label}"
+        menu: "Thêm mới"
+      edit:
+        title: "Chỉnh sửa %{model_label}"
+        menu: "Chỉnh sửa"
+      delete:
+        title: "Xóa %{model_label}"
+        menu: "Xóa"
+      export:
+        title: "Xuất %{model_label}"
+        menu: "Xuất"
+        link: "Xuất các bản ghi đã lọc"
+      bulk_delete:
+        title: "Xóa nhiều bản ghi %{model_label}"
+        menu: "Xóa nhiều"
+      show_in_app:
+        menu: "Xem trên trang"
+      history_index:
+        title: "Lịch sử"
+        menu: "Lịch sử"
+      history_show:
+        title: "Chi tiết lịch sử"
+        menu: "Xem thay đổi"
+  activerecord:
+    models:
+      relay_log: "Lịch sử rơ-le"
+      device: "Thiết bị"
+      user: "Người dùng"
+      employee: "Nhân viên"
+      reminder: "Nhắc nhở"
+      role: "Vai trò"
+      project: "Dự án"
+    attributes:
+      relay_log:
+        device: "Thiết bị"
+        relay_index: "Chỉ số rơ-le"
+        turn_on_at: "Thời gian bật"
+        turn_off_at: "Thời gian tắt"
+        triggered_by: "Kích hoạt bởi"
+        command_source: "Nguồn lệnh"
+        relay_status: "Trạng thái rơ-le"
+      device:
+        name: "Tên thiết bị"
+        status: "Trạng thái"
+      user:
+        username: "Tên đăng nhập"
+        email: "Email"
+      employee:
+        name: "Tên nhân viên"
+        code: "Mã nhân viên"
+      reminder:
+        schedule: "Lịch trình"
+        status: "Trạng thái"
+      role:
+        name: "Tên vai trò"
+      project:
+        name: "Tên dự án"
+  misc:
+    navigation:
+      header: "Điều hướng"
