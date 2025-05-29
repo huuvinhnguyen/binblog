@@ -3,6 +3,8 @@ require 'sidekiq/web'
 # require 'sidekiq-scheduler/web'
 
 Rails.application.routes.draw do
+  resources :posts
+  get 'home/index'
   devise_for :users
   mount ActionCable.server => '/cable'
   # mount Sidekiq::Web => '/sidekiq'
@@ -114,12 +116,12 @@ Rails.application.routes.draw do
 
   # You can have the root of your site routed with "root"
 
-  #root 'welcome#index'
+  root 'home#index'
+
 
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   resources :resumes, only: [:index, :new, :create, :destroy]
   resources :projects
-  root "employees#index"
   post '/download_mp3', to: 'youtube#download_mp3'
   post 'youtube/download_mp3'
 
