@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_05_14_143123) do
+ActiveRecord::Schema[7.0].define(version: 2025_05_28_235716) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -22,6 +22,13 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_14_143123) do
     t.datetime "end_time"
     t.decimal "hourly_wage", precision: 12
     t.index ["employee_id"], name: "index_attendances_on_employee_id"
+  end
+
+  create_table "categories", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.string "name"
+    t.string "slug"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "devices", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -71,6 +78,29 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_14_143123) do
     t.index ["device_finger_id"], name: "index_fingers_on_device_finger_id", unique: true
     t.index ["employee_id"], name: "index_fingers_on_employee_id"
     t.index ["finger_id"], name: "index_fingers_on_finger_id"
+  end
+
+  create_table "friendly_id_slugs", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.string "slug", null: false
+    t.integer "sluggable_id", null: false
+    t.string "sluggable_type", limit: 50
+    t.string "scope"
+    t.datetime "created_at"
+    t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
+    t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
+    t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
+  end
+
+  create_table "posts", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.string "title"
+    t.text "content"
+    t.string "slug"
+    t.boolean "published"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "category_id"
+    t.index ["category_id"], name: "index_posts_on_category_id"
+    t.index ["slug"], name: "index_posts_on_slug", unique: true
   end
 
   create_table "projects", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -186,6 +216,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_14_143123) do
 
   add_foreign_key "attendances", "employees"
   add_foreign_key "fingers", "employees"
+  add_foreign_key "posts", "categories"
   add_foreign_key "relay_logs", "devices"
   add_foreign_key "relay_logs", "users"
   add_foreign_key "reminders", "devices"

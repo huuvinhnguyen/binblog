@@ -71,3 +71,5 @@ end
 
   
 gem "cssbundling-rails"
+gem 'friendly_id'
+
