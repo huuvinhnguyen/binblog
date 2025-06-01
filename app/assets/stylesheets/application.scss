@@ -4,6 +4,44 @@
 @import "gauges";
 @import "toggle";
 
+
+
+.product-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.product-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.product-card img {
+  transition: transform 0.4s ease;
+  border-radius: 12px;
+}
+
+.product-card:hover img {
+  transform: scale(1.05);
+}
+
+.product-card h3,
+.product-card p {
+  transition: color 0.3s ease;
+}
+
+.product-card:hover h3 {
+  color: #2c7be5; /* xanh nổi bật hơn */
+}
+
+.product-card:hover p {
+  color: #495057;
+}
+
+
+
 .container {
   @include make-container();
   // Make sure to define this width after the mixin to override
