@@ -5,7 +5,8 @@
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.4",
     "cable_ready": "^5.0.0",
-    "esbuild": "^0.17.16",
+    "chart.js": "^4.4.9",
+    "esbuild": "^0.25.5",
     "rails_admin": "3.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -15,5 +16,15 @@
   "scripts": {
     "build": "sass ./app/assets/stylesheets/application.scss:./app/assets/builds/application.css ./app/assets/stylesheets/rails_admin.scss:./app/assets/builds/rails_admin.css --no-source-map --load-path=node_modules",
     "build:css": "sass ./app/assets/stylesheets/application.scss:./app/assets/builds/application.css ./app/assets/stylesheets/rails_admin.scss:./app/assets/builds/rails_admin.css --no-source-map --load-path=node_modules"
-  }
+  },
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "vite-plugin-ruby": "^5.1.1"
+  },
+  "name": "binblog",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:huuvinhnguyen/binblog.git",
+  "author": "Vinh Nguyen <huuvinh@live.com>",
+  "license": "MIT"
 }
