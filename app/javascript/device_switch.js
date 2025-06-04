@@ -9,6 +9,12 @@ document.addEventListener("turbo:load", () => {
       const chipId = e.target.getAttribute('data-chip-id');
       const switchValue = e.target.checked ? 1 : 0;
 
+      gtag("event", "switchon", {
+        chip_id: chipId,
+        relay_index: relayIndex,
+        switch_value: switchValue
+      });
+
       fetch('/api/devices/switchon', {
         method: 'POST',
         headers: {
@@ -38,6 +44,12 @@ document.addEventListener("turbo:load", () => {
       const chipId = e.target.getAttribute('data-chip-id');
       const toggleValue = e.target.checked ? 1 : 0;
 
+      gtag("event", "set_reminders_active", {
+        chip_id: chipId,
+        relay_index: relayIndex,
+        is_reminders_active: switchValue
+      });
+
       fetch('/api/devices/set_reminders_active', { // 🔥 sửa lại path đúng
         method: 'POST',
         headers: {
@@ -59,5 +71,25 @@ document.addEventListener("turbo:load", () => {
       });
     });
   });
+
+  document.querySelectorAll('[id^="longlast-input-"]').forEach((relay) => {
+    const relayIndex = relay.id.split('-').pop();
+
+    relay.addEventListener('change', (e) => {
+      const chipId = e.target.getAttribute('data-chip-id');
+      const value = parseInt(e.target.value, 10);
+      const unit = document.querySelector(`#longlast-unit-${relayIndex}`)?.value;
+
+
+      gtag("event", "relay_longlast_input", {
+        chip_id: chipId,
+        relay_index: relayIndex,
+        duration: value,
+        unit: unit
+      });
+    });
+  });
+
+
 });
 
