@@ -21,6 +21,7 @@ class SwitchOnDurationService
       device_info["update_at"] = Time.zone.now.to_i
   
       if device.update(device_info: device_info.to_json)
+        device.reload
         trigger_time = Time.current
         log = create_log(device.id, @relay_index, trigger_time, @longlast)
       
