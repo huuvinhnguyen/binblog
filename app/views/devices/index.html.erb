@@ -14,7 +14,7 @@
     </thead>
     <tbody>
       <% @devices.each do |device| %>
-        <% info = device.device_info.present? ? JSON.parse(device.device_info) : {} %>
+        <% info = device.parsed_meta_info %>
         <tr>
           <td>
             <%= link_to device.name, device_path(device), class: "text-decoration-none fw-bold text-primary" %>
@@ -23,7 +23,11 @@
           <td>
             <span class="text-muted">
               <% if info['last_seen'].present? %>
-                <%= time_ago_in_words(Time.parse(info['last_seen'])) %> trước
+                <% begin %>
+                  <%= time_ago_in_words(Time.parse(info['last_seen'])) %> trước
+                <% rescue ArgumentError, TypeError %>
+                  Không rõ
+                <% end %>
               <% else %>
                 Không rõ
               <% end %>

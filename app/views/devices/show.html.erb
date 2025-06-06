@@ -14,7 +14,7 @@
       <div class="d-flex align-items-center">
         <strong class="me-2">Lần kết nối lần cuối:</strong>
         <span class="text-muted me-3">
-          <%= Time.parse(@device_info['last_seen']).strftime('%d/%m/%Y %H:%M:%S') if @device_info['last_seen'].present? %>
+          <%= Time.parse(@device.parsed_meta_info['last_seen']).strftime('%d/%m/%Y %H:%M:%S') if @device_info['last_seen'].present? %>
         </span>
 
         <%= button_to "🔄 Làm mới", "/api/devices/refresh_device", method: :post,
@@ -68,25 +68,25 @@
     </div>
   <% end %>
 
-  <% device_info = @device.device_info.present? ? JSON.parse(@device.device_info) : {} %>
+  <% meta_info = @device.parsed_meta_info %>
 
 <div>
   <span>🆔 </span>  
   <small class="text-muted"><%= @device.chip_id %></small>
 </div>
 
-<% if device_info['build_version'].present? || device_info['app_version'].present? %>
+<% if meta_info['build_version'].present? || meta_info['app_version'].present? %>
   <div>
-    <% if device_info['build_version'].present? %>
-      <span>🛠️ <small class="text-muted">v<%= device_info['build_version'] %></small></span>
+    <% if meta_info['build_version'].present? %>
+      <span>🛠️ <small class="text-muted">v<%= meta_info['build_version'] %></small></span>
     <% end %>
 
-    <% if device_info['build_version'].present? && device_info['app_version'].present? %>
+    <% if meta_info['build_version'].present? && meta_info['app_version'].present? %>
       &nbsp;&nbsp;|&nbsp;&nbsp;
     <% end %>
 
-    <% if device_info['app_version'].present? %>
-      <span>📱 <small class="text-muted">v<%= device_info['app_version'] %></small></span>
+    <% if meta_info['app_version'].present? %>
+      <span>📱 <small class="text-muted">v<%= meta_info['app_version'] %></small></span>
     <% end %>
   </div>
 <% end %>
