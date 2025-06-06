@@ -291,7 +291,7 @@ module Api
       # Cập nhật trường updated_at để đánh dấu "last seen"
       device.touch
 
-      meta = device.meta_info || {}
+      meta = device.parsed_meta_info
       meta["last_seen"] = Time.current.to_s
       meta["local_ip"] = params[:local_ip] || ""
       meta["build_version"] = params[:build_version] || 0
