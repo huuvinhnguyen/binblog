@@ -14,7 +14,7 @@
       <div class="d-flex align-items-center">
         <strong class="me-2">Lần kết nối lần cuối:</strong>
         <span class="text-muted me-3">
-          <%= Time.parse(@device.parsed_meta_info['last_seen']).strftime('%d/%m/%Y %H:%M:%S') if @device_info['last_seen'].present? %>
+          <%= Time.parse(@device.parsed_meta_info['last_seen']).strftime('%d/%m/%Y %H:%M:%S') if @device.parsed_meta_info['last_seen'].present? %>
         </span>
 
         <%= button_to "🔄 Làm mới", "/api/devices/refresh_device", method: :post,
