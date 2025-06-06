@@ -22,7 +22,6 @@ class SwitchOnDurationService
   
       if device.update(device_info: device_info.to_json)
         device.reload
-        sleep(0.5) if duration_ms == 0 # hoặc delay job như perform_in(1)
         trigger_time = Time.current
         log = create_log(device.id, @relay_index, trigger_time, @longlast)
       
