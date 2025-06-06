@@ -48,7 +48,7 @@ class TurnOffRelayJob
 
         turn_off_at = Time.current
         refresh(device_id)
-        note = "Turn off relay switch_relay #{device.device_info['relays'][relay_index]['switch_value']}"
+        note = "Turn off relay switch_relay #{device.device_info.to_s}"
         log = create_log(device.id, relay_index,nil, turn_off_at, nil, note)
         puts note
 
