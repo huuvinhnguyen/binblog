@@ -297,7 +297,7 @@ module Api
       device_info["local_ip"] = params["local_ip"] || ""
       device_info["build_version"] = params[:build_version] || 0
       device_info["app_version"] = params[:app_version] || ""
-      device.update(device_info: device_info.to_json)
+      # device.update(device_info: device_info.to_json)
     
       render json: {
         status: 'success',
