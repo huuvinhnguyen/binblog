@@ -20,21 +20,23 @@ class SwitchOnDurationService
       device_info["relays"] = relays
       device_info["update_at"] = Time.zone.now.to_i
   
-      device.update(device_info: device_info.to_json)
-      trigger_time = Time.current
-      log = create_log(device.id, @relay_index, trigger_time, @longlast)
-  
-      puts "Đã bật relay #{@relay_index} cho thiết bị #{device.chip_id}"
-  
-      duration_ms = @longlast.to_i
-      puts "duration_ms: #{duration_ms}"
-  
-      if duration_ms == 0
-        TurnOffRelayJob.perform_async(device.chip_id, @relay_index)
+      if device.update(device_info: device_info.to_json)
+        device.reload
+        trigger_time = Time.current
+        log = create_log(device.id, @relay_index, trigger_time, @longlast)
+      
+        duration_ms = @longlast.to_i
+        if duration_ms == 0
+          TurnOffRelayJob.perform_async(device.chip_id, @relay_index)
+        else
+          TurnOffRelayJob.perform_in(duration_ms / 1000, device.chip_id, @relay_index)
+        end
+      
+        Rails.logger.info("Đã bật relay #{@relay_index} cho thiết bị #{device.chip_id}, tắt sau #{duration_ms / 1000}s")
       else
-        puts "Lên lịch tắt relay trong #{duration_ms / 1000} giây"
-        TurnOffRelayJob.perform_in(duration_ms / 1000, device.chip_id, @relay_index)
+        Rails.logger.error("❗Không thể cập nhật device_info cho thiết bị #{device.chip_id}, không lên lịch TurnOffRelayJob")
       end
+      
     end
 
     def create_log(device_id, relay_index, trigger_time, duration)

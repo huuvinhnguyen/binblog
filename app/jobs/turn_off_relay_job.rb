@@ -19,13 +19,19 @@ class TurnOffRelayJob
       success = device.update(device_info: device_info.to_json)
 
       unless success
-        puts "⚠️ Không thể cập nhật device_info cho thiết bị #{device_id}"
-        puts device.errors.full_messages.join(", ")
-
+        
         note = device.errors.full_messages.join(", ").to_s
-        log = create_log(device_id, relay_index, nil, reminder.turn_off_time, note)
+        sleep 1
+        success = device.update(device_info: device_info.to_json)
+
+        unless success
+          Rails.logger.error("❌ Retry cập nhật thiết bị #{device_id} cũng thất bại.")
+          log = create_log(device_id, relay_index, nil, Time.current, nil, "Update thất bại, relay có thể không tắt #{note}")
+          return
+        end
         return
       end
+      device.reload
   
       puts "TurnOffRelayJob: Đã tắt relay #{relay_index} của thiết bị #{device_id}"
 
@@ -37,13 +43,12 @@ class TurnOffRelayJob
         log = create_log(device.id, relay_index, reminder.next_trigger_time, reminder.turn_off_time, nil, note)
         refresh(device_id, log.id)
         puts note
-      
 
       else
 
         turn_off_at = Time.current
         refresh(device_id)
-        note = "Turn off relay"
+        note = "Turn off relay switch_relay #{device.device_info.to_s}"
         log = create_log(device.id, relay_index,nil, turn_off_at, nil, note)
         puts note
 

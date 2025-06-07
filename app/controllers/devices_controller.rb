@@ -18,9 +18,6 @@ class DevicesController < ApplicationController
 
   end
 
-  def relay_statistics
-  end
-
   def connect
     # session[:device_id] = params[:deviceid]
     # topic = params[:deviceid]

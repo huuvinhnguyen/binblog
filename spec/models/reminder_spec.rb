@@ -71,7 +71,9 @@ RSpec.describe Reminder, type: :model do
     end
 
     it 'returns nil if monthly repeat has invalid day (e.g. 31 Feb)' do
-      reminder = Reminder.new(
+      frozen_time = Time.zone.local(2025, 1, 31, 10, 0, 0)
+      travel_to(frozen_time) do
+        reminder = Reminder.new(
         start_time: Time.zone.local(2025, 1, 31, 10, 0, 0),
         relay_index: 0,
         repeat_type: 'monthly',
@@ -80,6 +82,7 @@ RSpec.describe Reminder, type: :model do
 
       # February 2025 has only 28 days
       expect(reminder.next_trigger_time).to be_nil
+      end 
     end
 
     it 'returns start_time for repeat_type once' do
@@ -412,30 +415,7 @@ RSpec.describe Reminder, type: :model do
           end
           include_examples 'returns false'
         end
-      end
-
-      # context 'when repeat_type is monthly' do
-      #   let(:start_time) { Time.zone.local(2025, 5, 25, 12, 0, 0) }
-      
-      #   let(:now) { Time.zone.local(2025, 6, 25, 12, 0, 0) } # next month, same day/time
-      
-      #   let(:reminder) do
-      #     Reminder.new(
-      #       start_time: start_time,
-      #       repeat_type: 'monthly',
-      #       last_triggered_at: nil
-      #     )
-      #   end
-      
-      #   it 'returns true' do
-      #     puts "Start time: #{start_time}"
-      #     puts "Now: #{now}"
-      #     puts "Next trigger: #{reminder.next_trigger_time}"
-      #     expect(reminder.should_turn_on?(now)).to be true
-      #   end
-      # end
-      
-      
+      end    
 
       context 'when start_time is not a valid time object' do
         let(:reminder) do

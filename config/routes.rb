@@ -36,7 +36,6 @@ Rails.application.routes.draw do
   get 'devices/create'
   get 'devices/edit'
   get 'devices/update'
-  get 'devices/relay_statistics', to: 'devices#relay_statistics', as: :relay_statistics
   get 'devices/destroy'
   post 'devices/publish'
   post 'devices/connect'
