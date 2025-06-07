@@ -98,3 +98,46 @@ document.addEventListener('turbo:load', () => {
         }
     });
 });
+
+
+document.addEventListener('turbo:load', () => {
+
+    // Sample data: số lần chuyển động ghi nhận mỗi giờ
+    const motionData = [
+        { hour: '08:00', motion_count: 2 },
+        { hour: '09:00', motion_count: 5 },
+        { hour: '10:00', motion_count: 3 },
+        { hour: '11:00', motion_count: 7 },
+        { hour: '12:00', motion_count: 4 },
+        { hour: '13:00', motion_count: 0 },
+        { hour: '14:00', motion_count: 6 }
+    ];
+
+    const labels = motionData.map(entry => entry.hour);
+    const data = motionData.map(entry => entry.motion_count);
+
+    const ctx = document.getElementById('motionChart').getContext('2d');
+    const motionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+        labels: labels,
+        datasets: [{
+            label: 'Số lần chuyển động',
+            data: data,
+            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+        },
+        options: {
+        responsive: true,
+        scales: {
+            y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+            }
+        }
+        }
+    });
+
+  });
