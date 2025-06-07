@@ -73,5 +73,3 @@ end
 gem "cssbundling-rails"
 gem 'friendly_id'
 
-
-gem "vite_rails", "~> 3.0"
