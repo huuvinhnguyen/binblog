@@ -1,23 +1,8 @@
 <div class="">
-<section class="hero text-center py-16 bg-blue-50">
-  <h1 class="text-4xl font-bold mb-4">Giải pháp Thiết bị Thông minh cho Nông nghiệp công nghệ cao</h1>
-  <p class="text-lg text-gray-700 mb-6">Chúng tôi cung cấp hệ thống quản lý thiết bị, tự động hóa và giám sát từ xa.</p>
-  <a href="/devices" class="bg-blue-600 text-white px-6 py-3 rounded shadow hover:bg-blue-700">Xem thiết bị</a>
-</section>
-
-<section class="hero text-center py-16 bg-blue-50">
-  <% @posts.each do |post| %>
-    <div class="mb-6">
-      <h2 class="text-2xl font-semibold">
-        <%= link_to post.title, post_path(post) %>
-      </h2>
-      <p class="text-gray-600"><%= truncate(strip_tags(post.content), length: 150) %></p>
-    </div>
-  <% end %>
-</section>
 
 <!-- FEATURES SECTION -->
 <section class="features grid grid-cols-1 md:grid-cols-3 gap-6 px-8 py-16">
+<!--
   <div class="feature-card p-6 bg-white shadow rounded">
     <h2 class="text-xl font-semibold mb-2">Thiết bị điều khiển</h2>
     <p class="text-gray-600">Giám sát môi trường, công tắc điều khiển từ xa, cảnh báo thông minh.</p>
@@ -30,6 +15,8 @@
     <h2 class="text-xl font-semibold mb-2">Tùy chỉnh theo nhu cầu</h2>
     <p class="text-gray-600">Thiết kế phần mềm và phần cứng linh hoạt cho doanh nghiệp của bạn.</p>
   </div>
+  -->
+
 </section>
 
 <!-- HIGHLIGHTED PRODUCTS -->
@@ -47,8 +34,12 @@
                   alt="Cảm biến nhiệt độ" 
                   class="img-fluid rounded shadow-sm object-fit-cover">
             </div>
+            <h3 class="h5 fw-semibold mb-2">Cho ăn đóng ngắt từ xa</h3>
+            <p class="text-muted">Giải phải chăn nuôi, cho ăn tự động theo lịch trình đặt ra</p>
+            <!--
             <h3 class="h5 fw-semibold mb-2">Cảm biến nhiệt độ & độ ẩm</h3>
             <p class="text-muted">Theo dõi chính xác điều kiện môi trường theo thời gian thực.</p>
+            -->
           </div>
         </a>
       </div>
@@ -72,12 +63,17 @@
                  alt="Bộ điều khiển trung tâm" 
                  class="img-fluid rounded shadow-sm object-fit-cover">
           </div>
-          <h3 class="h5 fw-semibold mb-2">Bộ điều khiển trung tâm</h3>
+          <h3 class="h5 fw-semibold mb-2">Theo dõi độ ẩm đất</h3>
           <p class="text-muted">Tích hợp dữ liệu, điều khiển và cảnh báo qua nền tảng đám mây.</p>
         </div>
       </div>
     </div>
   </div>
+</section>
+
+<section>
+  <canvas id="tempHumidityChart" width="400" height="200"></canvas>
+
 </section>
 
 
@@ -94,6 +90,23 @@
     <h2 class="text-xl font-semibold mb-2">Tùy chỉnh theo nhu cầu</h2>
     <p class="text-gray-600">Thiết kế phần mềm và phần cứng linh hoạt cho doanh nghiệp của bạn.</p>
   </div>
+</section>
+
+<section class="hero text-center py-16 bg-blue-50">
+  <h1 class="text-4xl font-bold mb-4">Giải pháp Thiết bị Thông minh cho Nông nghiệp công nghệ cao</h1>
+  <p class="text-lg text-gray-700 mb-6">Chúng tôi cung cấp hệ thống quản lý thiết bị, tự động hóa và giám sát từ xa.</p>
+  <a href="/devices" class="bg-blue-600 text-white px-6 py-3 rounded shadow hover:bg-blue-700">Xem thiết bị</a>
+</section>
+
+<section class="hero text-center py-16 bg-blue-50">
+  <% @posts.each do |post| %>
+    <div class="mb-6">
+      <h2 class="text-2xl font-semibold">
+        <%= link_to post.title, post_path(post) %>
+      </h2>
+      <p class="text-gray-600"><%= truncate(strip_tags(post.content), length: 150) %></p>
+    </div>
+  <% end %>
 </section>
 
 <section class="about px-8 py-16 bg-gray-100 text-center">
