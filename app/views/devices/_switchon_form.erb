@@ -1,3 +1,4 @@
+
 <!-- Công tắc BẬT/TẮT -->
 <div style="border: 2px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 30px; background-color: #f8f9fa;">
   <div class="form-check form-switch" style="display: flex; align-items: center; justify-content: center; font-size: 28px;">
@@ -46,6 +47,15 @@
 
     </div>
   <% end %>
+</div>
+
+<!-- Nút mở trang thống kê -->
+<div class="text-end mt-4">
+  <%= button_to "📊 Xem thống kê",
+      relay_statistics_path(chip_id: chip_id, relay_index: relay_index),
+      method: :get,
+      class: "btn btn-lg btn-info px-5 py-2",
+      style: "font-size: 22px; border-radius: 10px;" %>
 </div>
 
 <!-- Form hẹn giờ -->
