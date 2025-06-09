@@ -47,7 +47,7 @@ document.addEventListener("turbo:load", () => {
       gtag("event", "set_reminders_active", {
         chip_id: chipId,
         relay_index: relayIndex,
-        is_reminders_active: switchValue
+        is_reminders_active: toggleValue
       });
 
       fetch('/api/devices/set_reminders_active', { // 🔥 sửa lại path đúng
@@ -89,7 +89,5 @@ document.addEventListener("turbo:load", () => {
       });
     });
   });
-
-
 });
 

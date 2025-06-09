@@ -54,6 +54,11 @@ module Api
     
     def add_reminder
       device = Device.find_by(chip_id: params[:device_id])
+      device_info = device.device_info.present? ? JSON.parse(device.device_info) : {}
+      relays = device_info["relays"] || []
+      relay_index = params[:relay_index].to_i
+      is_reminders_active = relays[relay_index]["is_reminders_active"] == true ? 1 : 0
+
       unless device
         return render json: { error: "Device not found" }, status: :not_found
       end
@@ -70,7 +75,8 @@ module Api
         relay_index: params[:relay_index],
         start_time: start_time,
         duration: params[:duration],
-        repeat_type: params[:repeat_type]
+        repeat_type: params[:repeat_type],
+        enabled: is_reminders_active
       )
 
       if reminder.save
