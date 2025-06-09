@@ -26,6 +26,55 @@
       <div class="content-main">
         <%= yield %>
       </div>
+    <footer class="bg-light text-dark mt-5 py-4">
+      <div class="container">
+        <div class="row">
+          <!-- Về chúng tôi -->
+          <div class="col-12 col-md-3 mb-4">
+            <h5 class="mb-3">Vietfarmy</h5>
+            <p style="word-break: break-word; overflow-wrap: break-word;">
+
+              Giải pháp nông nghiệp thông minh giúp bạn theo dõi, <br> điều khiển và tối ưu hóa hệ thống tưới tiêu, <br> môi trường chăn nuôi và trồng trọt.
+            </p>
+          </div>
+
+          <!-- Liên kết -->
+          <div class="col-md-3">
+            <h5 class="mb-3">Liên kết</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-dark">Trang chủ</a></li>
+              <li><a href="#" class="text-dark">Sản phẩm</a></li>
+              <li><a href="#" class="text-dark">Dịch vụ</a></li>
+              <li><a href="#" class="text-dark">Liên hệ</a></li>
+            </ul>
+          </div>
+
+          <!-- Hỗ trợ -->
+          <div class="col-md-3">
+            <h5 class="mb-3">Hỗ trợ</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-dark">Hướng dẫn sử dụng</a></li>
+              <li><a href="#" class="text-dark">Câu hỏi thường gặp</a></li>
+              <li><a href="#" class="text-dark">Chính sách bảo mật</a></li>
+            </ul>
+          </div>
+
+          <!-- Liên hệ -->
+          <div class="col-md-3">
+            <h5 class="mb-3">Liên hệ</h5>
+            <p>Email: support@vietfarmy.vn</p>
+            <p>Điện thoại: 0901 234 567</p>
+            <p>Địa chỉ: TP. Hồ Chí Minh, Việt Nam</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Đoạn bản quyền -->
+      <div class="bg-dark text-white text-center py-3">
+        <p class="mb-0">© <%= Time.now.year %> VietFarmy. Đã đăng ký bản quyền.</p>
+      </div>
+    </footer>
 
   </body>
+
 </html>
