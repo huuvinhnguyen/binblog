@@ -16,7 +16,7 @@ RSpec.describe SwitchOnDurationService, type: :service do
   describe "#call" do
     context "when longlast is zero" do
       it "immediately performs TurnOffRelayJob" do
-        expect(TurnOffRelayJob).to receive(:perform_async).with(device.chip_id, 0)
+        expect(SwitchOffDurationJob).to receive(:perform_async).with(device.chip_id, 0)
 
         service = SwitchOnDurationService.new(device.chip_id, longlast: 0, relay_index: 0)
         service.call
@@ -30,8 +30,8 @@ RSpec.describe SwitchOnDurationService, type: :service do
     end
 
     context "when longlast is greater than 0" do
-      it "schedules TurnOffRelayJob with delay" do
-        expect(TurnOffRelayJob).to receive(:perform_in).with(5, device.chip_id, 0)
+      it "schedules SwitchOffDurationJob with delay" do
+        expect(SwitchOffDurationJob).to receive(:perform_in).with(5, device.chip_id, 0)
 
         service = SwitchOnDurationService.new(device.chip_id, longlast: 5000, relay_index: 0)
         service.call
@@ -46,8 +46,8 @@ RSpec.describe SwitchOnDurationService, type: :service do
 
     context "when relay_index is out of bounds" do
       it "does nothing" do
-        expect(TurnOffRelayJob).not_to receive(:perform_async)
-        expect(TurnOffRelayJob).not_to receive(:perform_in)
+        expect(SwitchOffDurationJob).not_to receive(:perform_async)
+        expect(SwitchOffDurationJob).not_to receive(:perform_in)
 
         service = SwitchOnDurationService.new(device.chip_id, longlast: 5000, relay_index: 5)
         service.call
