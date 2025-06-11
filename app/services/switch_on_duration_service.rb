@@ -27,9 +27,9 @@ class SwitchOnDurationService
       
         duration_ms = @longlast.to_i
         if duration_ms == 0
-          TurnOffRelayJob.perform_async(device.chip_id, @relay_index)
+          SwitchOffDurationJob.perform_async(device.chip_id, @relay_index)
         else
-          TurnOffRelayJob.perform_in(duration_ms / 1000, device.chip_id, @relay_index)
+          SwitchOffDurationJob.perform_in(duration_ms / 1000, device.chip_id, @relay_index)
         end
       
         Rails.logger.info("Đã bật relay #{@relay_index} cho thiết bị #{device.chip_id}, tắt sau #{duration_ms / 1000}s")
