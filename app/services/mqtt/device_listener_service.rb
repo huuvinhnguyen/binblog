@@ -44,12 +44,27 @@ module Mqtt
       begin
         data = JSON.parse(message)
         chip_id = data["device_id"]
-        relay_index = data["relay_index"]
+        relay_index = data["relay_index"].to_i
         longlast = data["longlast"]
         sent_time = data["sent_time"]
 
         Rails.logger.info "[MQTT][Listener] Device #{chip_id}, Relay #{relay_index}, Duration #{longlast}, Sent at #{sent_time}"
         # TODO: xử lý logic
+        device = Device.find_by(chip_id: chip_id)
+        log = RelayLog.create(
+              device_id: device.id,
+              relay_index: relay_index,
+              turn_on_at: nil,
+              turn_off_at: nil,
+              triggered_by: "MQTT",
+              command_source: "mqtt",
+              user_id: nil,
+              note: "Set relay ON trong #{(longlast / 1_000)} giây qua Reminder"
+            )
+
+        unless log.persisted?
+          Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
+        end
       rescue JSON::ParserError => e
         Rails.logger.error "[MQTT][Listener] Invalid JSON: #{message}"
       end
