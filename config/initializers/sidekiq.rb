@@ -26,5 +26,11 @@ Sidekiq.configure_server do |config|
   config.on(:startup) do
     Sidekiq.schedule = YAML.load_file(Rails.root.join("config/sidekiq_scheduler.yml"))
     Sidekiq::Scheduler.reload_schedule!
+
+    # Gọi trực tiếp không cần worker
+    Thread.new do
+      Rails.logger.info("[MQTT] Starting listener on boot")
+      Mqtt::DeviceListenerService.start_blocking
+    end
   end
 end

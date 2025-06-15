@@ -52,17 +52,17 @@ class ActivateRelayJob
   end
 
   def refresh(chip_id, log_id = nil)
-    topic = "#{chip_id}/refresh"
+    # topic = "#{chip_id}/refresh"
 
-    client = mqtt_client
-    message = {
-        "action": "refresh",
-        "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
-     }
+    # client = mqtt_client
+    # message = {
+    #     "action": "refresh",
+    #     "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
+    #  }
 
-    message[:log_id] = log_id if log_id.present?
-    client.publish(topic, message.to_json) if topic.present?
-    client.disconnect()
+    # message[:log_id] = log_id if log_id.present?
+    # client.publish(topic, message.to_json) if topic.present?
+    # client.disconnect()
   end
 
   def mqtt_client

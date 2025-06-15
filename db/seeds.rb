@@ -53,4 +53,51 @@
 #   slug: 'cho-ga-an-tu-dong-giai-phap-chan-nuoi',
 #   published: true
 # )
+puts "Seeding device..."
 
+Device.create!(
+  name: "Cho cá ăn",
+  chip_id: "esp8266_11367634",
+  status: 1, # giả sử 1 là trạng thái đang hoạt động
+  is_payment: false,
+  device_type: "switch",
+  device_info: {
+    device_type: "switch",
+    topic_type: "switchon",
+    device_id: "esp8266_11367634",
+    switch_value: nil,
+    update_at: 1749784469,
+    longlast: nil,
+    timetrigger: nil,
+    relays: [
+      {
+        switch_value: 0,
+        longlast: 0,
+        is_reminders_active: true,
+        reminders: [
+          {
+            start_time: "2025-05-27T07:05:00+07:00",
+            duration: 120000,
+            repeat_type: "daily"
+          },
+          {
+            start_time: "2025-05-29T09:11:00+07:00",
+            duration: 60000,
+            repeat_type: "daily"
+          }
+        ]
+      }
+    ],
+    last_seen: "2025-06-06 11:58:21 +0700",
+    local_ip: "192.168.1.249",
+    build_version: 0,
+    app_version: "1.0.0",
+    update_url: "https://khuonvien.com/latest_version.bin"
+  }.to_json,
+  trigger: nil,
+  url_firmware: "https://khuonvien.com/latest_version.bin",
+  note: "Cho cá ăn",
+  meta_info: {}.to_json
+)
+
+puts "Done!"
