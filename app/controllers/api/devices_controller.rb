@@ -309,7 +309,15 @@ module Api
     def refresh_device
       chip_id = params[:chip_id]
       refresh chip_id
-      render json: { status: 'ok', message: 'Refresh command sent', topic: "#{chip_id}/refresh_device" }
+      # render json: { status: 'ok', message: 'Refresh command sent', topic: "#{chip_id}/refresh_device" }
+      device = Device.find_by(chip_id: chip_id)
+
+      if device
+        # TODO: xử lý làm mới nếu cần
+        redirect_back fallback_location: device_path(device), notice: "Đã làm mới thiết bị."
+      else
+        redirect_back fallback_location: root_path, alert: "Không tìm thấy thiết bị."
+      end
     end
   
     private

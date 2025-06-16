@@ -17,4 +17,10 @@ class ApplicationController < ActionController::Base
     I18n.locale = :vi
   end
 
+  def after_sign_in_path_for(resource)
+    stored_location_for(resource) || root_path
+    # hoặc redirect đến dashboard, ví dụ:
+    # dashboard_path
+  end
+
 end

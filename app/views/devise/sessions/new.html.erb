@@ -1,24 +1,43 @@
-<h2>Log in</h2>
+<h2><%= t("devise.sessions.new.sign_in") %></h2>
 
 <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
   <div class="field">
-    <%= f.label :username %><br />
+    <%= f.label :username, t("devise.labels.username") %><br />
     <%= f.text_field :username, autofocus: true %>
   </div>
 
   <div class="field">
-    <%= f.label :password %><br />
-    <%= f.password_field :password, autocomplete: "current-password" %>
+    <%= f.label :password, t("devise.labels.password") %><br />
+    <%= f.password_field :password, id: "password_field", autocomplete: "current-password" %>
   </div>
 
-  <% if devise_mapping.rememberable? %>
-    <div class="field">
-      <%= f.check_box :remember_me %>
-      <%= f.label :remember_me %>
+  <div class="field" style="display: flex; align-items: center; gap: 15px;">
+    <% if devise_mapping.rememberable? %>
+      <div>
+        <%= f.check_box :remember_me %>
+        <%= f.label :remember_me, t("devise.labels.remember_me") %>
+      </div>
+    <% end %>
+
+    <div>
+      <input type="checkbox" id="show_password_checkbox">
+      <label for="show_password_checkbox"><%= t("devise.labels.show_password") %></label>
     </div>
-  <% end %>
+  </div>
 
   <div class="actions">
-    <%= f.submit "Log in" %>
+    <%= f.submit t("devise.sessions.new.sign_in") %>
   </div>
 <% end %>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const passwordField = document.getElementById("password_field");
+    const showPasswordCheckbox = document.getElementById("show_password_checkbox");
+
+    showPasswordCheckbox.addEventListener("change", function() {
+      passwordField.type = this.checked ? "text" : "password";
+    });
+  });
+</script>
+
