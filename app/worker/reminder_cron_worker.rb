@@ -15,8 +15,16 @@ class ReminderCronWorker
         turn_off_at  = reminder.turn_off_time
   
         if reminder.should_turn_on?(now)
+
+          SwitchOnDurationService.new(
+            reminder.device.chip_id,
+            longlast: reminder.duration,
+            relay_index: reminder.relay_index
+          ).call
+
           reminder.schedule_next_job!
           puts "schedule_next_job"
+          
         end
   
         if reminder.should_turn_off?(now)

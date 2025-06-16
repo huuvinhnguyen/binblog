@@ -222,52 +222,14 @@ module Api
     
     def set_longlast
       message = params.permit(:device_id, :longlast, :relay_index)
-
-      topic = "#{message[:device_id]}/switchon"
-      message_hash = {}
-    
-      # Kiểm tra và thêm các tham số vào hash
-      message_hash["relay_index"] = message[:relay_index] if message[:relay_index].present?
-      message_hash["longlast"] = message[:longlast].to_i if message[:longlast].present?
-      message_hash["sent_time"] = Time.current.strftime('%Y-%m-%d %H:%M:%S')
-      # Chuyển đổi hash thành JSON
-      message_json = message_hash.to_json
-      puts "#message json: #{message}"
-    
-      client = MQTT::Client.connect(
-        host: '103.9.77.155',
-        port: 1883
-      )
-    
-      client.publish(topic, message_json, retain: false) if topic.present?
-      client.disconnect()
-      
+     
       success = SwitchOnDurationService.new(
         message[:device_id],
         longlast: message[:longlast]&.to_i,
-        relay_index: message[:relay_index].present? ? message[:relay_index].to_i : nil
+        relay_index: message[:relay_index]&.to_i
       ).call
     
       if success
-        # user_id = current_user&.id rescue nil
-   
-        # device_id = Device.id_from_chip(message[:device_id])
-
-        # log = RelayLog.create(
-        #     device_id: device_id,
-        #     relay_index: message[:relay_index].to_i,
-        #     turn_on_at: Time.current,
-        #     turn_off_at: message[:longlast].present? ? Time.current + message[:longlast].to_i.seconds : nil,
-        #     triggered_by: "api",
-        #     command_source: "set_longlast",
-        #     user_id: user_id,
-        #     note: "Set relay ON trong #{(message[:longlast].to_i / 1_000)} giây qua API"
-        #   )
-
-        # unless log.persisted?
-        #   Rails.logger.error("RelayLog creation failed: #{log.errors.full_messages.join(', ')}")
-        # end
-        # refresh(message[:device_id], log.id)
         render json: { status: 'success', message: 'Longlast set successfully' }, status: :ok
       else
         render json: { status: 'error', message: 'Failed to set longlast' }, status: :unprocessable_entity
