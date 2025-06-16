@@ -1,6 +1,7 @@
 <h2><%= t("devise.sessions.new.sign_in") %></h2>
 
-<%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+<%= form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
+
   <div class="field">
     <%= f.label :username, t("devise.labels.username") %><br />
     <%= f.text_field :username, autofocus: true %>
@@ -31,13 +32,15 @@
 <% end %>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
+  document.addEventListener("turbo:load", function() {
     const passwordField = document.getElementById("password_field");
     const showPasswordCheckbox = document.getElementById("show_password_checkbox");
 
-    showPasswordCheckbox.addEventListener("change", function() {
-      passwordField.type = this.checked ? "text" : "password";
-    });
+    if (passwordField && showPasswordCheckbox) {
+      showPasswordCheckbox.addEventListener("change", function() {
+        passwordField.type = this.checked ? "text" : "password";
+      });
+    }
   });
 </script>
 
