@@ -8,12 +8,14 @@ vi:
 
   attendances:
     select_project: Chọn công trình
+
   projects:
     title: "Công trình"
     new: "Thêm công trình"
     form:
       name: "Tên công trình"
     add: "Thêm"
+
   activerecord:
     models:
       employee: Nhân viên
@@ -23,7 +25,7 @@ vi:
         name: Tên
         email: Email
         phone: Điện thoại
-        daily_salary: Lường theo ngày
+        daily_salary: Lương theo ngày
       attendance:
         employee_id: Nhân viên
         date: Ngày
@@ -36,6 +38,7 @@ vi:
           present: Có mặt
           absent: Vắng mặt
           late: Đi trễ
+
   datetime:
     distance_in_words:
       half_a_minute: "nửa phút"
@@ -73,3 +76,15 @@ vi:
         one: "gần 1 năm"
         other: "gần %{count} năm"
 
+  devise:
+    sessions:
+      new:
+        sign_in: "Đăng nhập"
+    shared:
+      links:
+        sign_in: "Đăng nhập"
+    labels:
+      username: "Tên đăng nhập"
+      password: "Mật khẩu"
+      remember_me: "Ghi nhớ đăng nhập"
+      show_password: "Hiện mật khẩu"
