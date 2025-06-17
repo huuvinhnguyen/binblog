@@ -31,6 +31,7 @@ Rails.application.configure do
   config.assets.compile = false
   config.hosts << "khuonvien.vn"
   config.hosts << "www.khuonvien.vn"
+  config.hosts << "staging.khuonvien.vn"
 
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.

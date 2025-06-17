@@ -18,6 +18,7 @@ Rails.application.configure do
   config.server_timing = true
   config.hosts << "khuonvien.vn"
   config.hosts << "www.khuonvien.vn"
+  config.hosts << "staging.khuonvien.vn"
 
 
   # Enable/disable caching. By default caching is disabled.
