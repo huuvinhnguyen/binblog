@@ -18,6 +18,8 @@ module RubyGettingStarted
     config.active_record.default_timezone = :local
     config.i18n.available_locales = [:en, :vi]
     config.eager_load_paths << Rails.root.join('app/services')
+    config.assets.enabled = true
+
 
 
     # Configuration for the application, engines, and railties goes here.
