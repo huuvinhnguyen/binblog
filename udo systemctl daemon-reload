@@ -1,0 +1,12 @@
+[0;1;31m●[0m redis.service - Redis In-Memory Data Store
+     Loaded: loaded (/etc/systemd/system/redis.service; enabled; vendor preset: enabled)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Mon 2025-05-05 17:50:00 CEST; 3s ago
+    Process: 2133000 ExecStart=/usr/bin/redis-server /etc/redis/redis.conf (code=exited, status=0/SUCCESS)
+    Process: 2133002 ExecStop=/usr/bin/redis-cli shutdown [0;1;31m(code=exited, status=1/FAILURE)[0m
+   Main PID: 2133000 (code=exited, status=0/SUCCESS)
+
+May 05 17:50:00 44542.vpsvinahost.vn systemd[1]: redis.service: Scheduled restart job, restart counter is at 5.
+May 05 17:50:00 44542.vpsvinahost.vn systemd[1]: Stopped Redis In-Memory Data Store.
+May 05 17:50:00 44542.vpsvinahost.vn systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mredis.service: Start request repeated too quickly.[0m
+May 05 17:50:00 44542.vpsvinahost.vn systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mredis.service: Failed with result 'exit-code'.[0m
+May 05 17:50:00 44542.vpsvinahost.vn systemd[1]: [0;1;31m[0;1;39m[0;1;31mFailed to start Redis In-Memory Data Store.[0m

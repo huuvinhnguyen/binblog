@@ -1,0 +1,24 @@
+{
+  "imports": {
+    "application": "/assets/application-e05fcecd7a25af99a81a94b78bf9ce25f812e618554d660ed76b157c25607df9.js",
+    "@hotwired/turbo-rails": "/assets/turbo.min-f61f052201ac8594db593bbdcf92ac493e8fde01cb4f8198585c715f53138abb.js",
+    "@hotwired/stimulus": "/assets/stimulus.min-9ee583d7d64bfaf202b0cf48971a673d9ed18952ae7927c50015649aebe535b6.js",
+    "@hotwired/stimulus-loading": "/assets/stimulus-loading-d80f0feea68692981b568bbfef0ed4370b56927ae5c663421e8461a466f0618f.js",
+    "@rails/actioncable": "/assets/actioncable.esm-a9e53dfa810276aa0aee8791a910c4878d48b75093398f3d6d822db41b428b7b.js",
+    "popper": "/assets/popper-4a00b192341976bb76a6eaa7eb6614bbd8649e9081181100cbdba143d3cf65a2.js",
+    "bootstrap": "/assets/bootstrap.min-bd3d75fd3576d26414af63db3323e02a250fc9aef42e9579272aa8dea8204017.js",
+    "gauges": "/assets/gauges-2e7b868bd945e4ecb4e9d998b402b6b2fb05769b322adc3650e40db96e8532fe.js",
+    "device_switch": "/assets/device_switch-ad2d693b970b3d4c311025e86898480edecba2d0ea716d60ca2f956e0eae367b.js",
+    "chart.js": "https://ga.jspm.io/npm:chart.js@4.2.0/dist/chart.js",
+    "@kurkle/color": "/assets/@kurkle--color-73eb9651c989255dd330624e189a5573d54d197e89216611787799ba9619e8df.js",
+    "jquery": "https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.js",
+    "jquery_ujs": "/assets/jquery_ujs-cb72fed0846eed03abe9166d55e5cdc06e85f829857094b828141e7b6ae21e68.js",
+    "controllers/application": "/assets/controllers/application-4608674e659940dc687555b6ef7f37026f42d5e3801880fc553bec4fc94baf0d.js",
+    "controllers": "/assets/controllers/index-248457f421c2ac75ba304921a4b9352d7cce55edfd33304c3d2de8f4b959352c.js",
+    "controllers/mqtt_controller": "/assets/controllers/mqtt_controller-5cab73e128131237bb6370864c16ebb20a42ccf5474236060a122c146e94d112.js",
+    "channels/consumer": "/assets/channels/consumer-f793d20696bcd2db0434c81e63f86e938e6ee20442e31b96b4bdbf4ba4db3391.js",
+    "channels/fingerprints_channel": "/assets/channels/fingerprints_channel-427f7f4069b2be6cf93003e2ea9c3b94c52d5fbb31285f03486a315d35d5f436.js",
+    "channels": "/assets/channels/index-cc196e56e439bd8654a6ff326bb47a82dfe9349886e87bd4c6b93d178c15d4c1.js",
+    "channels/mqtt_channel": "/assets/channels/mqtt_channel-2ff209e3f5b4065070ad40a4dd88b2f4bea21196df6cf0204d6a301938390964.js"
+  }
+}
