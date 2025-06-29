@@ -51,7 +51,6 @@ Rails.application.routes.draw do
 
 
   mount RailsAdmin::Engine => '/admin', as: 'rails_admin'
-  get 'youtube/download_mp3'
   get 'resumes/index'
   get 'resumes/new'
   get 'resumes/create'
@@ -123,9 +122,6 @@ Rails.application.routes.draw do
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   resources :resumes, only: [:index, :new, :create, :destroy]
   resources :projects
-  post '/download_mp3', to: 'youtube#download_mp3'
-  post 'youtube/download_mp3'
 
-  get '/youtube/download_mp3', to: 'youtube#download_mp3'
   # get '/employees/export_xls', to: 'employees#export_xls'
 end

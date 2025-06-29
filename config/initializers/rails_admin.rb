@@ -1,5 +1,6 @@
 RailsAdmin.config do |config|
-  config.asset_source = :importmap
+  # config.asset_source = :importmap
+  config.asset_source = :sprockets
 
   ### Popular gems integration
 

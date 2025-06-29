@@ -1,7 +1,7 @@
 // app/javascript/channels/mqtt_channel.js
 import consumer from "./consumer"
 // import { createConsumer } from "@rails/actioncable";
-import { createVerGauge, getTempColor, createRadGauge, getHumColor  }  from "gauges";
+import { createVerGauge, getTempColor, createRadGauge, getHumColor  }  from "../gauges";
 
 
 consumer.subscriptions.create("MqttChannel", {
