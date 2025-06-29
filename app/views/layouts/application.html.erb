@@ -18,9 +18,8 @@
     
     <%= favicon_link_tag 'favicon.svg', type: 'image/svg+xml' %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <script type="module" src="/assets/application.js?ts=<%= Time.now.to_i %>"></script>
-
-
+    <!-- <script type="module" src="/assets/application.js?ts=<%= Time.now.to_i %>"></script> -->
+    <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload" %>
 
   </head>
 
