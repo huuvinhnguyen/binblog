@@ -391,6 +391,7 @@ DEPENDENCIES
   rolify
   rspec-rails
   sass-rails
+  sassc-rails
   sdoc
   sidekiq
   sidekiq-cron
