@@ -24,4 +24,7 @@
 /node_modules
 
 /config/credentials/production.key
-/public/assets
+
+/public/assets/*
+!/public/assets/.keep
+
