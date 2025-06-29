@@ -71,4 +71,4 @@ end
   
 gem "cssbundling-rails"
 gem 'friendly_id'
-
+gem "sassc-rails"
