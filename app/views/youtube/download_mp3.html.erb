@@ -1,7 +1,0 @@
-<h1>Convert Youtube video to mp3</h1>
-
-<%= form_tag youtube_download_mp3_path, method: :post do %>
-  <%= label_tag :video_url, "Video URL" %>
-  <%= text_field_tag :video_url %>
-  <%= submit_tag "Download", class: "btn btn-primary" %>
-<% end %>
