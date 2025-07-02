@@ -33,6 +33,9 @@ Rails.application.configure do
   config.hosts << "khuonvien.vn"
   config.hosts << "www.khuonvien.vn"
   config.hosts << "staging.khuonvien.vn"
+  # Cho phép truy cập từ địa chỉ IP của server
+  config.hosts << "103.9.77.155"
+  #
 
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
@@ -49,6 +52,7 @@ Rails.application.configure do
   # config.action_cable.mount_path = nil
   # config.action_cable.url = "wss://example.com/cable"
   # config.action_cable.allowed_request_origins = [ "http://example.com", /http:\/\/example.*/ ]
+  config.action_cable.url = "wss://khuonvien.vn/cable"
   config.action_cable.allowed_request_origins = ["http://khuonvien.vn", /http:\/\/khuonvien.*/ ]
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
