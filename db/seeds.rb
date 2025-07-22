@@ -101,3 +101,11 @@ Device.create!(
 )
 
 puts "Done!"
+
+UserRelayFeature.create!(
+  user: User.first,
+  device: Device.first,
+  feature: "reminder",
+  enabled: false,
+  note: "Admin đã vô hiệu hoá tạm thời"
+)

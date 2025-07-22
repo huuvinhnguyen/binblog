@@ -148,6 +148,9 @@ class DevicesController < ApplicationController
     # initialize_mqtt_client
     # topic = @device.chip_id.to_s
     @device_info = @device.device_info.present? ? JSON.parse(@device.device_info) : {}
+    @reminder_enabled = UserRelayFeature.feature_enabled?(current_user, @device, 'reminder')
+    puts "@reminder_enabled: #{@reminder_enabled }"
+
     # subscribe_topic topic
     # message = { "action": "ping" }.to_json
     # pingTopic = topic + "/ping"
