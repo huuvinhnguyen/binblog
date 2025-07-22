@@ -56,108 +56,113 @@
       class: "btn btn-lg btn-info px-5 py-2",
       style: "font-size: 22px; border-radius: 10px;" %>
 </div>
-<!-- Form hẹn giờ -->
-<div style="border: 1px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 20px; background-color: #f9f9f9;">
-  <%= form_tag('/api/devices/add_reminder', method: 'post', onsubmit: "return updateDuration(this, #{relay_index})") do %>
-    <%= hidden_field_tag :device_id, chip_id %>
-    <%= hidden_field_tag :relay_index, relay_index %>
 
-    <div class="form-group" style="margin-bottom: 20px;">
-      <%= datetime_local_field_tag :start_time, Time.current.in_time_zone('Asia/Ho_Chi_Minh').strftime('%Y-%m-%dT%H:%M'), id: "reminder-start-time-#{relay_index}", class: 'form-control form-control-lg', style: 'font-size: 18px;' %>
+<% if @reminder_enabled %>
+  <!-- Hiển thị form -->
+  <!-- Form hẹn giờ -->
+  <div style="border: 1px solid #ccc; border-radius: 12px; padding: 30px; margin-top: 20px; background-color: #f9f9f9;">
+    <%= form_tag('/api/devices/add_reminder', method: 'post', onsubmit: "return updateDuration(this, #{relay_index})") do %>
+      <%= hidden_field_tag :device_id, chip_id %>
+      <%= hidden_field_tag :relay_index, relay_index %>
 
-    </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <%= datetime_local_field_tag :start_time, Time.current.in_time_zone('Asia/Ho_Chi_Minh').strftime('%Y-%m-%dT%H:%M'), id: "reminder-start-time-#{relay_index}", class: 'form-control form-control-lg', style: 'font-size: 18px;' %>
 
-    <div class="form-group" style="margin-bottom: 20px; display: flex; align-items: center;">
-      <div style="flex: 1; margin-right: 10px;">
-        <input type="number" id="reminder-duration-input-<%= relay_index %>" min="1" class="form-control form-control-lg" placeholder="Nhập thời gian" style="font-size: 18px;">
       </div>
-      <div style="flex: 1;">
-        <select id="reminder-duration-unit-<%= relay_index %>" class="form-select form-select-lg" style="font-size: 18px;">
-          <option value="seconds">Giây</option>
-          <option value="minutes" selected>Phút</option>
-        </select>
+
+      <div class="form-group" style="margin-bottom: 20px; display: flex; align-items: center;">
+        <div style="flex: 1; margin-right: 10px;">
+          <input type="number" id="reminder-duration-input-<%= relay_index %>" min="1" class="form-control form-control-lg" placeholder="Nhập thời gian" style="font-size: 18px;">
+        </div>
+        <div style="flex: 1;">
+          <select id="reminder-duration-unit-<%= relay_index %>" class="form-select form-select-lg" style="font-size: 18px;">
+            <option value="seconds">Giây</option>
+            <option value="minutes" selected>Phút</option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <%= hidden_field_tag :duration, nil, id: "reminder-duration-#{relay_index}" %>
+      <%= hidden_field_tag :duration, nil, id: "reminder-duration-#{relay_index}" %>
 
-    <div class="form-group" style="margin-bottom: 20px;">
-      <%= select_tag :repeat_type, options_for_select([['Không lặp lại', 'none'], ['Hằng ngày', 'daily'], ['Hằng tuần', 'weekly'], ['Hằng tháng', 'monthly']], 'daily'), id: "reminder-repeat-type-#{relay_index}", class: 'form-select form-select-lg', style: 'font-size: 18px;' %>
-    </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <%= select_tag :repeat_type, options_for_select([['Không lặp lại', 'none'], ['Hằng ngày', 'daily'], ['Hằng tuần', 'weekly'], ['Hằng tháng', 'monthly']], 'daily'), id: "reminder-repeat-type-#{relay_index}", class: 'form-select form-select-lg', style: 'font-size: 18px;' %>
+      </div>
 
-    <div style="text-align: right; margin-top: 30px;">
-      <%= submit_tag 'Hẹn giờ', class: 'btn btn-success btn-lg', style: 'font-size: 18px; padding: 10px 20px;' %>
-    </div>
-  <% end %>
-</div>
-
-<!-- Danh sách Hẹn giờ -->
-<div class="reminders" id="reminders" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
-  <div style="display: flex; justify-content: space-between; align-items: center;">
-    <h3>Danh sách Hẹn giờ</h3>
-    <div class="form-check form-switch large-toggle">
-      <input 
-        type="checkbox" 
-        name="toggle_reminders_<%= relay_index %>"
-        id="toggle-reminders-active-<%= relay_index %>" 
-        class="form-check-input" 
-        data-chip-id="<%= chip_id %>" 
-        data-relay-index="<%= relay_index %>" 
-        <%= @device_info['relays'][relay_index]['is_reminders_active'] ? 'checked' : '' %> 
-
-      >
-    </div>
+      <div style="text-align: right; margin-top: 30px;">
+        <%= submit_tag 'Hẹn giờ', class: 'btn btn-success btn-lg', style: 'font-size: 18px; padding: 10px 20px;' %>
+      </div>
+    <% end %>
   </div>
 
-  <% filtered_reminders = @device.reminders.where(relay_index: relay_index).order(:start_time) %>
-  <% if filtered_reminders.any? %>
-    <div class="reminders-list-<%= relay_index %>" id="reminders-list-<%= relay_index %>">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Ngày và giờ bắt đầu</th>
-            <th>Thời gian hoạt động</th>
-            <th>Kiểu lặp lại</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% filtered_reminders.each do |reminder| %>
-            <tr>
-              <td><%= reminder.start_time.strftime('%d/%m/%Y %H:%M:%S') %></td>
-              <td>
-                <% duration_ms = reminder.duration.to_i %>
-                <% hours = duration_ms / (1000 * 60 * 60) %>
-                <% minutes = (duration_ms / (1000 * 60)) % 60 %>
-                <% seconds = (duration_ms / 1000) % 60 %>
-                <%= "#{hours} giờ, #{minutes} phút, #{seconds} giây" %>
-              </td>
-              <td>
-                <%= case reminder.repeat_type
-                    when 'none' then 'Không lặp lại'
-                    when 'daily' then 'Hằng ngày'
-                    when 'weekly' then 'Hằng tuần'
-                    when 'monthly' then 'Hằng tháng'
-                    else 'Không xác định'
-                  end %>
-              </td>
-              <td>
-                <%= form_tag('/api/devices/remove_reminder', method: :post) do %>
-                  <%= hidden_field_tag :device_id, chip_id %>
-                  <%= hidden_field_tag :relay_index, relay_index %>
-                  <%= hidden_field_tag :start_time, reminder.start_time.iso8601 %>
-                  <%= submit_tag 'Xóa', class: 'btn btn-danger btn-sm' %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+  <!-- Danh sách Hẹn giờ -->
+  <div class="reminders" id="reminders" style="border: 1px solid grey; border-radius: 10px; padding: 20px; margin-top: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Danh sách Hẹn giờ</h3>
+      <div class="form-check form-switch large-toggle">
+        <input 
+          type="checkbox" 
+          name="toggle_reminders_<%= relay_index %>"
+          id="toggle-reminders-active-<%= relay_index %>" 
+          class="form-check-input" 
+          data-chip-id="<%= chip_id %>" 
+          data-relay-index="<%= relay_index %>" 
+          <%= @device_info['relays'][relay_index]['is_reminders_active'] ? 'checked' : '' %> 
+
+        >
+      </div>
     </div>
-  <% else %>
-    <p>Không có hẹn giờ nào được thiết lập.</p>
-  <% end %>
-</div>
+
+    <% filtered_reminders = @device.reminders.where(relay_index: relay_index).order(:start_time) %>
+    <% if filtered_reminders.any? %>
+      <div class="reminders-list-<%= relay_index %>" id="reminders-list-<%= relay_index %>">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Ngày và giờ bắt đầu</th>
+              <th>Thời gian hoạt động</th>
+              <th>Kiểu lặp lại</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% filtered_reminders.each do |reminder| %>
+              <tr>
+                <td><%= reminder.start_time.strftime('%d/%m/%Y %H:%M:%S') %></td>
+                <td>
+                  <% duration_ms = reminder.duration.to_i %>
+                  <% hours = duration_ms / (1000 * 60 * 60) %>
+                  <% minutes = (duration_ms / (1000 * 60)) % 60 %>
+                  <% seconds = (duration_ms / 1000) % 60 %>
+                  <%= "#{hours} giờ, #{minutes} phút, #{seconds} giây" %>
+                </td>
+                <td>
+                  <%= case reminder.repeat_type
+                      when 'none' then 'Không lặp lại'
+                      when 'daily' then 'Hằng ngày'
+                      when 'weekly' then 'Hằng tuần'
+                      when 'monthly' then 'Hằng tháng'
+                      else 'Không xác định'
+                    end %>
+                </td>
+                <td>
+                  <%= form_tag('/api/devices/remove_reminder', method: :post) do %>
+                    <%= hidden_field_tag :device_id, chip_id %>
+                    <%= hidden_field_tag :relay_index, relay_index %>
+                    <%= hidden_field_tag :start_time, reminder.start_time.iso8601 %>
+                    <%= submit_tag 'Xóa', class: 'btn btn-danger btn-sm' %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p>Không có hẹn giờ nào được thiết lập.</p>
+    <% end %>
+  </div>
+<% end %>
+
 
 <!-- Scripts -->
 <script>
