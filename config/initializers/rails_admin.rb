@@ -16,6 +16,17 @@ RailsAdmin.config do |config|
   ## == Pundit ==
   # config.authorize_with :pundit
 
+  ### ==> Chỉ cho phép admin đăng nhập:
+  config.authorize_with do
+    redirect_to main_app.root_path, alert: 'Bạn không có quyền truy cập' unless current_user&.admin?
+  end
+
+  ### ==> Sử dụng Devise
+  config.authenticate_with do
+    warden.authenticate! scope: :user
+  end
+  config.current_user_method(&:current_user)
+
   ## == PaperTrail ==
   # config.audit_with :paper_trail, 'User', 'PaperTrail::Version' # PaperTrail >= 3.0.0
 

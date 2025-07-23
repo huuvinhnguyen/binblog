@@ -16,4 +16,8 @@ class User < ActiveRecord::Base
   has_and_belongs_to_many :devices
   has_and_belongs_to_many :employees
   
+  def admin?
+    has_role?(:admin)
+  end
+  
 end
