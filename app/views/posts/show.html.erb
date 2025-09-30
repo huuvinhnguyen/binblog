@@ -1,3 +1,7 @@
+<% content_for :meta_title, @post.title %>
+<% content_for :meta_description, truncate(@post.content, length: 160) %>
+<% content_for :meta_image, asset_url("favicon.svg") %>
+
 <h1 class="text-3xl font-bold mb-4"><%= @post.title %></h1>
 <div class="prose max-w-none">
   <%= raw @post.content %>
