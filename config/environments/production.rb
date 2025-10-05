@@ -55,6 +55,8 @@ Rails.application.configure do
   config.action_cable.url = "wss://khuonvien.vn/cable"
   config.action_controller.default_url_options = { host: "khuonvien.vn", protocol: "https" }
   config.force_ssl = true
+  Rails.application.config.action_controller.forgery_protection_origin_check = false
+
   config.action_cable.allowed_request_origins = ["http://khuonvien.vn", /http:\/\/khuonvien.*/ ]
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
