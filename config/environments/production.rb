@@ -57,7 +57,10 @@ Rails.application.configure do
   config.force_ssl = true
   Rails.application.config.action_controller.forgery_protection_origin_check = false
 
-  config.action_cable.allowed_request_origins = ["http://khuonvien.vn", /http:\/\/khuonvien.*/ ]
+  config.action_cable.allowed_request_origins = [
+  "https://khuonvien.vn",
+  "https://www.khuonvien.vn",
+  %r{https://khuonvien.*}]
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
   # config.force_ssl = true
