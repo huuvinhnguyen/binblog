@@ -319,6 +319,12 @@ module Api
         redirect_back fallback_location: root_path, alert: "Không tìm thấy thiết bị."
       end
     end
+    
+    def time
+      # Plain text – cực nhẹ cho ESP
+      self.response.headers["Content-Type"] = "text/plain"
+      render plain: Time.current.to_i
+    end
   
     private
 

@@ -18,6 +18,7 @@ Rails.application.routes.draw do
         post :remove_reminder
         post :set_reminders_active
         get :device_info  
+        get :time
         post :trigger
         post :switchon
         post :set_longlast
