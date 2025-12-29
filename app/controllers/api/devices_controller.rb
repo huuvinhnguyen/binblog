@@ -321,12 +321,11 @@ module Api
     end
     
     def time
-      # Plain text – cực nhẹ cho ESP
-      response.headers["Content-Type"] = "text/plain"
-      render plain: Time.now.utc.to_i
+      # Trả về epoch theo giờ Việt Nam (UTC+7)
+      epoch_vn = Time.now.in_time_zone("Asia/Ho_Chi_Minh").to_i
+      render plain: epoch_vn
     end
-
-  
+    
     private
 
     def mqtt_client
