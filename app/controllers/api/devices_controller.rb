@@ -322,9 +322,10 @@ module Api
     
     def time
       # Plain text – cực nhẹ cho ESP
-      self.response.headers["Content-Type"] = "text/plain"
-      render plain: Time.current.to_i
+      response.headers["Content-Type"] = "text/plain"
+      render plain: Time.now.utc.to_i
     end
+
   
     private
 
