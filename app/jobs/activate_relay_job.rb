@@ -2,34 +2,40 @@ class ActivateRelayJob
   include Sidekiq::Worker
 
   def perform(reminder_id)
-    puts "ActivateRelayJob perform"
+    Reminder.transaction do
+      reminder = Reminder.lock.find_by(id: reminder_id)
+      return unless reminder
+      return unless reminder.enabled?
+      return unless reminder.should_turn_on?
 
-    reminder = Reminder.find_by(id: reminder_id)
-    return unless reminder
+      # 🔒 ĐÁNH DẤU NGAY – CHỐNG RACE
+      reminder.update!(
+        last_triggered_at: Time.current,
+        last_triggered_on: Date.current
+      )
 
-    device = reminder.device
-    relay_index = reminder.relay_index
-    return unless device&.device_info.present?
+      device = reminder.device
+      return unless device&.device_info.present?
 
-    device_info = JSON.parse(device.device_info)
-    relays = device_info["relays"] || []
-    return unless relay_index < relays.length
+      relay_index = reminder.relay_index
+      device_info = JSON.parse(device.device_info)
+      relays = device_info["relays"] || []
+      return unless relay_index < relays.length
 
-    relay = relays[relay_index]
-    relay["switch_value"] = 1
-    device_info["relays"][relay_index] = relay
-    device_info["update_at"] = Time.zone.now.to_i
-    updated = device.update(device_info: device_info.to_json)
-    if updated
-      # 👉 Chỉ update reminder và tạo log nếu update device thành công
-      reminder.update(last_triggered_at: Time.current)
+      relay = relays[relay_index]
+      relay["switch_value"] = 1
+      device_info["relays"][relay_index] = relay
+      device_info["update_at"] = Time.zone.now.to_i
+
+      unless device.update(device_info: device_info.to_json)
+        Rails.logger.error("[ActivateRelayJob] Failed to update device #{device.id}")
+        raise ActiveRecord::Rollback
+      end
+
       log = create_log(reminder)
       refresh(device.chip_id, log.id)
-    else
-      Rails.logger.error("[ActivateRelayJob] Failed to update device_info for device #{device.id}")
     end
-
-  end
+  end 
 
   private
 

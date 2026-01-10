@@ -1,6 +1,6 @@
 module Api
   class Api::DevicesController < ApplicationController
-    
+
     def set_reminders_active
       message = params.permit(:device_id, :relay_index, :is_reminders_active)
     
@@ -312,20 +312,40 @@ module Api
       # render json: { status: 'ok', message: 'Refresh command sent', topic: "#{chip_id}/refresh_device" }
       device = Device.find_by(chip_id: chip_id)
 
-      if device
-        # TODO: xử lý làm mới nếu cần
-        redirect_back fallback_location: device_path(device), notice: "Đã làm mới thiết bị."
-      else
-        redirect_back fallback_location: root_path, alert: "Không tìm thấy thiết bị."
-      end
+      respond_to do |format|
+        format.json do
+          if device
+            render json: {
+              status: "ok",
+              message: "Refresh command sent",
+              topic: "#{chip_id}/refresh_device"
+            }, status: :ok
+          else
+            render json: {
+              status: "error",
+              message: "Device not found"
+            }, status: :not_found
+          end
+        end
+
+        format.html do
+            if device
+              redirect_back fallback_location: device_path(device),
+                            notice: "Đã làm mới thiết bị."
+            else
+              redirect_back fallback_location: root_path,
+                            alert: "Không tìm thấy thiết bị."
+            end
+        end
+      end   
     end
     
     def time
-      # Trả về epoch theo giờ Việt Nam (UTC+7)
-      epoch_vn = Time.now.in_time_zone("Asia/Ho_Chi_Minh").to_i
-      render plain: epoch_vn
+      # Plain text – cực nhẹ cho ESP
+      self.response.headers["Content-Type"] = "text/plain"
+      render plain: Time.current.to_i
     end
-    
+  
     private
 
     def mqtt_client
