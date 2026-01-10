@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_07_21_171801) do
+ActiveRecord::Schema[7.0].define(version: 2026_01_08_162302) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -143,7 +143,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_21_171801) do
     t.string "job_jid"
     t.boolean "enabled", default: true, null: false
     t.string "turn_off_jid"
+    t.date "last_triggered_on"
     t.index ["device_id"], name: "index_reminders_on_device_id"
+    t.index ["last_triggered_on"], name: "index_reminders_on_last_triggered_on"
   end
 
   create_table "resumes", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|

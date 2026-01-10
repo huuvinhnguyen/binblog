@@ -132,7 +132,8 @@ class Reminder < ActiveRecord::Base
 
     def should_turn_on?(now = Time.current)
       return false unless next_trigger_time
-  
+      return false if triggered_today?(now.to_date)
+
       not_triggered_yet = last_triggered_at.nil? || last_triggered_at < next_trigger_time
       in_time_window = next_trigger_time.between?(now - 5.minutes, now + 5.minutes)
       not_triggered_yet && in_time_window
@@ -141,6 +142,10 @@ class Reminder < ActiveRecord::Base
     def should_turn_off?(now = Time.current)
       return false unless turn_off_time
       turn_off_time.between?(now - 5.minutes, now + 5.minutes)
+    end
+
+    def triggered_today?(date = Date.current)
+      last_triggered_on == date
     end
 
   end
