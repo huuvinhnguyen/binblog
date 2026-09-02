@@ -1,5 +1,33 @@
 module Api
   class Api::DevicesController < ApplicationController
+    before_action :authenticate_api_user!
+
+    def index
+      devices = current_user.present? ? current_user.devices_for_current_user : Device.all
+
+      render json: {
+        status: 'success',
+        count: devices.count,
+        devices: devices.map do |device|
+          {
+            id: device.id,
+            name: device.name,
+            chip_id: device.chip_id,
+            device_type: device.device_type,
+            status: device.status,
+            is_payment: device.is_payment,
+            note: device.note,
+            url_firmware: device.url_firmware,
+            device_info: safe_parse_json(device.device_info),
+            meta_info: device.parsed_meta_info,
+            created_at: device.created_at&.iso8601,
+            updated_at: device.updated_at&.iso8601
+          }
+        end
+      }, status: :ok
+    rescue => e
+      render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+    end
 
     def set_reminders_active
       message = params.permit(:device_id, :relay_index, :is_reminders_active)
@@ -387,6 +415,30 @@ module Api
 
       client.publish(topic, message.to_json) if topic.present?
       client.disconnect()
+    end
+
+    def safe_parse_json(value)
+      return {} if value.blank?
+
+      JSON.parse(value)
+    rescue JSON::ParserError, TypeError
+      {}
+    end
+
+    def authenticate_api_user!
+      auth_header = request.headers['Authorization']
+      token = auth_header&.split(' ')&.last
+
+      return render json: { error: 'Unauthorized' }, status: :unauthorized if token.blank?
+
+      payload = JWT.decode(token, Rails.application.secret_key_base).first
+      @current_user = User.find(payload['user_id'])
+    rescue JWT::DecodeError, ActiveRecord::RecordNotFound
+      render json: { error: 'Unauthorized' }, status: :unauthorized
+    end
+
+    def current_user
+      @current_user
     end
   end
 end

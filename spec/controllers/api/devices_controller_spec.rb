@@ -3,7 +3,35 @@ require 'rails_helper'
 
 RSpec.describe Api::DevicesController, type: :controller do
 
+  describe 'GET #index' do
+    let!(:user) do
+      User.create!(username: 'demo_user', email: 'demo@example.com', password: 'password123')
+    end
+
+    let!(:device_1) { Device.create!(name: 'Device A', chip_id: 'chip_a', device_info: {}.to_json) }
+    let!(:device_2) { Device.create!(name: 'Device B', chip_id: 'chip_b', device_info: {}.to_json) }
+
+    before do
+      user.devices << [device_1, device_2]
+      request.headers['Authorization'] = "Bearer #{JWT.encode({ user_id: user.id, exp: 1.day.from_now.to_i }, Rails.application.secret_key_base)}"
+    end
+
+    it 'returns all devices in JSON for authenticated user' do
+      get :index, format: :json
+
+      expect(response).to have_http_status(:ok)
+
+      json = JSON.parse(response.body)
+      expect(json['status']).to eq('success')
+      expect(json['devices'].map { |d| d['chip_id'] }).to contain_exactly('chip_a', 'chip_b')
+    end
+  end
+
   describe 'POST #set_longlast' do
+    let!(:user) do
+      User.create!(username: 'token_user', email: 'token@example.com', password: 'password123')
+    end
+
     let!(:device) do
       Device.create!(
         name: "Test Device",
@@ -13,6 +41,10 @@ RSpec.describe Api::DevicesController, type: :controller do
           update_at: Time.zone.now.to_i
         }.to_json
       )
+    end
+
+    before do
+      request.headers['Authorization'] = "Bearer #{JWT.encode({ user_id: user.id, exp: 1.day.from_now.to_i }, Rails.application.secret_key_base)}"
     end
 
     it 'sets longlast and returns success' do
@@ -34,6 +66,10 @@ RSpec.describe Api::DevicesController, type: :controller do
   end
 
   describe 'POST #reset_wifi' do
+    let!(:user) do
+      User.create!(username: 'wifi_user', email: 'wifi@example.com', password: 'password123')
+    end
+
     let(:device_id) { 'ABC123' }
     let!(:device) do
       Device.create!(
@@ -46,6 +82,7 @@ RSpec.describe Api::DevicesController, type: :controller do
     let(:mqtt_client) { double('MQTT::Client') }
 
     before do
+      request.headers['Authorization'] = "Bearer #{JWT.encode({ user_id: user.id, exp: 1.day.from_now.to_i }, Rails.application.secret_key_base)}"
       allow(controller).to receive(:mqtt_client).and_return(mqtt_client)
       allow(mqtt_client).to receive(:publish)
       allow(mqtt_client).to receive(:disconnect)
@@ -67,6 +104,10 @@ RSpec.describe Api::DevicesController, type: :controller do
   end
 
   describe 'POST #refresh_device' do
+    let!(:user) do
+      User.create!(username: 'refresh_user', email: 'refresh@example.com', password: 'password123')
+    end
+
     let(:device_id) { 'ABC123' }
     let!(:device) do
       Device.create!(
@@ -79,6 +120,7 @@ RSpec.describe Api::DevicesController, type: :controller do
     let(:mqtt_client) { double('MQTT::Client') }
 
     before do
+      request.headers['Authorization'] = "Bearer #{JWT.encode({ user_id: user.id, exp: 1.day.from_now.to_i }, Rails.application.secret_key_base)}"
       allow(controller).to receive(:mqtt_client).and_return(mqtt_client)
       allow(mqtt_client).to receive(:publish)
       allow(mqtt_client).to receive(:disconnect)
