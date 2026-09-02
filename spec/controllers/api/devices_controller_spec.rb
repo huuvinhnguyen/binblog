@@ -139,4 +139,29 @@ RSpec.describe Api::DevicesController, type: :controller do
       expect(mqtt_client).to have_received(:disconnect)
     end
   end
+
+  describe 'API auth fallback' do
+    let!(:user) do
+      User.create!(username: 'session_user', email: 'session@example.com', password: 'password123')
+    end
+
+    let!(:device) do
+      Device.create!(name: 'Session Device', chip_id: 'session_chip', device_info: {}.to_json)
+    end
+
+    before do
+      user.devices << device
+      allow(controller).to receive(:user_signed_in?).and_return(true)
+      allow(controller).to receive(:current_user).and_return(user)
+    end
+
+    it 'accepts an already authenticated web session when no bearer token is provided' do
+      get :index, format: :json
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json['status']).to eq('success')
+      expect(json['devices'].map { |d| d['chip_id'] }).to include('session_chip')
+    end
+  end
 end

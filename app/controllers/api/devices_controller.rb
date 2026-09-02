@@ -429,10 +429,18 @@ module Api
       auth_header = request.headers['Authorization']
       token = auth_header&.split(' ')&.last
 
-      return render json: { error: 'Unauthorized' }, status: :unauthorized if token.blank?
+      if token.present?
+        payload = JWT.decode(token, Rails.application.secret_key_base).first
+        @current_user = User.find(payload['user_id'])
+        return
+      end
 
-      payload = JWT.decode(token, Rails.application.secret_key_base).first
-      @current_user = User.find(payload['user_id'])
+      if user_signed_in? && current_user.present?
+        @current_user = current_user
+        return
+      end
+
+      render json: { error: 'Unauthorized' }, status: :unauthorized
     rescue JWT::DecodeError, ActiveRecord::RecordNotFound
       render json: { error: 'Unauthorized' }, status: :unauthorized
     end
