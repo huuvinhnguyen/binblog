@@ -11,13 +11,15 @@ Rails.application.routes.draw do
   mount Sidekiq::Web => '/sidekiq'
 
   namespace :api do
-    resources :devices, only: [] do
+    post 'login', to: 'sessions#create'
+
+    resources :devices, only: [:index] do
       collection do
         post :receive_info
         post :add_reminder
         post :remove_reminder
         post :set_reminders_active
-        get :device_info  
+        get :device_info
         get :time
         post :trigger
         post :switchon

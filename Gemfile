@@ -56,6 +56,7 @@ gem 'carrierwave'
 gem 'jquery-rails'
 gem 'slack-notifier'
 gem 'devise'
+gem 'jwt'
 gem 'rolify'
 
 group :development, :test do
