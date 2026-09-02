@@ -446,7 +446,7 @@ module Api
     end
 
     def current_user
-      @current_user
+      @current_user || super
     end
   end
 end

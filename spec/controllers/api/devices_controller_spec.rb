@@ -151,8 +151,7 @@ RSpec.describe Api::DevicesController, type: :controller do
 
     before do
       user.devices << device
-      allow(controller).to receive(:user_signed_in?).and_return(true)
-      allow(controller).to receive(:current_user).and_return(user)
+      sign_in user
     end
 
     it 'accepts an already authenticated web session when no bearer token is provided' do
