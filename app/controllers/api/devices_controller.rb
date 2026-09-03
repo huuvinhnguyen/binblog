@@ -1,6 +1,6 @@
 module Api
   class Api::DevicesController < ApplicationController
-    before_action :authenticate_api_user!
+    before_action :authenticate_api_user!, only: [:index]
 
     def index
       devices = current_user.present? ? current_user.devices_for_current_user : Device.all
