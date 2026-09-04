@@ -2,6 +2,12 @@
 
 A barebones Rails app, which can easily be deployed to Heroku.
 
+## API Documentation
+
+- Swagger UI: `/api-docs`
+- [Hướng dẫn API `POST /devices/notify`](docs/API_DEVICES_NOTIFY.md)
+- [Hướng dẫn API `POST /api/devices/trigger`](docs/API_DEVICES_TRIGGER.md)
+
 This application supports the [Getting Started on Heroku with Ruby](https://devcenter.heroku.com/articles/getting-started-with-ruby) article - check it out.
 
 ## Running Locally
