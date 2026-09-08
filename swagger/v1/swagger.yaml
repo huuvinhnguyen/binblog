@@ -30,6 +30,81 @@ paths:
                 password:
                   type: string
                   example: '123456'
+  "/api/devices/trigger":
+    post:
+      summary: Publish the configured device trigger through MQTT
+      tags:
+      - Devices
+      parameters: []
+      responses:
+        '200':
+          description: trigger message published successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    example: success
+                  message:
+                    type: string
+                    example: Message sent successfully
+        '422':
+          description: stored trigger is not valid JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                    example: error
+                  message:
+                    type: string
+                    example: Invalid JSON format
+        '500':
+          description: device or trigger configuration is invalid
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                    example: error
+                  message:
+                    type: string
+                    example: undefined method `trigger' for nil
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - chip_id
+              properties:
+                chip_id:
+                  type: string
+                  description: Chip ID used to find the device whose stored trigger
+                    will be published.
+                  example: ESP32_ABC123
+        required: true
   "/api/devices":
     get:
       summary: List all devices for the authenticated user
@@ -89,6 +164,70 @@ paths:
                           nullable: true
         '401':
           description: unauthorized
+  "/devices/notify":
+    post:
+      summary: Send a device notification to Slack
+      tags:
+      - Devices Webhook
+      parameters: []
+      responses:
+        '200':
+          description: notification received
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - message
+                - status
+                properties:
+                  message:
+                    type: string
+                    example: Notification sent to Slack
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    - failure
+                    example: success
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - id
+              - message
+              properties:
+                id:
+                  type: string
+                  description: The device chip ID.
+                  example: ESP32_ABC123
+                message:
+                  type: string
+                  description: Notification text sent to Slack.
+                  example: Relay 1 đã bật
+                model:
+                  type: string
+                  description: Device model.
+                  example: ESP32
+                relay_state:
+                  type: integer
+                  description: Relay state reported by the device (0 = off, 1 = on).
+                  enum:
+                  - 0
+                  - 1
+                  example: 1
+                relay_index:
+                  type: integer
+                  description: Zero-based relay index.
+                  minimum: 0
+                  example: 0
+                name:
+                  type: string
+                  description: Device name used when the device is first registered.
+                  example: Thiết bị phòng khách
+        required: true
 servers:
 - url: https://{defaultHost}
   variables:
