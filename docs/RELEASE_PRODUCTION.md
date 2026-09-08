@@ -10,11 +10,12 @@ Tài liệu này mô tả quy trình deploy và release code lên môi trường
 - Quyền sudo để restart services
 - Git access đến repository
 
-## Services cần restart
+## Services cần kiểm tra/restart
 
-- **sidekiq** - Background job processor
+- **sidekiq** - Background job processor và MQTT listener
 - **nginx** - Web server / Reverse proxy  
 - **myapp** - Rails application (Puma/Passenger)
+- **mosquitto** - MQTT broker (chỉ restart khi có thay đổi cấu hình hoặc sự cố)
 
 ---
 
@@ -111,6 +112,7 @@ sudo systemctl restart nginx
 sudo systemctl status sidekiq
 sudo systemctl status myapp
 sudo systemctl status nginx
+sudo systemctl status mosquitto --no-pager -l
 
 # Check application logs
 tail -f /path/to/binblog/log/production.log
@@ -130,6 +132,8 @@ sudo tail -f /var/log/nginx/access.log
 - [ ] Kiểm tra API endpoints
 - [ ] Monitor error logs trong 15-30 phút
 - [ ] Kiểm tra Sidekiq jobs đang chạy
+- [ ] Kiểm tra Mosquitto đang `active` và port `1883` có thể kết nối
+- [ ] Xác nhận MQTT listener đã subscribe topic `device` trong log Sidekiq
 - [ ] Thông báo deploy thành công cho team
 - [ ] Tag release version trong Git
 
@@ -150,7 +154,73 @@ sudo systemctl status sidekiq
 sudo journalctl -u sidekiq -f
 sudo journalctl -u myapp -f
 sudo journalctl -u nginx -f
+sudo journalctl -u mosquitto -f
 ```
+
+### Check Production Logs
+
+Chạy tại thư mục deploy của ứng dụng:
+
+```bash
+# Xem 100 dòng log gần nhất
+tail -n 100 log/production.log
+
+# Theo dõi log production theo thời gian thực
+tail -f log/production.log
+
+# Chỉ theo dõi log MQTT
+tail -f log/production.log | grep --line-buffered '\[MQTT\]'
+```
+
+### Check Mosquitto Status
+
+```bash
+# Check if Mosquitto is running
+sudo systemctl is-active mosquitto
+sudo systemctl status mosquitto --no-pager -l
+
+# Check if the broker is listening on the standard MQTT port
+sudo ss -lntp | grep ':1883'
+
+# Check recent logs
+sudo journalctl -u mosquitto -n 100 --no-pager
+
+# Follow logs in real time
+sudo journalctl -u mosquitto -f
+
+# Check connectivity from the application server
+nc -vz -w 5 103.9.77.155 1883
+```
+
+### MQTT Publish/Subscribe Example
+
+Mở terminal thứ nhất để subscribe topic:
+
+```bash
+mosquitto_sub -h khuonvien.vn -t test/topic -v
+```
+
+Mở terminal thứ hai để publish một message thử nghiệm:
+
+```bash
+mosquitto_pub -h khuonvien.vn -t test/topic -m "Hello MQTT"
+```
+
+Terminal subscribe sẽ nhận được:
+
+```text
+test/topic Hello MQTT
+```
+
+Có thể bật debug để xem chi tiết kết nối MQTT:
+
+```bash
+mosquitto_sub -h khuonvien.vn -t test/topic -v -d
+```
+
+Ví dụ trên sử dụng topic `test/topic`, tránh tác động đến topic `device` của production.
+
+Kết quả mong đợi của `systemctl is-active` là `active`. Mosquitto chỉ nên được restart khi thay đổi cấu hình hoặc khi broker gặp sự cố, vì restart sẽ ngắt các MQTT client đang kết nối.
 
 ### Start/Stop/Restart Services
 
@@ -224,6 +294,40 @@ RAILS_ENV=production bundle exec rails console
 > Sidekiq::Queue.new.clear
 ```
 
+### Mosquitto/MQTT Connection Issues
+
+```bash
+# Check broker service
+sudo systemctl status mosquitto --no-pager -l
+
+# Check whether port 1883 is listening locally
+sudo ss -lntp | grep ':1883'
+
+# Check recent broker errors
+sudo journalctl -u mosquitto -n 100 --no-pager
+
+# Test the production broker from the application server
+nc -vz -w 5 103.9.77.155 1883
+
+# Check the MQTT listener started by Sidekiq
+sudo journalctl -u sidekiq --since "30 minutes ago" --no-pager \
+  | grep -E '\[MQTT\]|Protocol error|Unexpected error'
+```
+
+MQTT hoạt động bình thường khi:
+
+- `mosquitto` có trạng thái `active`.
+- Port `1883` đang lắng nghe hoặc lệnh `nc` kết nối thành công.
+- Log Sidekiq có dòng `[MQTT][Listener] Subscribed to 'device' topic`.
+
+Nếu đã xác nhận broker gặp sự cố, restart và kiểm tra lại:
+
+```bash
+sudo systemctl restart mosquitto
+sudo systemctl status mosquitto --no-pager -l
+sudo journalctl -u mosquitto -n 100 --no-pager
+```
+
 ### Nginx 502 Bad Gateway
 
 ```bash
@@ -285,7 +389,7 @@ echo "All services restarted!"
 ### Check All Services Status
 
 ```bash
-for service in sidekiq myapp nginx; do
+for service in sidekiq myapp nginx mosquitto; do
   echo "=== $service ==="
   sudo systemctl status $service | head -n 3
   echo ""
@@ -297,6 +401,8 @@ done
 ## Notes
 
 - Luôn restart Sidekiq **sau** khi restart application
+- MQTT listener được khởi động cùng Sidekiq; kiểm tra log Sidekiq để xác nhận đã subscribe topic `device`
+- Không restart Mosquitto trong mỗi lần deploy; chỉ restart khi thay đổi cấu hình hoặc broker gặp sự cố
 - Dùng `reload` cho Nginx thay vì `restart` để tránh downtime
 - Monitor logs trong ít nhất 15 phút sau deploy
 - Có kế hoạch rollback sẵn sàng
@@ -310,5 +416,5 @@ done
 
 ---
 
-**Last Updated:** 2026-09-03  
-**Version:** 1.0
+**Last Updated:** 2026-09-08
+**Version:** 1.1
