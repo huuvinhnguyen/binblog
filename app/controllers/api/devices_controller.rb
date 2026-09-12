@@ -198,12 +198,28 @@ module Api
     def trigger
       # Lấy JSON từ body của request
       # raw_body = request.body.read
-    
+
       begin
 
         device = Device.find_by(chip_id: params[:chip_id])
+
+        unless device
+          return render json: { status: 'error', message: 'Device not found' }, status: :not_found
+        end
+
+        # Log motion detection event
+        device.device_events.create!(
+          event_type: 'motion_detected',
+          occurred_at: Time.current,
+          payload: {
+            triggered_from: request.remote_ip,
+            user_agent: request.user_agent
+          }
+        )
+
+        # Execute existing relay trigger via MQTT
         trigger_device device
-        
+
         render json: { status: 'success', message: 'Message sent successfully' }, status: :ok
       rescue JSON::ParserError
         render json: { status: 'error', message: 'Invalid JSON format' }, status: :unprocessable_entity

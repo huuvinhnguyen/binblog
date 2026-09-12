@@ -2,6 +2,7 @@ class Device < ActiveRecord::Base
     has_and_belongs_to_many :users
     has_many :reminders, dependent: :destroy
     has_many :relay_logs
+    has_many :device_events, dependent: :destroy
     serialize :meta_info, JSON
 
     def self.id_from_chip(chip_id)

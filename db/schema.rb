@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_08_162302) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_11_174147) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -29,6 +29,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_08_162302) do
     t.string "slug"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "device_events", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "device_id", null: false
+    t.string "event_type", null: false
+    t.text "payload"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["device_id", "event_type", "occurred_at"], name: "index_device_events_on_device_id_and_event_type_and_occurred_at"
+    t.index ["device_id"], name: "index_device_events_on_device_id"
+    t.index ["occurred_at"], name: "index_device_events_on_occurred_at"
   end
 
   create_table "devices", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -231,6 +243,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_08_162302) do
   end
 
   add_foreign_key "attendances", "employees"
+  add_foreign_key "device_events", "devices"
   add_foreign_key "fingers", "employees"
   add_foreign_key "posts", "categories"
   add_foreign_key "relay_logs", "devices"

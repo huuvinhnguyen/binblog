@@ -185,6 +185,7 @@ namespace :device do
     puts "\nRelated data:"
     puts "  Reminders: #{device.reminders.count}"
     puts "  Relay logs: #{device.relay_logs.count}"
+    puts "  Device events: #{device.device_events.count}"
     puts "  User relay features: #{UserRelayFeature.where(device_id: device.id).count}"
     puts "  User links: #{device.users.count}"
     puts "  Legacy user_devices links: #{legacy_user_devices}"
@@ -213,6 +214,7 @@ namespace :device do
       user_ids: device.user_ids,
       reminders: device.reminders.map(&:attributes),
       relay_logs: device.relay_logs.map(&:attributes),
+      device_events: device.device_events.map(&:attributes),
       user_relay_features: UserRelayFeature.where(device_id: device.id).map(&:attributes),
       legacy_user_devices: legacy_links
     }
