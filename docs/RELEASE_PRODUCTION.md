@@ -75,15 +75,25 @@ RAILS_ENV=production bundle exec rails db:migrate
 # RAILS_ENV=production bundle exec rails db:rollback STEP=1
 ```
 
-#### 5. Precompile Assets
+#### 5. Build và Precompile Assets
+
+Khi release có thay đổi JavaScript, CSS hoặc Chart.js (ví dụ biểu đồ PIR), phải build asset trước khi precompile để server tạo fingerprint mới.
 
 ```bash
+# Build JavaScript bundle
+yarn build
+
+# Build CSS bundle
+yarn build:css
+
 # Clean old assets
 RAILS_ENV=production bundle exec rails assets:clobber
 
 # Precompile new assets
 RAILS_ENV=production bundle exec rails assets:precompile
 ```
+
+> `assets:precompile` cũng có thể gọi lại các build hook đã cấu hình. Chạy tường minh `yarn build` và `yarn build:css` giúp phát hiện lỗi frontend sớm, trước khi restart ứng dụng.
 
 #### 6. Restart Services
 
@@ -130,6 +140,8 @@ sudo tail -f /var/log/nginx/access.log
 - [ ] Kiểm tra trang chủ load thành công
 - [ ] Test các chức năng chính
 - [ ] Kiểm tra API endpoints
+- [ ] Nếu có thay đổi frontend, dùng hard refresh (`Cmd + Shift + R` trên macOS) để kiểm tra browser đang tải asset fingerprint mới
+- [ ] Kiểm tra biểu đồ/JavaScript mới trong browser console, không có lỗi tải asset hoặc Chart.js
 - [ ] Monitor error logs trong 15-30 phút
 - [ ] Kiểm tra Sidekiq jobs đang chạy
 - [ ] Kiểm tra Mosquitto đang `active` và port `1883` có thể kết nối

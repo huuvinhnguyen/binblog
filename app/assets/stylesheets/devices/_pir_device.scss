@@ -195,8 +195,8 @@
     }
   }
 
-  &__chart-suggestions {
-    border: 2px dashed var(--pir-surface-4);
+  &__chart-card--motion {
+    border: 2px solid var(--pir-surface-4);
     border-radius: var(--pir-radius-card);
     padding: var(--pir-spacing-lg);
     margin-top: var(--pir-spacing-lg);
@@ -226,6 +226,17 @@
       font-size: var(--pir-text-xs);
       margin: 0 0 15px 0;
     }
+  }
+
+  &__chart-description {
+    color: var(--pir-text-secondary);
+    font-size: var(--pir-text-sm);
+    margin: var(--pir-spacing-xs) 0 0;
+  }
+
+  &__chart-canvas-wrap {
+    height: 320px;
+    position: relative;
   }
 
   &__chart-tech {
@@ -276,6 +287,10 @@
 
     &__chart-grid {
       grid-template-columns: 1fr;
+    }
+
+    &__chart-canvas-wrap {
+      height: 260px;
     }
   }
 }

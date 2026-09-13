@@ -157,6 +157,17 @@ class DevicesController < ApplicationController
                               .where(event_type: 'motion_detected')
                               .order(occurred_at: :desc)
                               .limit(20)
+
+      chart_start = 23.hours.ago.beginning_of_hour
+      chart_buckets = 24.times.map { |offset| chart_start + offset.hours }
+      motion_counts = @device.device_events
+                           .where(event_type: 'motion_detected', occurred_at: chart_start..Time.current)
+                           .group_by { |event| event.occurred_at.in_time_zone(Time.zone).beginning_of_hour }
+
+      @pir_motion_chart = {
+        labels: chart_buckets.map { |hour| hour.strftime('%H:%M') },
+        values: chart_buckets.map { |hour| motion_counts.fetch(hour, []).count }
+      }
     end
 
     # subscribe_topic topic

@@ -102,56 +102,21 @@
 
 </div>
 
-<!-- Chart Suggestion Section -->
-<div class="pir-device__chart-suggestions">
-
-  <h4 class="pir-device__history-title" style="margin-bottom: 20px;">
-    📈 Đề xuất biểu đồ phân tích
-  </h4>
-
-  <div class="pir-device__chart-grid">
-
-    <!-- Chart 1: Timeline -->
-    <div class="pir-device__chart-card">
-      <h5>⏱️ Timeline phát hiện</h5>
-      <p>
-        Biểu đồ thời gian thực hiển thị các sự kiện phát hiện chuyển động theo timeline (giờ/ngày).
-      </p>
-      <div class="pir-device__chart-tech">
-        <strong>Thư viện đề xuất:</strong> Chart.js (timeline chart) hoặc ApexCharts
-      </div>
+<div class="pir-device__chart-card pir-device__chart-card--motion">
+  <div class="pir-device__history-header">
+    <div>
+      <h4 class="pir-device__history-title">📈 Phát hiện chuyển động</h4>
+      <p class="pir-device__chart-description">Số lần phát hiện theo giờ trong 24 giờ gần nhất.</p>
     </div>
-
-    <!-- Chart 2: Heatmap -->
-    <div class="pir-device__chart-card">
-      <h5>🔥 Heatmap theo giờ</h5>
-      <p>
-        Ma trận nhiệt hiển thị tần suất phát hiện theo từng giờ trong ngày và ngày trong tuần.
-      </p>
-      <div class="pir-device__chart-tech">
-        <strong>Thư viện đề xuất:</strong> ApexCharts (heatmap) hoặc D3.js
-      </div>
-    </div>
-
-    <!-- Chart 3: Bar Chart -->
-    <div class="pir-device__chart-card">
-      <h5>📊 Thống kê theo ngày</h5>
-      <p>
-        Biểu đồ cột hiển thị số lần phát hiện chuyển động theo từng ngày trong 7 ngày gần nhất.
-      </p>
-      <div class="pir-device__chart-tech">
-        <strong>Thư viện đề xuất:</strong> Chart.js (bar chart)
-      </div>
-    </div>
-
+    <span class="pir-device__history-subtitle">24 giờ</span>
   </div>
 
-  <div class="pir-device__chart-tip">
-    <p style="margin: 0;">
-      💡 <strong>Gợi ý triển khai:</strong> Các biểu đồ trên có thể được implement bằng Chart.js hoặc ApexCharts.
-      Data có thể load qua AJAX từ endpoint mới (VD: <code>/api/devices/:chip_id/motion_stats</code>)
-      để tránh làm chậm page load ban đầu.
-    </p>
+  <div class="pir-device__chart-canvas-wrap">
+    <canvas
+      id="pir-motion-chart"
+      data-labels="<%= json_escape(@pir_motion_chart[:labels].to_json) %>"
+      data-values="<%= json_escape(@pir_motion_chart[:values].to_json) %>"
+      aria-label="Biểu đồ số lần phát hiện chuyển động theo giờ"
+      role="img"></canvas>
   </div>
-
 </div>

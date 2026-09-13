@@ -10,6 +10,7 @@
 // import "./jquery_ujs"
 import "./gauges"
 import "./device_switch"
+import "./pir_motion_chart"
 
 //buildjs
 import Rails from "@rails/ujs"

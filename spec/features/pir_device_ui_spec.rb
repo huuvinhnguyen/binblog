@@ -64,6 +64,16 @@ RSpec.describe 'PIR Device UI', type: :request do
       expect(response.body).to include('ESP32-HTTPClient/1.0')
     end
 
+    it 'renders the 24-hour motion chart with motion event data' do
+      get device_path(pir_device)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('id="pir-motion-chart"')
+      expect(response.body).to include('Phát hiện chuyển động')
+      expect(response.body).to include('data-labels=')
+      expect(response.body).to include('data-values=')
+    end
+
     it 'loads device events for PIR devices' do
       get device_path(pir_device)
 
