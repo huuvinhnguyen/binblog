@@ -1,0 +1,157 @@
+<!-- PIR Motion Sensor Card -->
+<div class="pir-device__status-card">
+
+  <!-- Header with device name -->
+  <div class="pir-device__header">
+    <h3 class="pir-device__title">
+      🔍 <%= @device.name %>
+    </h3>
+    <% is_online = @device_info&.dig('update_at').to_i > 5.minutes.ago.to_i %>
+    <span class="pir-device__status-badge pir-device__status-badge--<%= is_online ? 'online' : 'offline' %>">
+      <%= is_online ? '● Online' : '○ Offline' %>
+    </span>
+  </div>
+
+  <!-- Status Grid -->
+  <div class="pir-device__stats-grid">
+
+    <!-- Last Motion -->
+    <div class="pir-device__stat-card">
+      <div class="pir-device__stat-label">
+        Phát hiện cuối
+      </div>
+      <div class="pir-device__stat-value <%= 'pir-device__stat-value--empty' unless @device_events&.any? %>">
+        <% if @device_events&.any? %>
+          <%= @device_events.first.occurred_at.in_time_zone('Asia/Ho_Chi_Minh').strftime('%d/%m/%Y %H:%M:%S') %>
+        <% else %>
+          Chưa có dữ liệu
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Local IP -->
+    <div class="pir-device__stat-card">
+      <div class="pir-device__stat-label">
+        Địa chỉ IP
+      </div>
+      <div class="pir-device__stat-value <%= 'pir-device__stat-value--empty' unless @device_info&.dig('local_ip').present? %>">
+        <%= @device_info&.dig('local_ip').present? ? @device_info['local_ip'] : '—' %>
+      </div>
+    </div>
+
+    <!-- App Version -->
+    <div class="pir-device__stat-card">
+      <div class="pir-device__stat-label">
+        Phiên bản
+      </div>
+      <div class="pir-device__stat-value">
+        <%= @device_info&.dig('app_version') || 'v1.0.0' %>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Motion Events History -->
+<div class="pir-device__history-card">
+
+  <div class="pir-device__history-header">
+    <h4 class="pir-device__history-title">
+      📊 Lịch sử phát hiện chuyển động
+    </h4>
+    <span class="pir-device__history-subtitle">
+      20 sự kiện gần nhất
+    </span>
+  </div>
+
+  <% if @device_events&.any? %>
+    <div class="table-responsive">
+      <table class="pir-device__table">
+        <thead>
+          <tr>
+            <th style="width: 30%;">Thời gian</th>
+            <th style="width: 25%;">IP nguồn</th>
+            <th style="width: 45%;">User Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @device_events.first(20).each do |event| %>
+            <% payload = JSON.parse(event.payload || '{}') rescue {} %>
+            <tr>
+              <td>
+                <%= event.occurred_at.in_time_zone('Asia/Ho_Chi_Minh').strftime('%d/%m/%Y %H:%M:%S') %>
+              </td>
+              <td>
+                <%= payload['triggered_from'] || '—' %>
+              </td>
+              <td>
+                <%= payload['user_agent'] || '—' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="pir-device__empty-state">
+      <div class="pir-device__empty-state-icon">🔍</div>
+      Chưa có sự kiện phát hiện chuyển động nào.
+    </div>
+  <% end %>
+
+</div>
+
+<!-- Chart Suggestion Section -->
+<div class="pir-device__chart-suggestions">
+
+  <h4 class="pir-device__history-title" style="margin-bottom: 20px;">
+    📈 Đề xuất biểu đồ phân tích
+  </h4>
+
+  <div class="pir-device__chart-grid">
+
+    <!-- Chart 1: Timeline -->
+    <div class="pir-device__chart-card">
+      <h5>⏱️ Timeline phát hiện</h5>
+      <p>
+        Biểu đồ thời gian thực hiển thị các sự kiện phát hiện chuyển động theo timeline (giờ/ngày).
+      </p>
+      <div class="pir-device__chart-tech">
+        <strong>Thư viện đề xuất:</strong> Chart.js (timeline chart) hoặc ApexCharts
+      </div>
+    </div>
+
+    <!-- Chart 2: Heatmap -->
+    <div class="pir-device__chart-card">
+      <h5>🔥 Heatmap theo giờ</h5>
+      <p>
+        Ma trận nhiệt hiển thị tần suất phát hiện theo từng giờ trong ngày và ngày trong tuần.
+      </p>
+      <div class="pir-device__chart-tech">
+        <strong>Thư viện đề xuất:</strong> ApexCharts (heatmap) hoặc D3.js
+      </div>
+    </div>
+
+    <!-- Chart 3: Bar Chart -->
+    <div class="pir-device__chart-card">
+      <h5>📊 Thống kê theo ngày</h5>
+      <p>
+        Biểu đồ cột hiển thị số lần phát hiện chuyển động theo từng ngày trong 7 ngày gần nhất.
+      </p>
+      <div class="pir-device__chart-tech">
+        <strong>Thư viện đề xuất:</strong> Chart.js (bar chart)
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pir-device__chart-tip">
+    <p style="margin: 0;">
+      💡 <strong>Gợi ý triển khai:</strong> Các biểu đồ trên có thể được implement bằng Chart.js hoặc ApexCharts.
+      Data có thể load qua AJAX từ endpoint mới (VD: <code>/api/devices/:chip_id/motion_stats</code>)
+      để tránh làm chậm page load ban đầu.
+    </p>
+  </div>
+
+</div>

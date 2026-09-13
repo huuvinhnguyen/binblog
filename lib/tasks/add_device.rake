@@ -1,17 +1,35 @@
 namespace :device do
-  desc "Create a new single-relay device"
+  desc "Create a new device (switch or pir)"
   task :create => :environment do
+    puts "Select device type:"
+    puts "1. Switch (relay device)"
+    puts "2. PIR (motion sensor)"
+    puts "Enter choice (1 or 2):"
+    device_type_choice = STDIN.gets&.chomp.to_s
+
+    case device_type_choice
+    when "1"
+      create_switch_device
+    when "2"
+      create_pir_device
+    else
+      puts "Invalid choice! Please enter 1 or 2."
+    end
+  end
+
+  def create_switch_device
+    puts "\n=== Creating Switch Device ==="
     puts "Enter chip_id (e.g., esp8266_12345678):"
     chip_id = STDIN.gets&.chomp.to_s
 
     if chip_id.empty?
       puts "chip_id cannot be blank!"
-      next
+      return
     end
 
     if Device.exists?(chip_id: chip_id)
       puts "Device with chip_id '#{chip_id}' already exists!"
-      next
+      return
     end
 
     puts "Enter device name:"
@@ -19,7 +37,7 @@ namespace :device do
 
     if name.empty?
       puts "Device name cannot be blank!"
-      next
+      return
     end
 
     puts "Enter note [optional]:"
@@ -32,7 +50,7 @@ namespace :device do
 
     unless longlast_input.match?(/\A\d+\z/)
       puts "longlast must be a non-negative integer!"
-      next
+      return
     end
 
     longlast = longlast_input.to_i
@@ -48,7 +66,7 @@ namespace :device do
 
       unless user
         puts "User with email '#{email}' not found! Device was not created."
-        next
+        return
       end
     end
 
@@ -95,7 +113,7 @@ namespace :device do
       device.users << user if user
     end
 
-    puts "✓ Single-relay device '#{name}' (#{chip_id}) was successfully created."
+    puts "✓ Switch device '#{name}' (#{chip_id}) was successfully created."
     puts "  Device ID: #{device.id}"
     puts "  Relay index: 0"
     puts "  Longlast: #{longlast} ms"
@@ -104,6 +122,83 @@ namespace :device do
     puts "Failed to create device:"
     puts e.record.errors.full_messages.join("\n")
   end
+
+  def create_pir_device
+    puts "\n=== Creating PIR Motion Sensor Device ==="
+    puts "Enter chip_id (e.g., esp32_87654321):"
+    chip_id = STDIN.gets&.chomp.to_s
+
+    if chip_id.empty?
+      puts "chip_id cannot be blank!"
+      return
+    end
+
+    if Device.exists?(chip_id: chip_id)
+      puts "Device with chip_id '#{chip_id}' already exists!"
+      return
+    end
+
+    puts "Enter device name:"
+    name = STDIN.gets&.chomp.to_s
+
+    if name.empty?
+      puts "Device name cannot be blank!"
+      return
+    end
+
+    puts "Enter note [optional]:"
+    note = STDIN.gets&.chomp.to_s
+    note = nil if note.empty?
+
+    puts "Do you want to link this device to a user? (y/n):"
+    link_user = STDIN.gets&.chomp.to_s.downcase
+    user = nil
+
+    if link_user == 'y'
+      puts "Enter user email:"
+      email = STDIN.gets&.chomp.to_s
+      user = User.find_by(email: email)
+
+      unless user
+        puts "User with email '#{email}' not found! Device was not created."
+        return
+      end
+    end
+
+    device_info = {
+      device_type: "pir",
+      device_id: chip_id,
+      update_at: Time.current.to_i,
+      local_ip: "",
+      build_version: 0,
+      app_version: "1.0.0"
+    }
+
+    device = nil
+    ActiveRecord::Base.transaction do
+      device = Device.create!(
+        chip_id: chip_id,
+        name: name,
+        device_type: "pir",
+        note: note,
+        status: 1,
+        is_payment: false,
+        device_info: device_info.to_json,
+        trigger: nil,
+        meta_info: {}.to_json
+      )
+      device.users << user if user
+    end
+
+    puts "✓ PIR motion sensor '#{name}' (#{chip_id}) was successfully created."
+    puts "  Device ID: #{device.id}"
+    puts "  Device type: pir"
+    puts "  User: #{user.email}" if user
+  rescue ActiveRecord::RecordInvalid => e
+    puts "Failed to create device:"
+    puts e.record.errors.full_messages.join("\n")
+  end
+
 
   desc "List all devices"
   task :list => :environment do

@@ -151,6 +151,14 @@ class DevicesController < ApplicationController
     @reminder_enabled = UserRelayFeature.feature_enabled?(current_user, @device, 'reminder')
     puts "@reminder_enabled: #{@reminder_enabled }"
 
+    # Load device events for PIR devices
+    if @device.device_type == 'pir'
+      @device_events = @device.device_events
+                              .where(event_type: 'motion_detected')
+                              .order(occurred_at: :desc)
+                              .limit(20)
+    end
+
     # subscribe_topic topic
     # message = { "action": "ping" }.to_json
     # pingTopic = topic + "/ping"
