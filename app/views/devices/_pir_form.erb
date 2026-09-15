@@ -102,21 +102,43 @@
 
 </div>
 
-<div class="pir-device__chart-card pir-device__chart-card--motion">
+<div
+  id="pir-motion-dashboard"
+  class="pir-device__chart-card pir-device__chart-card--motion"
+  data-stats-url="<%= motion_stats_api_devices_path %>"
+  data-heatmap-url="<%= motion_heatmap_api_devices_path %>"
+  data-chip-id="<%= @device.chip_id %>">
   <div class="pir-device__history-header">
     <div>
       <h4 class="pir-device__history-title">📈 Phát hiện chuyển động</h4>
-      <p class="pir-device__chart-description">Số lần phát hiện theo giờ trong 24 giờ gần nhất.</p>
+      <p class="pir-device__chart-description">Số lần phát hiện theo giờ trong ngày đã chọn.</p>
     </div>
-    <span class="pir-device__history-subtitle">24 giờ</span>
+    <span id="pir-motion-total" class="pir-device__history-subtitle">Đang tải…</span>
+  </div>
+
+  <div class="pir-device__date-controls" aria-label="Chọn ngày thống kê">
+    <button id="pir-motion-prev-day" class="pir-device__date-button" type="button" aria-label="Ngày trước">←</button>
+    <input id="pir-motion-date" class="pir-device__date-input" type="date" value="<%= Time.zone.today.iso8601 %>">
+    <button id="pir-motion-next-day" class="pir-device__date-button" type="button" aria-label="Ngày sau">→</button>
   </div>
 
   <div class="pir-device__chart-canvas-wrap">
     <canvas
       id="pir-motion-chart"
-      data-labels="<%= json_escape(@pir_motion_chart[:labels].to_json) %>"
-      data-values="<%= json_escape(@pir_motion_chart[:values].to_json) %>"
       aria-label="Biểu đồ số lần phát hiện chuyển động theo giờ"
       role="img"></canvas>
+  </div>
+
+  <div class="pir-device__heatmap-section">
+    <div class="pir-device__history-header">
+      <div>
+        <h5 class="pir-device__heatmap-title">Mật độ phát hiện — 30 ngày</h5>
+        <p class="pir-device__chart-description">Chọn một ngày để xem chi tiết theo giờ.</p>
+      </div>
+      <div class="pir-device__heatmap-legend" aria-label="Chú thích mật độ">
+        <span>Ít</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>Nhiều</span>
+      </div>
+    </div>
+    <div id="pir-motion-heatmap" class="pir-device__heatmap" aria-label="Heatmap số lần phát hiện theo ngày"></div>
   </div>
 </div>

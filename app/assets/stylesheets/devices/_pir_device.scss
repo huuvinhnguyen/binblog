@@ -239,6 +239,88 @@
     position: relative;
   }
 
+  &__date-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--pir-spacing-sm);
+    margin: 0 0 var(--pir-spacing-md);
+  }
+
+  &__date-button,
+  &__date-input {
+    background: var(--pir-surface-4);
+    border: 1px solid var(--pir-surface-5);
+    border-radius: 8px;
+    color: var(--pir-text-primary);
+    font: inherit;
+    min-height: 40px;
+  }
+
+  &__date-button {
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: 0 14px;
+
+    &:hover { background: var(--pir-accent-muted); }
+  }
+
+  &__date-input { padding: 0 12px; }
+
+  &__heatmap-section {
+    border-top: 1px solid var(--pir-surface-4);
+    margin-top: var(--pir-spacing-lg);
+    padding-top: var(--pir-spacing-md);
+  }
+
+  &__heatmap-title {
+    color: var(--pir-text-primary);
+    font-size: var(--pir-text-base);
+    margin: 0;
+  }
+
+  &__heatmap {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+
+  &__heatmap-day {
+    aspect-ratio: 1;
+    background: var(--pir-surface-4);
+    border: 1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    min-width: 0;
+    padding: 0;
+
+    &[data-level="1"] { background: #1d4d42; }
+    &[data-level="2"] { background: #28705d; }
+    &[data-level="3"] { background: #3b9b7a; }
+    &[data-level="4"] { background: var(--pir-accent); }
+    &[aria-pressed="true"] { border-color: #f3f4f6; box-shadow: 0 0 0 2px var(--pir-accent-muted); }
+  }
+
+  &__heatmap-legend {
+    align-items: center;
+    color: var(--pir-text-muted);
+    display: flex;
+    font-size: var(--pir-text-xs);
+    gap: 5px;
+
+    i {
+      background: var(--pir-surface-4);
+      border-radius: 3px;
+      display: inline-block;
+      height: 12px;
+      width: 12px;
+
+      &[data-level="1"] { background: #1d4d42; }
+      &[data-level="2"] { background: #28705d; }
+      &[data-level="3"] { background: #3b9b7a; }
+      &[data-level="4"] { background: var(--pir-accent); }
+    }
+  }
+
   &__chart-tech {
     padding: 10px;
     background-color: var(--pir-surface-4);
@@ -292,5 +374,9 @@
     &__chart-canvas-wrap {
       height: 260px;
     }
+
+    &__heatmap { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+    &__heatmap-legend { width: 100%; }
   }
 }

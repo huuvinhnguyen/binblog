@@ -70,8 +70,8 @@ RSpec.describe 'PIR Device UI', type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include('id="pir-motion-chart"')
       expect(response.body).to include('Phát hiện chuyển động')
-      expect(response.body).to include('data-labels=')
-      expect(response.body).to include('data-values=')
+      expect(response.body).to include('id="pir-motion-date"')
+      expect(response.body).to include('id="pir-motion-heatmap"')
     end
 
     it 'loads device events for PIR devices' do
