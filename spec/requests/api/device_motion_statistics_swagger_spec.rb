@@ -55,7 +55,19 @@ RSpec.describe 'PIR motion statistics API documentation', type: :request do
               items: { type: :integer, minimum: 0 },
               example: [0, 1, 3]
             },
-            total: { type: :integer, minimum: 0, example: 4 }
+            total: { type: :integer, minimum: 0, example: 4 },
+            recent_events: {
+              type: :array, maxItems: 20,
+              description: 'Latest motion events for this device, newest first, independent of selected date.',
+              items: {
+                type: :object, required: %w[id event_type occurred_at],
+                properties: {
+                  id: { type: :integer },
+                  event_type: { type: :string, enum: ['motion_detected'] },
+                  occurred_at: { type: :string, format: 'date-time' }
+                }
+              }
+            }
           }
 
         run_test!

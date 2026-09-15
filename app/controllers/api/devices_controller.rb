@@ -212,7 +212,11 @@ module Api
         date: date.iso8601,
         labels: 24.times.map { |hour| format('%02d:00', hour) },
         values: values,
-        total: values.sum
+        total: values.sum,
+        recent_events: device.device_events.where(event_type: 'motion_detected')
+                             .order(occurred_at: :desc, id: :desc).limit(20).map do |event|
+          { id: event.id, event_type: event.event_type, occurred_at: event.occurred_at.iso8601 }
+        end
       }
     rescue Date::Error
       render json: { status: 'error', message: 'Invalid date. Use YYYY-MM-DD.' }, status: :unprocessable_entity
