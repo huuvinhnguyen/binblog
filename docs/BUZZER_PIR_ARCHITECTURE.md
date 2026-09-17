@@ -3,7 +3,12 @@
 ## Quyết định
 
 Tái sử dụng nguyên `POST /api/devices/trigger`. Không đổi firmware PIR,
-payload HTTP, topic MQTT hoặc firmware Buzzer trong phạm vi màn hình Buzzer.
+payload HTTP, topic MQTT hoặc firmware Buzzer trong luồng PIR → Buzzer.
+
+Màn hình Buzzer có thêm chức năng **Test Buzzer** độc lập. Nó không dùng
+`POST /api/devices/trigger`, mà dùng một web endpoint có Devise session, CSRF
+và kiểm tra quyền sở hữu. Command test vẫn publish vào topic MQTT hiện có của
+Buzzer và giữ nguyên các field firmware đang hỗ trợ.
 
 `params[:chip_id]` là chip ID của **PIR nguồn**. Rails tìm PIR, lưu event
 `motion_detected` cho PIR, đọc `trigger` của PIR và publish command tới Buzzer
@@ -130,8 +135,74 @@ Màn hình gồm:
 2. Danh sách PIR có `trigger.chip_id` trỏ đến Buzzer này.
 3. Lịch sử 20 event gần nhất với `payload.target_chip_id == @device.chip_id`; mỗi dòng hiển thị tên/chip ID PIR nguồn, thời điểm và duration.
 4. Empty state khi chưa có PIR nào cấu hình trigger Buzzer.
+5. Nút **Test Buzzer**, chỉ hiển thị với user có quyền trên Buzzer. Nút có xác
+   nhận trước khi gửi lệnh và disabled/loading state để tránh bấm lặp.
 
-Phiên bản đầu không thêm nút **Test Buzzer**. Gọi `POST /api/devices/trigger` với chip ID Buzzer là sai contract: controller sẽ coi Buzzer là PIR nguồn. Nếu cần test thủ công, thiết kế endpoint hoặc command riêng sau.
+Không gọi `POST /api/devices/trigger` với chip ID Buzzer: endpoint đó coi
+`chip_id` là PIR nguồn nên sẽ ghi sai ngữ nghĩa event và đọc sai cấu hình
+`trigger`.
+
+## Test Buzzer thủ công
+
+### Web endpoint
+
+```http
+POST /devices/:id/test_buzzer
+```
+
+Đây là web endpoint cho màn hình quản trị, dùng Devise session và CSRF, không
+phải public firmware API. Vì vậy không thêm JWT, không thay đổi Swagger của
+`POST /api/devices/trigger`, và không nhận `chip_id` từ browser.
+
+Controller phải lấy device qua phạm vi thiết bị user được phép truy cập, ví dụ
+`current_user.devices_for_current_user.find(params[:id])`, rồi xác minh
+`device_type == "buzzer"`.
+
+Response thành công có thể redirect lại Buzzer page với flash message. Các lỗi
+config hoặc MQTT trả flash lỗi phù hợp; user không có quyền hoặc ID không tồn
+tại nhận `404` để không lộ device khác.
+
+### MQTT command
+
+`BuzzerTestService` đọc relay mặc định từ `buzzer.device_info`, validate dữ
+liệu và publish:
+
+```text
+{buzzer_chip_id}/switchon
+```
+
+```json
+{
+  "chip_id": "ESP32_BUZZER_02",
+  "relay_index": 0,
+  "switch_value": 1,
+  "longlast": 1000,
+  "sent_time": "2026-09-17 10:30:00"
+}
+```
+
+- `relay_index`, `longlast` lấy từ cấu hình Buzzer, không nhận từ browser ở
+  phiên bản đầu.
+- Giới hạn duration an toàn cần được validate server-side.
+- Dùng cooldown server-side ngắn (ví dụ 3 giây trên mỗi Buzzer) để giảm
+  double-click/retry; browser không được là cơ chế chống trùng duy nhất.
+- Service phải đóng MQTT client trong mọi trường hợp.
+- Chưa có firmware ACK, nên publish không lỗi chỉ có nghĩa Rails đã gửi command
+  tới broker; không khẳng định Buzzer đã phát âm.
+
+### Audit
+
+Sau khi MQTT publish không lỗi, có thể ghi một `DeviceEvent` mới trên Buzzer:
+
+```text
+event_type: "buzzer_test_requested"
+payload: { relay_index, longlast, requested_by_user_id }
+```
+
+Event type này biểu thị yêu cầu test được gửi từ Rails, không được dùng các
+event ACK như `buzzer_started` hoặc `buzzer_finished` khi firmware chưa xác
+nhận. Nếu thêm event type, cần mở rộng validation của `DeviceEvent`; không cần
+migration vì bảng event hiện có đã có payload linh hoạt.
 
 ## Giới hạn đã biết
 
@@ -139,6 +210,8 @@ Phiên bản đầu không thêm nút **Test Buzzer**. Gọi `POST /api/devices/
 - Một PIR retry request có thể làm Buzzer phát lại.
 - Không có xác nhận Buzzer đã bật/tắt từ firmware.
 - Endpoint hiện chưa xác thực firmware PIR; đây là rủi ro hiện hữu, ngoài phạm vi màn hình Buzzer.
+- Test Buzzer thủ công chỉ chống request lặp ở Rails trong một khoảng ngắn;
+  firmware hiện chưa có `command_id` để idempotent xuyên suốt MQTT.
 
 ## Kế hoạch triển khai
 
@@ -148,8 +221,16 @@ Phiên bản đầu không thêm nút **Test Buzzer**. Gọi `POST /api/devices/
 4. Tạo `_buzzer_form.erb` và SCSS tương ứng.
 5. Thêm request/UI specs cho source PIR, target Buzzer và event metadata.
 6. Cập nhật tài liệu đăng ký Buzzer. Swagger không đổi vì request/response của `POST /api/devices/trigger` giữ nguyên.
-7. Build asset, precompile và kiểm tra giao diện sau release.
+7. Thêm route `POST /devices/:id/test_buzzer`, `BuzzerTestService`, kiểm tra
+   ownership, validate cấu hình và cooldown server-side.
+8. Thêm nút Test Buzzer cùng confirm/loading/empty/error states; thêm UI,
+   request và service specs cho owner, non-owner, invalid config, MQTT failure
+   và payload MQTT.
+9. Cập nhật tài liệu đăng ký Buzzer; build asset, precompile và kiểm tra giao
+   diện sau release.
 
 ## Rollback
 
-Rollback chỉ cần ngừng render Buzzer form và bỏ metadata event mới. Luồng PIR → `POST /api/devices/trigger` → MQTT không đổi, nên không cần flash lại firmware hoặc đổi cấu hình PIR.
+Rollback Test Buzzer chỉ cần gỡ route/nút và ngừng gọi service; không cần flash
+firmware hoặc đổi cấu hình PIR. Luồng PIR → `POST /api/devices/trigger` → MQTT
+không đổi. Nếu đã ghi audit event, giữ lại lịch sử thay vì xóa.

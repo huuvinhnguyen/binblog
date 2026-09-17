@@ -2,6 +2,7 @@
 @import "bootstrap/scss/bootstrap";
 @import "devices";
 @import "devices/pir_device";
+@import "devices/buzzer_device";
 @import "gauges";
 @import "toggle";
 
@@ -182,4 +183,3 @@ body {
   background: #04AA6D;
   cursor: pointer;
 }
-

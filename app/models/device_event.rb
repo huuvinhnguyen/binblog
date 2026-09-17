@@ -5,6 +5,7 @@ class DeviceEvent < ActiveRecord::Base
     motion_detected
     buzzer_started
     buzzer_finished
+    buzzer_test_requested
     device_online
     device_offline
   ].freeze
@@ -19,8 +20,8 @@ class DeviceEvent < ActiveRecord::Base
   scope :today, -> { where('occurred_at >= ?', Time.current.beginning_of_day) }
 
   def parsed_payload
-    @parsed_payload ||= JSON.parse(payload || '{}')
-  rescue JSON::ParserError
+    @parsed_payload ||= payload.is_a?(Hash) ? payload : JSON.parse(payload || '{}')
+  rescue JSON::ParserError, TypeError
     {}
   end
 end

@@ -261,18 +261,26 @@ module Api
           return render json: { status: 'error', message: 'Device not found' }, status: :not_found
         end
 
-        # Log motion detection event
+        # `chip_id` identifies the PIR that detected motion. Its trigger config
+        # identifies the target device that receives the existing MQTT command.
+        trigger_config = JSON.parse(device.trigger)
+
+        # Log motion detection on the PIR while retaining the target metadata so
+        # the Buzzer UI can later show which PIR caused a command.
         device.device_events.create!(
           event_type: 'motion_detected',
           occurred_at: Time.current,
           payload: {
             triggered_from: request.remote_ip,
-            user_agent: request.user_agent
+            user_agent: request.user_agent,
+            target_chip_id: trigger_config['chip_id'],
+            relay_index: trigger_config['relay_index'],
+            longlast: trigger_config['longlast']
           }
         )
 
         # Execute existing relay trigger via MQTT
-        trigger_device device
+        trigger_device device, trigger_config
 
         render json: { status: 'success', message: 'Message sent successfully' }, status: :ok
       rescue JSON::ParserError
@@ -453,9 +461,8 @@ module Api
       )
     end
     
-    def trigger_device device
-      raw_message_trigger = device.trigger
-      json_params = JSON.parse(raw_message_trigger)
+    def trigger_device(device, trigger_config = nil)
+      json_params = trigger_config || JSON.parse(device.trigger)
     
       # Tạo topic từ chip_id
       topic = "#{json_params['chip_id']}/switchon"

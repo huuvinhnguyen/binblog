@@ -103,6 +103,9 @@ Rails.application.routes.draw do
       get :mqtt_data
       get :latest_data
     end
+    member do
+      post :test_buzzer
+    end
   end
 
   resources :devices do

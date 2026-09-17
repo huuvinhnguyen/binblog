@@ -13,8 +13,8 @@ RSpec.describe 'device:create' do
     task.reenable
   end
 
-  def run_task(*answers)
-    input = StringIO.new("#{answers.join("\n")}\n")
+  def run_task(*answers, device_type: '1')
+    input = StringIO.new("#{([device_type] + answers).join("\n")}\n")
     output = StringIO.new
 
     stub_const('STDIN', input)
@@ -120,5 +120,31 @@ RSpec.describe 'device:create' do
 
     expect(Device.exists?(chip_id: 'esp8266_missing_user')).to be(false)
     expect(output).to include("User with email 'missing@example.com' not found! Device was not created.")
+  end
+
+  it 'creates a buzzer without assigning it a trigger of its own' do
+    run_task(
+      'esp32_buzzer_create',
+      'Chuong phong khach',
+      'Buzzer test',
+      '1000',
+      'n',
+      device_type: '3'
+    )
+
+    device = Device.find_by!(chip_id: 'esp32_buzzer_create')
+
+    expect(device).to have_attributes(
+      name: 'Chuong phong khach',
+      device_type: 'buzzer',
+      trigger: nil,
+      note: 'Buzzer test'
+    )
+    expect(JSON.parse(device.device_info)).to include(
+      'device_type' => 'buzzer',
+      'topic_type' => 'switchon',
+      'device_id' => 'esp32_buzzer_create'
+    )
+    expect(JSON.parse(device.device_info).dig('relays', 0, 'longlast')).to eq(1000)
   end
 end

@@ -1,10 +1,11 @@
 namespace :device do
-  desc "Create a new device (switch or pir)"
+  desc "Create a new device (switch, pir, or buzzer)"
   task :create => :environment do
     puts "Select device type:"
     puts "1. Switch (relay device)"
     puts "2. PIR (motion sensor)"
-    puts "Enter choice (1 or 2):"
+    puts "3. Buzzer (alarm device)"
+    puts "Enter choice (1, 2, or 3):"
     device_type_choice = STDIN.gets&.chomp.to_s
 
     case device_type_choice
@@ -12,8 +13,10 @@ namespace :device do
       create_switch_device
     when "2"
       create_pir_device
+    when "3"
+      create_buzzer_device
     else
-      puts "Invalid choice! Please enter 1 or 2."
+      puts "Invalid choice! Please enter 1, 2, or 3."
     end
   end
 
@@ -193,6 +196,89 @@ namespace :device do
     puts "✓ PIR motion sensor '#{name}' (#{chip_id}) was successfully created."
     puts "  Device ID: #{device.id}"
     puts "  Device type: pir"
+    puts "  User: #{user.email}" if user
+  rescue ActiveRecord::RecordInvalid => e
+    puts "Failed to create device:"
+    puts e.record.errors.full_messages.join("\n")
+  end
+
+  def create_buzzer_device
+    puts "\n=== Creating Buzzer Device ==="
+    puts "Enter chip_id (e.g., esp32_buzzer_01):"
+    chip_id = STDIN.gets&.chomp.to_s
+
+    if chip_id.empty?
+      puts "chip_id cannot be blank!"
+      return
+    end
+
+    if Device.exists?(chip_id: chip_id)
+      puts "Device with chip_id '#{chip_id}' already exists!"
+      return
+    end
+
+    puts "Enter device name:"
+    name = STDIN.gets&.chomp.to_s
+    if name.empty?
+      puts "Device name cannot be blank!"
+      return
+    end
+
+    puts "Enter note [optional]:"
+    note = STDIN.gets&.chomp.to_s
+    note = nil if note.empty?
+
+    puts "Enter default sound duration in milliseconds (default: 1000):"
+    longlast_input = STDIN.gets&.chomp.to_s
+    longlast_input = "1000" if longlast_input.empty?
+    unless longlast_input.match?(/\A\d+\z/)
+      puts "longlast must be a non-negative integer!"
+      return
+    end
+    longlast = longlast_input.to_i
+
+    puts "Do you want to link this device to a user? (y/n):"
+    link_user = STDIN.gets&.chomp.to_s.downcase
+    user = nil
+    if link_user == 'y'
+      puts "Enter user email:"
+      user = User.find_by(email: STDIN.gets&.chomp.to_s)
+      unless user
+        puts "User not found! Device was not created."
+        return
+      end
+    end
+
+    device_info = {
+      device_type: "buzzer",
+      topic_type: "switchon",
+      device_id: chip_id,
+      relays: [{ switch_value: 0, longlast: longlast }],
+      update_at: Time.current.to_i,
+      local_ip: "",
+      build_version: 0,
+      app_version: "1.0.0"
+    }
+
+    device = nil
+    ActiveRecord::Base.transaction do
+      device = Device.create!(
+        chip_id: chip_id,
+        name: name,
+        device_type: "buzzer",
+        note: note,
+        status: 1,
+        is_payment: false,
+        device_info: device_info.to_json,
+        trigger: nil,
+        meta_info: {}.to_json
+      )
+      device.users << user if user
+    end
+
+    puts "✓ Buzzer '#{name}' (#{chip_id}) was successfully created."
+    puts "  Device ID: #{device.id}"
+    puts "  Default duration: #{longlast} ms"
     puts "  User: #{user.email}" if user
   rescue ActiveRecord::RecordInvalid => e
     puts "Failed to create device:"

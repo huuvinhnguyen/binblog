@@ -3,15 +3,16 @@ require 'rails_helper'
 RSpec.describe 'POST /api/devices/trigger', type: :request do
   let(:device) do
     Device.create!(
-      chip_id: 'esp8266_test_trigger',
-      name: 'Test Device',
-      device_type: 'switch',
+      chip_id: 'esp32_test_pir_trigger',
+      name: 'Test PIR',
+      device_type: 'pir',
       status: 1,
       is_payment: false,
       trigger: {
-        chip_id: 'esp8266_test_trigger',
-        relay_indexes: [0],
-        longlast: 6000
+        chip_id: 'esp32_test_buzzer_target',
+        relay_index: 0,
+        switch_value: 1,
+        longlast: 1000
       }.to_json
     )
   end
@@ -36,6 +37,11 @@ RSpec.describe 'POST /api/devices/trigger', type: :request do
       expect(event.device_id).to eq(device.id)
       expect(event.event_type).to eq('motion_detected')
       expect(event.occurred_at).to be_within(2.seconds).of(Time.current)
+      expect(event.parsed_payload).to include(
+        'target_chip_id' => 'esp32_test_buzzer_target',
+        'relay_index' => 0,
+        'longlast' => 1000
+      )
     end
 
     it 'returns error when device not found' do

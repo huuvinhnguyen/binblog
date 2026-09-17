@@ -8,7 +8,8 @@ Trong hệ thống:
 
 - `chip_id` là mã duy nhất của thiết bị.
 - Device PIR dùng `device_type: "pir"`.
-- PIR không có cấu hình relay hoặc trigger.
+- PIR không có relay. `trigger` để trống khi tạo mới; khi pair với Buzzer, nó
+  sẽ lưu cấu hình Buzzer đích.
 - Mỗi lần phát hiện chuyển động, thiết bị gọi API `/api/devices/trigger` để ghi lại sự kiện.
 
 > Không tạo thêm record nếu `chip_id` đã tồn tại. Hãy kiểm tra và cập nhật record hiện có.
@@ -24,13 +25,13 @@ bundle exec rake -T device
 Các task hiện có:
 
 ```text
-rake device:create   # Tạo device (switch hoặc pir)
+rake device:create   # Tạo device (switch, pir hoặc buzzer)
 rake device:delete   # Sao lưu rồi xóa device cùng dữ liệu liên quan
 rake device:link     # Liên kết device với user
 rake device:list     # Liệt kê các device
 ```
 
-Task `device:create` đã được cập nhật để hỗ trợ tạo cả switch và PIR. Khi chạy task, bạn sẽ được hỏi loại device muốn tạo.
+Task `device:create` hỗ trợ switch, PIR và Buzzer. Khi chạy task, bạn sẽ được hỏi loại device muốn tạo.
 
 ## 1. Mở Rails console
 
@@ -96,7 +97,8 @@ Task sẽ hỏi:
 Select device type:
 1. Switch (relay device)
 2. PIR (motion sensor)
-Enter choice (1 or 2):
+3. Buzzer (alarm device)
+Enter choice (1, 2, or 3):
 2
 
 === Creating PIR Motion Sensor Device ===
