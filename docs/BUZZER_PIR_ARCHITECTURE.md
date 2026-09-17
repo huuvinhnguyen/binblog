@@ -175,7 +175,6 @@ liệu và publish:
 {
   "chip_id": "ESP32_BUZZER_02",
   "relay_index": 0,
-  "switch_value": 1,
   "longlast": 1000,
   "sent_time": "2026-09-17 10:30:00"
 }
@@ -183,6 +182,8 @@ liệu và publish:
 
 - `relay_index`, `longlast` lấy từ cấu hình Buzzer, không nhận từ browser ở
   phiên bản đầu.
+- Test Buzzer chỉ gửi `longlast`; firmware dùng field này để phát beep theo
+  thời lượng và tự tắt. Không gửi `switch_value` cho command test.
 - Giới hạn duration an toàn cần được validate server-side.
 - Dùng cooldown server-side ngắn (ví dụ 3 giây trên mỗi Buzzer) để giảm
   double-click/retry; browser không được là cơ chế chống trùng duy nhất.

@@ -35,12 +35,14 @@ RSpec.describe BuzzerTestService do
       expect(JSON.parse(payload)).to include(
         'chip_id' => buzzer.chip_id,
         'relay_index' => 0,
-        'switch_value' => 1,
         'longlast' => 1000,
         'sent_time' => be_a(String)
       )
       expect(retain).to be(false)
     end
+    expect(mqtt_client_class).to have_received(:connect).with(
+      Rails.application.config_for(:mqtt).symbolize_keys.slice(:host, :port)
+    )
     expect(client).to have_received(:disconnect)
 
     event = buzzer.device_events.last

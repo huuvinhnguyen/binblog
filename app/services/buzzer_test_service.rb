@@ -76,14 +76,13 @@ class BuzzerTestService
     {
       chip_id: @device.chip_id,
       relay_index: relay_index,
-      switch_value: 1,
       longlast: longlast,
       sent_time: Time.current.strftime('%Y-%m-%d %H:%M:%S')
     }
   end
 
   def mqtt_options
-    Rails.application.config_for(:mqtt).slice('host', 'port').symbolize_keys
+    Rails.application.config_for(:mqtt).symbolize_keys.slice(:host, :port)
   end
 
   def cooldown_key

@@ -84,5 +84,6 @@ thống dùng relay channel và thời lượng đã lưu khi tạo Buzzer để
 
 - Chỉ user được liên kết với Buzzer (hoặc administrator) có thể dùng nút này.
 - Có cooldown ngắn để tránh bấm lặp.
+- Command test chỉ gửi `longlast`; firmware tự tắt Buzzer sau thời lượng đó.
 - Thông báo thành công chỉ xác nhận Rails đã gửi lệnh tới MQTT broker, không
   xác nhận Buzzer đã phát âm vì firmware hiện chưa gửi ACK.
