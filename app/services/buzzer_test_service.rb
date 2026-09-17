@@ -23,7 +23,10 @@ class BuzzerTestService
     client = nil
     begin
       client = @mqtt_client.connect(**mqtt_options)
-      client.publish(topic, message.to_json, retain: false)
+      client.publish(topic, message.to_json, false, 1)
+      Rails.logger.info(
+        "[BuzzerTest] device_id=#{@device.id} published topic=#{topic} qos=1 longlast=#{longlast}"
+      )
       record_requested_event!
 
       Result.new(relay_index: relay_index, longlast: longlast)
@@ -34,6 +37,9 @@ class BuzzerTestService
     ensure
       client.disconnect if client
     end
+  rescue ConfigurationError, CooldownError => e
+    Rails.logger.warn("[BuzzerTest] device_id=#{@device.id} skipped: #{e.message}")
+    raise
   end
 
   private

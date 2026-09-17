@@ -182,8 +182,14 @@ liệu và publish:
 
 - `relay_index`, `longlast` lấy từ cấu hình Buzzer, không nhận từ browser ở
   phiên bản đầu.
-- Test Buzzer chỉ gửi `longlast`; firmware dùng field này để phát beep theo
-  thời lượng và tự tắt. Không gửi `switch_value` cho command test.
+- Command test gửi `chip_id`, `relay_index`, `longlast` và `sent_time`; không
+  gửi `switch_value`. `sent_time` phải do Rails tạo ngay trước khi publish,
+  theo format `YYYY-MM-DD HH:MM:SS` và không được dùng timestamp tĩnh/cũ.
+  Firmware Buzzer hiện bỏ qua command thiếu `sent_time` hoặc có thời điểm quá
+  cũ. `longlast` xác định thời lượng beep và firmware tự tắt sau thời lượng đó.
+- Publish test dùng MQTT QoS 1. Rails chỉ ghi audit event và báo thành công sau
+  khi MQTT broker trả `PUBACK`; đây là xác nhận broker nhận command, không phải
+  xác nhận Buzzer đã phát âm.
 - Giới hạn duration an toàn cần được validate server-side.
 - Dùng cooldown server-side ngắn (ví dụ 3 giây trên mỗi Buzzer) để giảm
   double-click/retry; browser không được là cơ chế chống trùng duy nhất.

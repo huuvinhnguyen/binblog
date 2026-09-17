@@ -27,18 +27,23 @@ RSpec.describe BuzzerTestService do
   end
 
   it 'publishes the compatible MQTT command and records an audit event' do
-    result = call_service
+    sent_at = Time.zone.parse('2026-09-17 22:30:00')
 
-    expect(result).to have_attributes(relay_index: 0, longlast: 1000)
-    expect(client).to have_received(:publish) do |topic, payload, retain:|
-      expect(topic).to eq("#{buzzer.chip_id}/switchon")
-      expect(JSON.parse(payload)).to include(
-        'chip_id' => buzzer.chip_id,
-        'relay_index' => 0,
-        'longlast' => 1000,
-        'sent_time' => be_a(String)
-      )
-      expect(retain).to be(false)
+    travel_to(sent_at) do
+      result = call_service
+
+      expect(result).to have_attributes(relay_index: 0, longlast: 1000)
+      expect(client).to have_received(:publish) do |topic, payload, retain, qos|
+        expect(topic).to eq("#{buzzer.chip_id}/switchon")
+        expect(JSON.parse(payload)).to include(
+          'chip_id' => buzzer.chip_id,
+          'relay_index' => 0,
+          'longlast' => 1000,
+          'sent_time' => '2026-09-17 22:30:00'
+        )
+        expect(retain).to be(false)
+        expect(qos).to eq(1)
+      end
     end
     expect(mqtt_client_class).to have_received(:connect).with(
       Rails.application.config_for(:mqtt).symbolize_keys.slice(:host, :port)

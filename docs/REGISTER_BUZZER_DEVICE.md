@@ -84,6 +84,12 @@ thống dùng relay channel và thời lượng đã lưu khi tạo Buzzer để
 
 - Chỉ user được liên kết với Buzzer (hoặc administrator) có thể dùng nút này.
 - Có cooldown ngắn để tránh bấm lặp.
-- Command test chỉ gửi `longlast`; firmware tự tắt Buzzer sau thời lượng đó.
+- Command test gửi `chip_id`, `relay_index`, `longlast` và `sent_time`; không
+  gửi `switch_value`. `sent_time` do Rails tạo ngay trước khi publish theo
+  format `YYYY-MM-DD HH:MM:SS`. Firmware sẽ bỏ qua payload thiếu `sent_time`
+  hoặc dùng thời điểm cũ, vì vậy không dùng payload JSON tĩnh để kiểm tra.
+  `longlast` quyết định thời lượng và firmware tự tắt Buzzer sau thời lượng đó.
+- Command test dùng MQTT QoS 1: thông báo thành công nghĩa là broker đã nhận
+  command (`PUBACK`), không phải Buzzer đã phát âm.
 - Thông báo thành công chỉ xác nhận Rails đã gửi lệnh tới MQTT broker, không
   xác nhận Buzzer đã phát âm vì firmware hiện chưa gửi ACK.
