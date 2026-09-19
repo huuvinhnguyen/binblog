@@ -1,0 +1,49 @@
+.buzzer-device {
+  display: grid;
+  gap: 1.25rem;
+  color: #e7edf8;
+
+  &__status-card,
+  &__card {
+    background: #172033;
+    border: 1px solid #2b3a57;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .14);
+  }
+
+  &__status-card { padding: 1.35rem; }
+  &__header, &__card-header, &__stats-grid { display: flex; gap: 1rem; }
+  &__header, &__card-header { justify-content: space-between; align-items: flex-start; }
+  &__stats-grid { margin-top: 1.25rem; }
+  &__stat-card { flex: 1; padding: .85rem 1rem; background: #202c44; border-radius: 10px; }
+  &__eyebrow { margin: 0 0 .2rem; color: #8fa1c5; font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
+  &__title { margin: 0; font-size: 1.35rem; color: #fff; }
+  &__chip-id, &__card-header p, &__source-list small, &__table small { display: block; margin: .25rem 0 0; color: #aab7cf; }
+  &__status-badge, &__count, &__sent-badge { border-radius: 99px; font-size: .8rem; font-weight: 700; padding: .35rem .65rem; white-space: nowrap; }
+  &__status-badge--online { background: #153b30; color: #7ee2b8; }
+  &__status-badge--offline { background: #3a2831; color: #efacbd; }
+  &__stat-label { display: block; color: #aab7cf; font-size: .82rem; }
+  &__stat-value { display: block; margin-top: .25rem; color: #fff; font-size: 1.35rem; }
+  &__stat-value--date { font-size: .95rem; }
+  &__test-action { display: flex; gap: .75rem; align-items: center; margin-top: 1.25rem; color: #aab7cf; }
+  &__test-button { border: 0; border-radius: 8px; padding: .55rem .9rem; background: #ffc857; color: #172033; font-weight: 700; }
+  &__test-button:hover { background: #ffd576; }
+  &__test-button:disabled { cursor: wait; opacity: .65; }
+  &__card { padding: 1.25rem; }
+  &__card-header h4 { margin: 0; color: #fff; font-size: 1.05rem; }
+  &__count { background: #293b5c; color: #bfd4ff; }
+  &__source-list { list-style: none; margin: 1rem 0 0; padding: 0; }
+  &__source-list li { display: flex; gap: .7rem; align-items: center; padding: .75rem 0; border-top: 1px solid #2b3a57; }
+  &__source-icon { color: #ffc857; font-size: 1.2rem; }
+  &__table { width: 100%; margin-top: 1rem; color: #e7edf8; }
+  &__table th { color: #aab7cf; font-size: .78rem; text-transform: uppercase; }
+  &__table th, &__table td { padding: .7rem; border-bottom: 1px solid #2b3a57; }
+  &__sent-badge { background: #293b5c; color: #bfd4ff; }
+  &__empty-state { margin-top: 1rem; padding: 1.5rem; color: #aab7cf; text-align: center; background: #202c44; border-radius: 10px; }
+  &__empty-state span { display: block; margin-bottom: .35rem; font-size: 1.4rem; }
+
+  @media (max-width: 576px) {
+    &__header, &__card-header, &__stats-grid { flex-direction: column; }
+    &__test-action { align-items: flex-start; flex-direction: column; }
+  }
+}

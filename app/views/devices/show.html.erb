@@ -68,6 +68,16 @@
     </div>
   <% end %>
 
+  <!-- PIR Motion Sensor -->
+  <% if @device.device_type == "pir" %>
+    <%= render 'pir_form' %>
+  <% end %>
+
+  <!-- Buzzer -->
+  <% if @device.device_type == "buzzer" %>
+    <%= render 'buzzer_form' %>
+  <% end %>
+
   <% meta_info = @device.parsed_meta_info %>
 
 <div>

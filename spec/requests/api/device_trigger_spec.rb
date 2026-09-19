@@ -85,14 +85,14 @@ RSpec.describe 'Device trigger API', type: :request do
         run_test!
       end
 
-      response '500', 'device or trigger configuration is invalid' do
+      response '404', 'device is not found' do
         let(:payload) { { chip_id: 'UNKNOWN_DEVICE' } }
 
         schema type: :object,
           required: %w[status message],
           properties: {
             status: { type: :string, enum: ['error'], example: 'error' },
-            message: { type: :string, example: "undefined method `trigger' for nil" }
+            message: { type: :string, example: 'Device not found' }
           }
 
         run_test!

@@ -22,6 +22,16 @@ RSpec.configure do |config|
         version: 'v1'
       },
       paths: {},
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: :http,
+            scheme: :bearer,
+            bearerFormat: :JWT,
+            description: 'JWT returned by POST /api/login. Send it as Bearer <token>.'
+          }
+        }
+      },
       servers: [
         {
           url: 'https://{defaultHost}',

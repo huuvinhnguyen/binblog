@@ -1,6 +1,6 @@
 module Api
   class Api::DevicesController < ApplicationController
-    before_action :authenticate_api_user!, only: [:index]
+    before_action :authenticate_api_user!, only: [:index, :motion_stats, :motion_heatmap]
 
     def index
       devices = current_user.present? ? current_user.devices_for_current_user : Device.all
@@ -195,15 +195,93 @@ module Api
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
     end
 
+    def motion_stats
+      device = accessible_pir_device
+      return unless device
+
+      date = Date.iso8601(params[:date].presence || Time.zone.today.to_s)
+      day_start = Time.zone.local(date.year, date.month, date.day).beginning_of_day
+      day_end = day_start.end_of_day
+      counts_by_hour = motion_events_for(device, day_start..day_end)
+                        .group_by { |event| event.occurred_at.in_time_zone(Time.zone).hour }
+
+      values = 24.times.map { |hour| counts_by_hour.fetch(hour, []).count }
+
+      render json: {
+        status: 'success',
+        date: date.iso8601,
+        labels: 24.times.map { |hour| format('%02d:00', hour) },
+        values: values,
+        total: values.sum,
+        recent_events: device.device_events.where(event_type: 'motion_detected')
+                             .order(occurred_at: :desc, id: :desc).limit(20).map do |event|
+          { id: event.id, event_type: event.event_type, occurred_at: event.occurred_at.iso8601 }
+        end
+      }
+    rescue Date::Error
+      render json: { status: 'error', message: 'Invalid date. Use YYYY-MM-DD.' }, status: :unprocessable_entity
+    end
+
+    def motion_heatmap
+      device = accessible_pir_device
+      return unless device
+
+      days = params[:days].to_i
+      days = 30 if days.zero?
+      days = days.clamp(1, 90)
+
+      start_date = Time.zone.today - (days - 1)
+      start_at = start_date.beginning_of_day
+      counts_by_date = motion_events_for(device, start_at..Time.current.end_of_day)
+                       .group_by { |event| event.occurred_at.in_time_zone(Time.zone).to_date }
+
+      data = days.times.map do |offset|
+        date = start_date + offset.days
+        { date: date.iso8601, count: counts_by_date.fetch(date, []).count }
+      end
+
+      render json: {
+        status: 'success',
+        from: start_date.iso8601,
+        to: Time.zone.today.iso8601,
+        max_count: data.map { |entry| entry[:count] }.max || 0,
+        data: data
+      }
+    end
+
     def trigger
       # Lấy JSON từ body của request
       # raw_body = request.body.read
-    
+
       begin
 
         device = Device.find_by(chip_id: params[:chip_id])
-        trigger_device device
-        
+
+        unless device
+          return render json: { status: 'error', message: 'Device not found' }, status: :not_found
+        end
+
+        # `chip_id` identifies the PIR that detected motion. Its trigger config
+        # identifies the target device that receives the existing MQTT command.
+        trigger_config = JSON.parse(device.trigger)
+
+        # Log motion detection on the PIR while retaining the target metadata so
+        # the Buzzer UI can later show which PIR caused a command.
+        device.device_events.create!(
+          event_type: 'motion_detected',
+          occurred_at: Time.current,
+          payload: {
+            triggered_from: request.remote_ip,
+            user_agent: request.user_agent,
+            target_chip_id: trigger_config['chip_id'],
+            relay_index: trigger_config['relay_index'],
+            longlast: trigger_config['longlast']
+          }
+        )
+
+        # Execute existing relay trigger via MQTT
+        trigger_device device, trigger_config
+
         render json: { status: 'success', message: 'Message sent successfully' }, status: :ok
       rescue JSON::ParserError
         render json: { status: 'error', message: 'Invalid JSON format' }, status: :unprocessable_entity
@@ -383,9 +461,8 @@ module Api
       )
     end
     
-    def trigger_device device
-      raw_message_trigger = device.trigger
-      json_params = JSON.parse(raw_message_trigger)
+    def trigger_device(device, trigger_config = nil)
+      json_params = trigger_config || JSON.parse(device.trigger)
     
       # Tạo topic từ chip_id
       topic = "#{json_params['chip_id']}/switchon"
@@ -423,6 +500,21 @@ module Api
       JSON.parse(value)
     rescue JSON::ParserError, TypeError
       {}
+    end
+
+    def accessible_pir_device
+      device = current_user.devices_for_current_user.find_by(chip_id: params[:chip_id])
+
+      unless device&.device_type == 'pir'
+        render json: { status: 'error', message: 'PIR device not found' }, status: :not_found
+        return nil
+      end
+
+      device
+    end
+
+    def motion_events_for(device, period)
+      device.device_events.where(event_type: 'motion_detected', occurred_at: period)
     end
 
     def authenticate_api_user!

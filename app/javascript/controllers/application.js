@@ -44,7 +44,10 @@ document.addEventListener('turbo:load', () => {
 
 document.addEventListener('turbo:load', () => {
 
-    const ctx = document.getElementById('tempHumidityChart').getContext('2d');
+    const canvas = document.getElementById('tempHumidityChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
 
     const tempHumidityChart = new Chart(ctx, {
         type: 'line',
@@ -105,6 +108,9 @@ document.addEventListener('turbo:load', () => {
 
 document.addEventListener('turbo:load', () => {
 
+    const canvas = document.getElementById('motionChart');
+    if (!canvas) return;
+
     // Sample data: số lần chuyển động ghi nhận mỗi giờ
     const motionData = [
         { hour: '08:00', motion_count: 2 },
@@ -119,7 +125,7 @@ document.addEventListener('turbo:load', () => {
     const labels = motionData.map(entry => entry.hour);
     const data = motionData.map(entry => entry.motion_count);
 
-    const ctx = document.getElementById('motionChart').getContext('2d');
+    const ctx = canvas.getContext('2d');
     const motionChart = new Chart(ctx, {
         type: 'bar',
         data: {

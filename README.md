@@ -6,6 +6,8 @@ A barebones Rails app, which can easily be deployed to Heroku.
 
 - Swagger UI: `/api-docs`
 - [Hướng dẫn thêm device relay 1 kênh](docs/REGISTER_SINGLE_RELAY_DEVICE.md)
+- [Hướng dẫn đăng ký Buzzer và pair với PIR](docs/REGISTER_BUZZER_DEVICE.md)
+- [Hướng dẫn đăng ký PIR](docs/REGISTER_PIR_DEVICE.md)
 - [Hướng dẫn API `POST /devices/notify`](docs/API_DEVICES_NOTIFY.md)
 - [Hướng dẫn API `POST /api/devices/trigger`](docs/API_DEVICES_TRIGGER.md)
 

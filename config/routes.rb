@@ -22,6 +22,8 @@ Rails.application.routes.draw do
         post :remove_reminder
         post :set_reminders_active
         get :device_info
+        get :motion_stats
+        get :motion_heatmap
         get :time
         post :trigger
         post :switchon
@@ -100,6 +102,9 @@ Rails.application.routes.draw do
     collection do
       get :mqtt_data
       get :latest_data
+    end
+    member do
+      post :test_buzzer
     end
   end
 

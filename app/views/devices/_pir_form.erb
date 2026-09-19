@@ -1,0 +1,144 @@
+<!-- PIR Motion Sensor Card -->
+<div class="pir-device__status-card">
+
+  <!-- Header with device name -->
+  <div class="pir-device__header">
+    <h3 class="pir-device__title">
+      🔍 <%= @device.name %>
+    </h3>
+    <% is_online = @device_info&.dig('update_at').to_i > 5.minutes.ago.to_i %>
+    <span class="pir-device__status-badge pir-device__status-badge--<%= is_online ? 'online' : 'offline' %>">
+      <%= is_online ? '● Online' : '○ Offline' %>
+    </span>
+  </div>
+
+  <!-- Status Grid -->
+  <div class="pir-device__stats-grid">
+
+    <!-- Last Motion -->
+    <div class="pir-device__stat-card">
+      <div class="pir-device__stat-label">
+        Phát hiện cuối
+      </div>
+      <div class="pir-device__stat-value <%= 'pir-device__stat-value--empty' unless @device_events&.any? %>">
+        <% if @device_events&.any? %>
+          <%= @device_events.first.occurred_at.in_time_zone('Asia/Ho_Chi_Minh').strftime('%d/%m/%Y %H:%M:%S') %>
+        <% else %>
+          Chưa có dữ liệu
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Local IP -->
+    <div class="pir-device__stat-card">
+      <div class="pir-device__stat-label">
+        Địa chỉ IP
+      </div>
+      <div class="pir-device__stat-value <%= 'pir-device__stat-value--empty' unless @device_info&.dig('local_ip').present? %>">
+        <%= @device_info&.dig('local_ip').present? ? @device_info['local_ip'] : '—' %>
+      </div>
+    </div>
+
+    <!-- App Version -->
+    <div class="pir-device__stat-card">
+      <div class="pir-device__stat-label">
+        Phiên bản
+      </div>
+      <div class="pir-device__stat-value">
+        <%= @device_info&.dig('app_version') || 'v1.0.0' %>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Motion Events History -->
+<div class="pir-device__history-card">
+
+  <div class="pir-device__history-header">
+    <h4 class="pir-device__history-title">
+      📊 Lịch sử phát hiện chuyển động
+    </h4>
+    <span class="pir-device__history-subtitle">
+      20 sự kiện gần nhất
+    </span>
+  </div>
+
+  <% if @device_events&.any? %>
+    <div class="table-responsive">
+      <table class="pir-device__table">
+        <thead>
+          <tr>
+            <th style="width: 30%;">Thời gian</th>
+            <th style="width: 25%;">IP nguồn</th>
+            <th style="width: 45%;">User Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @device_events.first(20).each do |event| %>
+            <% payload = JSON.parse(event.payload || '{}') rescue {} %>
+            <tr>
+              <td>
+                <%= event.occurred_at.in_time_zone('Asia/Ho_Chi_Minh').strftime('%d/%m/%Y %H:%M:%S') %>
+              </td>
+              <td>
+                <%= payload['triggered_from'] || '—' %>
+              </td>
+              <td>
+                <%= payload['user_agent'] || '—' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="pir-device__empty-state">
+      <div class="pir-device__empty-state-icon">🔍</div>
+      Chưa có sự kiện phát hiện chuyển động nào.
+    </div>
+  <% end %>
+
+</div>
+
+<div
+  id="pir-motion-dashboard"
+  class="pir-device__chart-card pir-device__chart-card--motion"
+  data-stats-url="<%= motion_stats_api_devices_path %>"
+  data-heatmap-url="<%= motion_heatmap_api_devices_path %>"
+  data-chip-id="<%= @device.chip_id %>">
+  <div class="pir-device__history-header">
+    <div>
+      <h4 class="pir-device__history-title">📈 Phát hiện chuyển động</h4>
+      <p class="pir-device__chart-description">Số lần phát hiện theo giờ trong ngày đã chọn.</p>
+    </div>
+    <span id="pir-motion-total" class="pir-device__history-subtitle">Đang tải…</span>
+  </div>
+
+  <div class="pir-device__date-controls" aria-label="Chọn ngày thống kê">
+    <button id="pir-motion-prev-day" class="pir-device__date-button" type="button" aria-label="Ngày trước">←</button>
+    <input id="pir-motion-date" class="pir-device__date-input" type="date" value="<%= Time.zone.today.iso8601 %>">
+    <button id="pir-motion-next-day" class="pir-device__date-button" type="button" aria-label="Ngày sau">→</button>
+  </div>
+
+  <div class="pir-device__chart-canvas-wrap">
+    <canvas
+      id="pir-motion-chart"
+      aria-label="Biểu đồ số lần phát hiện chuyển động theo giờ"
+      role="img"></canvas>
+  </div>
+
+  <div class="pir-device__heatmap-section">
+    <div class="pir-device__history-header">
+      <div>
+        <h5 class="pir-device__heatmap-title">Mật độ phát hiện — 30 ngày</h5>
+        <p class="pir-device__chart-description">Chọn một ngày để xem chi tiết theo giờ.</p>
+      </div>
+      <div class="pir-device__heatmap-legend" aria-label="Chú thích mật độ">
+        <span>Ít</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>Nhiều</span>
+      </div>
+    </div>
+    <div id="pir-motion-heatmap" class="pir-device__heatmap" aria-label="Heatmap số lần phát hiện theo ngày"></div>
+  </div>
+</div>

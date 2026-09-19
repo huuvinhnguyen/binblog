@@ -147,9 +147,30 @@ class DevicesController < ApplicationController
 
     # initialize_mqtt_client
     # topic = @device.chip_id.to_s
-    @device_info = @device.device_info.present? ? JSON.parse(@device.device_info) : {}
+    @device_info = safe_parse_json(@device.device_info)
     @reminder_enabled = UserRelayFeature.feature_enabled?(current_user, @device, 'reminder')
     puts "@reminder_enabled: #{@reminder_enabled }"
+
+    # Load device events for PIR devices
+    if @device.device_type == 'pir'
+      @device_events = @device.device_events
+                              .where(event_type: 'motion_detected')
+                              .order(occurred_at: :desc)
+                              .limit(20)
+
+      chart_start = 23.hours.ago.beginning_of_hour
+      chart_buckets = 24.times.map { |offset| chart_start + offset.hours }
+      motion_counts = @device.device_events
+                           .where(event_type: 'motion_detected', occurred_at: chart_start..Time.current)
+                           .group_by { |event| event.occurred_at.in_time_zone(Time.zone).beginning_of_hour }
+
+      @pir_motion_chart = {
+        labels: chart_buckets.map { |hour| hour.strftime('%H:%M') },
+        values: chart_buckets.map { |hour| motion_counts.fetch(hour, []).count }
+      }
+    end
+
+    load_buzzer_data if @device.device_type == 'buzzer'
 
     # subscribe_topic topic
     # message = { "action": "ping" }.to_json
@@ -171,6 +192,16 @@ class DevicesController < ApplicationController
   end
 
   def destroy
+  end
+
+  def test_buzzer
+    buzzer = current_user.devices_for_current_user.find_by(id: params[:id], device_type: 'buzzer')
+    return head :not_found unless buzzer
+
+    BuzzerTestService.new(device: buzzer, user: current_user).call
+    redirect_to device_path(buzzer), notice: 'Đã gửi yêu cầu test đến MQTT broker.'
+  rescue BuzzerTestService::ConfigurationError, BuzzerTestService::CooldownError, BuzzerTestService::PublishError => e
+    redirect_to device_path(buzzer), alert: e.message
   end
 
   private
@@ -234,5 +265,37 @@ class DevicesController < ApplicationController
 
   def set_device
     @device = Device.find(params[:id])
+  end
+
+  def load_buzzer_data
+    pir_devices = current_user.devices_for_current_user.where(device_type: 'pir').to_a
+    @buzzer_source_devices = pir_devices.select do |pir_device|
+      trigger_config_for(pir_device)['chip_id'] == @device.chip_id
+    end
+
+    source_device_ids = @buzzer_source_devices.map(&:id)
+    @buzzer_events = if source_device_ids.empty?
+      []
+    else
+      DeviceEvent.includes(:device)
+                 .where(device_id: source_device_ids, event_type: 'motion_detected')
+                 .order(occurred_at: :desc, id: :desc)
+                 .limit(200)
+                 .select { |event| event.parsed_payload['target_chip_id'] == @device.chip_id }
+                 .first(20)
+    end
+  end
+
+  def trigger_config_for(device)
+    safe_parse_json(device.trigger)
+  end
+
+  def safe_parse_json(value)
+    return {} if value.blank?
+    return value if value.is_a?(Hash)
+
+    JSON.parse(value)
+  rescue JSON::ParserError, TypeError
+    {}
   end
 end
