@@ -6,7 +6,7 @@
         <h3 id="buzzer-device-title" class="buzzer-device__title">🔔 <%= @device.name %></h3>
         <p class="buzzer-device__chip-id"><%= @device.chip_id %></p>
       </div>
-      <% is_online = @device_info['update_at'].to_i > 5.minutes.ago.to_i %>
+      <% is_online = @buzzer_details.online? %>
       <span class="buzzer-device__status-badge buzzer-device__status-badge--<%= is_online ? 'online' : 'offline' %>">
         <%= is_online ? '● Online' : '○ Offline' %>
       </span>
@@ -51,7 +51,7 @@
     <% if @buzzer_source_devices.any? %>
       <ul class="buzzer-device__source-list">
         <% @buzzer_source_devices.each do |pir_device| %>
-          <% trigger_config = JSON.parse(pir_device.trigger || '{}') rescue {} %>
+          <% trigger_config = @buzzer_details.trigger_for(pir_device) %>
           <li>
             <span class="buzzer-device__source-icon">◉</span>
             <span>

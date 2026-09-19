@@ -1,6 +1,52 @@
 module Api
   class Api::DevicesController < ApplicationController
-    before_action :authenticate_api_user!, only: [:index, :motion_stats, :motion_heatmap]
+    before_action :authenticate_api_user!, only: [:index, :motion_stats, :motion_heatmap, :buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test]
+    before_action :reject_failed_api_authentication, only: [:index, :motion_stats, :motion_heatmap, :buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test]
+    before_action :accessible_buzzer, only: [:buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test]
+
+    def buzzer
+      details = BuzzerDetails.new(device: @buzzer, user: current_user)
+      render json: {
+        status: 'success',
+        buzzer: {
+          id: @buzzer.id, name: @buzzer.name, chip_id: @buzzer.chip_id,
+          device_type: @buzzer.device_type, online: details.online?,
+          last_seen: details.last_seen, linked_pir_count: details.linked_pirs.size,
+          last_triggered_at: details.last_triggered_at
+        }
+      }
+    end
+
+    def buzzer_linked_pirs
+      details = BuzzerDetails.new(device: @buzzer, user: current_user)
+      render json: { status: 'success', linked_pirs: details.linked_pirs.map do |pir|
+        trigger = details.trigger_for(pir)
+        { id: pir.id, name: pir.name, chip_id: pir.chip_id,
+          relay_index: trigger['relay_index'] || 0, longlast: trigger['longlast'] }
+      end }
+    end
+
+    def buzzer_history
+      details = BuzzerDetails.new(device: @buzzer, user: current_user)
+      render json: { status: 'success', events: details.events.map do |event|
+        payload = event.parsed_payload
+        { id: event.id, event_type: event.event_type, occurred_at: event.occurred_at.iso8601,
+          pir: { id: event.device.id, name: event.device.name, chip_id: event.device.chip_id },
+          relay_index: payload['relay_index'], longlast: payload['longlast'] }
+      end }
+    end
+
+    def buzzer_test
+      result = BuzzerTestService.new(device: @buzzer, user: current_user).call
+      render json: { status: 'success', message: 'Command sent to MQTT broker',
+                     relay_index: result.relay_index, longlast: result.longlast }
+    rescue BuzzerTestService::ConfigurationError => e
+      render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+    rescue BuzzerTestService::CooldownError => e
+      render json: { status: 'error', message: e.message }, status: :too_many_requests
+    rescue BuzzerTestService::PublishError => e
+      render json: { status: 'error', message: e.message }, status: :service_unavailable
+    end
 
     def index
       devices = current_user.present? ? current_user.devices_for_current_user : Device.all
@@ -513,6 +559,13 @@ module Api
       device
     end
 
+    def accessible_buzzer
+      return if performed?
+
+      @buzzer = current_user.devices_for_current_user.find_by(id: params[:id], device_type: 'buzzer')
+      render json: { status: 'error', message: 'Buzzer device not found' }, status: :not_found unless @buzzer
+    end
+
     def motion_events_for(device, period)
       device.device_events.where(event_type: 'motion_detected', occurred_at: period)
     end
@@ -522,7 +575,13 @@ module Api
       token = auth_header&.split(' ')&.last
 
       if token.present?
-        payload = JWT.decode(token, Rails.application.secret_key_base).first
+        payload = JWT.decode(
+          token,
+          Rails.application.secret_key_base,
+          true,
+          algorithm: 'HS256',
+          verify_expiration: true
+        ).first
         @current_user = User.find(payload['user_id'])
         return
       end
@@ -532,8 +591,15 @@ module Api
         return
       end
 
-      render json: { error: 'Unauthorized' }, status: :unauthorized
+      return render json: { error: 'Unauthorized' }, status: :unauthorized
     rescue JWT::DecodeError, ActiveRecord::RecordNotFound
+      @api_authentication_failed = true
+      return render json: { error: 'Unauthorized' }, status: :unauthorized
+    end
+
+    def reject_failed_api_authentication
+      return unless @api_authentication_failed
+
       render json: { error: 'Unauthorized' }, status: :unauthorized
     end
 
