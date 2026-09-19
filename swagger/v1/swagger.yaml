@@ -105,16 +105,21 @@ paths:
                   recent_events:
                     type: array
                     maxItems: 20
-                    description: Latest motion events for this device, newest first, independent of selected date.
+                    description: Latest motion events for this device, newest first,
+                      independent of selected date.
                     items:
                       type: object
-                      required: [id, event_type, occurred_at]
+                      required:
+                      - id
+                      - event_type
+                      - occurred_at
                       properties:
                         id:
                           type: integer
                         event_type:
                           type: string
-                          enum: [motion_detected]
+                          enum:
+                          - motion_detected
                         occurred_at:
                           type: string
                           format: date-time
@@ -309,8 +314,8 @@ paths:
                   message:
                     type: string
                     example: Invalid JSON format
-        '500':
-          description: device or trigger configuration is invalid
+        '404':
+          description: device is not found
           content:
             application/json:
               schema:
@@ -326,7 +331,7 @@ paths:
                     example: error
                   message:
                     type: string
-                    example: undefined method `trigger' for nil
+                    example: Device not found
       requestBody:
         content:
           application/json:

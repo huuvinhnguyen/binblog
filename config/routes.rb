@@ -16,6 +16,12 @@ Rails.application.routes.draw do
     post 'login', to: 'sessions#create'
 
     resources :devices, only: [:index] do
+      member do
+        get 'buzzer', action: :buzzer
+        get 'buzzer/linked_pirs', action: :buzzer_linked_pirs
+        get 'buzzer/history', action: :buzzer_history
+        post 'buzzer/test', action: :buzzer_test
+      end
       collection do
         post :receive_info
         post :add_reminder

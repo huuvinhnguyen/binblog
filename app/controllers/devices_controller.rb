@@ -264,30 +264,13 @@ class DevicesController < ApplicationController
   end
 
   def set_device
-    @device = Device.find(params[:id])
+    @device = current_user.devices_for_current_user.find(params[:id])
   end
 
   def load_buzzer_data
-    pir_devices = current_user.devices_for_current_user.where(device_type: 'pir').to_a
-    @buzzer_source_devices = pir_devices.select do |pir_device|
-      trigger_config_for(pir_device)['chip_id'] == @device.chip_id
-    end
-
-    source_device_ids = @buzzer_source_devices.map(&:id)
-    @buzzer_events = if source_device_ids.empty?
-      []
-    else
-      DeviceEvent.includes(:device)
-                 .where(device_id: source_device_ids, event_type: 'motion_detected')
-                 .order(occurred_at: :desc, id: :desc)
-                 .limit(200)
-                 .select { |event| event.parsed_payload['target_chip_id'] == @device.chip_id }
-                 .first(20)
-    end
-  end
-
-  def trigger_config_for(device)
-    safe_parse_json(device.trigger)
+    @buzzer_details = BuzzerDetails.new(device: @device, user: current_user)
+    @buzzer_source_devices = @buzzer_details.linked_pirs
+    @buzzer_events = @buzzer_details.events
   end
 
   def safe_parse_json(value)

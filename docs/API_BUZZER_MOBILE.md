@@ -1,0 +1,123 @@
+# Buzzer Mobile API
+
+These endpoints support the unified Swift and Flutter Buzzer screen. They use the
+same JWT authentication as the other user-facing APIs and never expose MQTT
+credentials.
+
+## Authentication and authorization
+
+Send the JWT returned by `POST /api/login` as:
+
+```http
+Authorization: Bearer <token>
+```
+
+The `:id` path value is the Rails `devices.id` of a device accessible through
+the authenticated user. A missing, inaccessible, or non-Buzzer device returns
+`404` with `{ "status": "error", "message": "Buzzer device not found" }`.
+The API intentionally does not distinguish those cases.
+
+## Detail
+
+`GET /api/devices/:id/buzzer`
+
+```json
+{
+  "status": "success",
+  "buzzer": {
+    "id": 42,
+    "name": "Hall Buzzer",
+    "chip_id": "ESP32_BUZZER_02",
+    "device_type": "buzzer",
+    "online": true,
+    "last_seen": "2026-09-19T10:30:00+07:00",
+    "linked_pir_count": 2,
+    "last_triggered_at": "2026-09-19T10:29:00+07:00"
+  }
+}
+```
+
+`last_seen` and `last_triggered_at` may be `null`. `online` is derived from the
+Buzzer's `device_info.update_at` and is true only when it is within five minutes.
+
+## Linked PIRs
+
+`GET /api/devices/:id/buzzer/linked_pirs`
+
+Only accessible PIRs whose `trigger.chip_id` equals the Buzzer `chip_id` are
+returned. Invalid trigger JSON is treated as an empty configuration.
+
+```json
+{
+  "status": "success",
+  "linked_pirs": [
+    {
+      "id": 7,
+      "name": "Hall PIR",
+      "chip_id": "ESP32_PIR_01",
+      "relay_index": 0,
+      "longlast": 1000
+    }
+  ]
+}
+```
+
+## Recent history
+
+`GET /api/devices/:id/buzzer/history`
+
+Returns at most 20 newest `motion_detected` events from accessible linked PIRs
+whose `payload.target_chip_id` equals the Buzzer `chip_id`. Ties are ordered by
+`id` descending. Older events without target metadata are not attributed to a
+Buzzer.
+
+```json
+{
+  "status": "success",
+  "events": [
+    {
+      "id": 123,
+      "event_type": "motion_detected",
+      "occurred_at": "2026-09-19T10:29:00+07:00",
+      "pir": { "id": 7, "name": "Hall PIR", "chip_id": "ESP32_PIR_01" },
+      "relay_index": 0,
+      "longlast": 1000
+    }
+  ]
+}
+```
+
+## Test action
+
+`POST /api/devices/:id/buzzer/test`
+
+The request has no body. Rails reuses `BuzzerTestService`, which reads the
+configured relay duration from the Buzzer, applies validation and a three-second
+per-Buzzer cooldown, publishes the existing MQTT command, and records a
+`buzzer_test_requested` audit event.
+
+A successful HTTP `200` response means only that Rails connected to the MQTT broker
+and the broker accepted the QoS 1 publish (`PUBACK`). It does **not** confirm that
+the physical Buzzer received, activated, or produced sound. Mobile clients should
+therefore display a command-sent state rather than a physical-execution state:
+
+```json
+{
+  "status": "success",
+  "message": "Command sent to MQTT broker",
+  "relay_index": 0,
+  "longlast": 1000
+}
+```
+
+Error responses use `{ "status": "error", "message": "..." }`:
+
+| Status | Meaning |
+| --- | --- |
+| `401` | Missing or invalid JWT |
+| `404` | Missing, inaccessible, or non-Buzzer device |
+| `422` | Invalid Buzzer relay configuration |
+| `429` | Test cooldown is active |
+| `503` | MQTT publish failed |
+
+The existing web route and firmware trigger contract are unchanged.
