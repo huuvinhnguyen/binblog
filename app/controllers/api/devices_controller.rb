@@ -1,8 +1,8 @@
 module Api
   class Api::DevicesController < ApplicationController
-    before_action :authenticate_api_user!, only: [:index, :motion_stats, :motion_heatmap, :buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test]
-    before_action :reject_failed_api_authentication, only: [:index, :motion_stats, :motion_heatmap, :buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test]
-    before_action :accessible_buzzer, only: [:buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test]
+    before_action :authenticate_api_user!, only: [:index, :motion_stats, :motion_heatmap, :buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test, :buzzer_available_pirs, :buzzer_link_pir, :buzzer_unlink_pir]
+    before_action :reject_failed_api_authentication, only: [:index, :motion_stats, :motion_heatmap, :buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test, :buzzer_available_pirs, :buzzer_link_pir, :buzzer_unlink_pir]
+    before_action :accessible_buzzer, only: [:buzzer, :buzzer_linked_pirs, :buzzer_history, :buzzer_test, :buzzer_available_pirs, :buzzer_link_pir, :buzzer_unlink_pir]
 
     def buzzer
       details = BuzzerDetails.new(device: @buzzer, user: current_user)
@@ -24,6 +24,26 @@ module Api
         { id: pir.id, name: pir.name, chip_id: pir.chip_id,
           relay_index: trigger['relay_index'] || 0, longlast: trigger['longlast'] }
       end }
+    end
+
+    def buzzer_available_pirs
+      render json: { status: 'success', available_pirs: buzzer_links.available_pirs }
+    end
+
+    def buzzer_link_pir
+      pir = buzzer_links.link(pir_id: params[:pir_id], relay_index: params[:relay_index], longlast: params[:longlast])
+      render json: { status: 'success', linked_pir: pir }
+    rescue BuzzerLinks::NotFoundError => e
+      render json: { status: 'error', message: e.message }, status: :not_found
+    rescue BuzzerLinks::ValidationError => e
+      render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+    end
+
+    def buzzer_unlink_pir
+      pir_id = buzzer_links.unlink(pir_id: params[:pir_id])
+      render json: { status: 'success', pir_id: pir_id }
+    rescue BuzzerLinks::NotFoundError => e
+      render json: { status: 'error', message: e.message }, status: :not_found
     end
 
     def buzzer_history
@@ -557,6 +577,10 @@ module Api
       end
 
       device
+    end
+
+    def buzzer_links
+      BuzzerLinks.new(buzzer: @buzzer, user: current_user)
     end
 
     def accessible_buzzer
