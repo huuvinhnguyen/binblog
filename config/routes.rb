@@ -19,6 +19,9 @@ Rails.application.routes.draw do
       member do
         get 'buzzer', action: :buzzer
         get 'buzzer/linked_pirs', action: :buzzer_linked_pirs
+        get 'buzzer/available_pirs', action: :buzzer_available_pirs
+        post 'buzzer/linked_pirs', action: :buzzer_link_pir
+        delete 'buzzer/linked_pirs/:pir_id', action: :buzzer_unlink_pir
         get 'buzzer/history', action: :buzzer_history
         post 'buzzer/test', action: :buzzer_test
       end

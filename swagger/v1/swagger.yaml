@@ -30,6 +30,390 @@ paths:
                 password:
                   type: string
                   example: '123456'
+  "/api/devices/{id}/buzzer/available_pirs":
+    get:
+      summary: List accessible PIRs for linking or moving to this Buzzer
+      tags:
+      - Buzzer devices
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rails ID of an accessible Buzzer.
+        schema:
+          type: integer
+      description: Returns accessible PIRs ordered by ID, including already linked
+        PIRs. linked_buzzer contains only an accessible current Buzzer ID and name;
+        otherwise null. requires_confirmation indicates an existing configuration
+        that would be replaced. Clients should show Move & Link for a different visible
+        Buzzer, or a generic replace-configuration confirmation when its identity
+        is unavailable. POST performs the replacement; this flag is advisory, not
+        a confirmation token.
+      responses:
+        '200':
+          description: available PIRs; empty array when none are accessible
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - available_pirs
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  available_pirs:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                      - id
+                      - name
+                      - chip_id
+                      - linked_buzzer
+                      - requires_confirmation
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                          nullable: true
+                        chip_id:
+                          type: string
+                        linked_buzzer:
+                          type: object
+                          nullable: true
+                          required:
+                          - id
+                          - name
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                              nullable: true
+                        requires_confirmation:
+                          type: boolean
+        '401':
+          description: missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - error
+                properties:
+                  error:
+                    type: string
+                    example: Unauthorized
+        '404':
+          description: missing, inaccessible, or non-Buzzer target
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  message:
+                    type: string
+                    example: Buzzer device not found
+  "/api/devices/{id}/buzzer/linked_pirs":
+    post:
+      summary: Link or move an accessible PIR to this Buzzer
+      tags:
+      - Buzzer devices
+      security:
+      - bearerAuth: []
+      description: 'Configuration only: replaces the PIR trigger with chip_id, relay_index
+        and longlast. Repeating the same request produces the same state. Existing
+        configuration is replaced, including malformed JSON. Does not connect to MQTT,
+        test, or sound the Buzzer.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rails ID of an accessible Buzzer.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: PIR linked with normalized configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - linked_pir
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  linked_pir:
+                    type: object
+                    required:
+                    - id
+                    - name
+                    - chip_id
+                    - relay_index
+                    - longlast
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                        nullable: true
+                      chip_id:
+                        type: string
+                      relay_index:
+                        type: integer
+                        minimum: 0
+                      longlast:
+                        type: integer
+                        minimum: 100
+                        maximum: 10000
+        '401':
+          description: missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - error
+                properties:
+                  error:
+                    type: string
+                    example: Unauthorized
+        '404':
+          description: Buzzer or PIR is missing, inaccessible, or the wrong device
+            type
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  message:
+                    type: string
+                    example: PIR device not found
+        '422':
+          description: missing or invalid pir_id, relay_index, or longlast; JSON integers
+            required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  message:
+                    type: string
+                    example: longlast must be an integer between 100 and 10000 ms.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - pir_id
+              - relay_index
+              - longlast
+              properties:
+                pir_id:
+                  type: integer
+                  minimum: 1
+                  example: 7
+                relay_index:
+                  type: integer
+                  minimum: 0
+                  example: 0
+                longlast:
+                  type: integer
+                  minimum: 100
+                  maximum: 10000
+                  example: 1000
+                  description: Duration in milliseconds.
+        required: true
+    get:
+      summary: List PIR devices linked to a Buzzer
+      tags:
+      - Buzzer devices
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rails devices.id of an accessible Buzzer device.
+        example: 42
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: linked PIR devices
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - linked_pirs
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  linked_pirs:
+                    type: array
+                    description: Accessible PIRs whose trigger.chip_id matches this
+                      Buzzer. Empty array when none match.
+                    items:
+                      type: object
+                      required:
+                      - id
+                      - name
+                      - chip_id
+                      - relay_index
+                      - longlast
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                          nullable: true
+                        chip_id:
+                          type: string
+                        relay_index:
+                          description: Stored trigger.relay_index JSON value, without
+                            coercion; defaults to 0 when null or false.
+                          example: 0
+                        longlast:
+                          nullable: true
+                          description: Stored trigger.longlast JSON value, without
+                            coercion; null when absent. Duration in milliseconds.
+                          example: 1000
+        '401':
+          description: missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - error
+                properties:
+                  error:
+                    type: string
+        '404':
+          description: Buzzer is missing, inaccessible, or not a Buzzer
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  message:
+                    type: string
+  "/api/devices/{id}/buzzer/linked_pirs/{pir_id}":
+    delete:
+      summary: Unlink an accessible PIR from this Buzzer
+      tags:
+      - Buzzer devices
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rails ID of an accessible Buzzer.
+        schema:
+          type: integer
+      - name: pir_id
+        in: path
+        required: true
+        description: Rails ID of an accessible PIR.
+        schema:
+          type: integer
+      description: Body-less, configuration-only operation. Removes command fields
+        only if the stored target matches this Buzzer, retaining other metadata. Repeated
+        unlink, another target, missing configuration, and malformed existing JSON
+        are successful no-ops. A normalized link becomes {}. Never connects to MQTT
+        or tests the Buzzer.
+      responses:
+        '200':
+          description: PIR is no longer linked to this Buzzer, or no matching configuration
+            was found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - pir_id
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  pir_id:
+                    type: integer
+        '401':
+          description: missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - error
+                properties:
+                  error:
+                    type: string
+                    example: Unauthorized
+        '404':
+          description: Buzzer or PIR is missing, inaccessible, or the wrong device
+            type; invalid path PIR ID
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  message:
+                    type: string
+                    example: PIR device not found
   "/api/devices/{id}/buzzer":
     get:
       summary: Get Buzzer details
@@ -136,92 +520,6 @@ paths:
                   message:
                     type: string
                     example: Buzzer device not found
-  "/api/devices/{id}/buzzer/linked_pirs":
-    get:
-      summary: List PIR devices linked to a Buzzer
-      tags:
-      - Buzzer devices
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: Rails devices.id of an accessible Buzzer device.
-        example: 42
-        schema:
-          type: integer
-      responses:
-        '200':
-          description: linked PIR devices
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - status
-                - linked_pirs
-                properties:
-                  status:
-                    type: string
-                    enum:
-                    - success
-                  linked_pirs:
-                    type: array
-                    description: Accessible PIRs whose trigger.chip_id matches this
-                      Buzzer. Empty array when none match.
-                    items:
-                      type: object
-                      required:
-                      - id
-                      - name
-                      - chip_id
-                      - relay_index
-                      - longlast
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                          nullable: true
-                        chip_id:
-                          type: string
-                        relay_index:
-                          description: Stored trigger.relay_index JSON value, without
-                            coercion; defaults to 0 when null or false.
-                          example: 0
-                        longlast:
-                          nullable: true
-                          description: Stored trigger.longlast JSON value, without
-                            coercion; null when absent. Duration in milliseconds.
-                          example: 1000
-        '401':
-          description: missing or invalid JWT
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - error
-                properties:
-                  error:
-                    type: string
-        '404':
-          description: Buzzer is missing, inaccessible, or not a Buzzer
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - status
-                - message
-                properties:
-                  status:
-                    type: string
-                    enum:
-                    - error
-                  message:
-                    type: string
   "/api/devices/{id}/buzzer/history":
     get:
       summary: List recent PIR triggers targeting a Buzzer
