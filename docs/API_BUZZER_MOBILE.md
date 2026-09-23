@@ -45,7 +45,10 @@ Buzzer's `device_info.update_at` and is true only when it is within five minutes
 `GET /api/devices/:id/buzzer/linked_pirs`
 
 Only accessible PIRs whose `trigger.chip_id` equals the Buzzer `chip_id` are
-returned. Invalid trigger JSON is treated as an empty configuration.
+returned. Invalid trigger JSON is treated as an empty configuration. No matches return
+`linked_pirs: []`. Names may be `null`. Relay index and duration are stored JSON
+values returned without type coercion: `relay_index` defaults to `0` when null or
+false, and missing `longlast` returns `null`.
 
 ```json
 {
@@ -69,7 +72,9 @@ returned. Invalid trigger JSON is treated as an empty configuration.
 Returns at most 20 newest `motion_detected` events from accessible linked PIRs
 whose `payload.target_chip_id` equals the Buzzer `chip_id`. Ties are ordered by
 `id` descending. Older events without target metadata are not attributed to a
-Buzzer.
+Buzzer. No matches return `events: []`. Nested PIR names may be `null`.
+`relay_index` and `longlast` are stored payload JSON values returned without type
+coercion and are `null` when absent.
 
 ```json
 {
@@ -96,8 +101,9 @@ configured relay duration from the Buzzer, applies validation and a three-second
 per-Buzzer cooldown, publishes the existing MQTT command, and records a
 `buzzer_test_requested` audit event.
 
-A successful HTTP `200` response means only that Rails connected to the MQTT broker
-and the broker accepted the QoS 1 publish (`PUBACK`). It does **not** confirm that
+A successful HTTP `200` response means Rails completed the existing MQTT publish
+call and recorded the request. The current service does not explicitly request
+QoS 1 or provide a broker `PUBACK` guarantee. It does **not** confirm that
 the physical Buzzer received, activated, or produced sound. Mobile clients should
 therefore display a command-sent state rather than a physical-execution state:
 
@@ -110,7 +116,8 @@ therefore display a command-sent state rather than a physical-execution state:
 }
 ```
 
-Error responses use `{ "status": "error", "message": "..." }`:
+Authentication failures (`401`) return `{ "error": "Unauthorized" }`.
+Other documented errors use `{ "status": "error", "message": "..." }`:
 
 | Status | Meaning |
 | --- | --- |
