@@ -12,6 +12,7 @@ import "./gauges"
 import "./device_switch"
 import "./pir_motion_chart"
 import "./buzzer_test"
+import "./buzzer_links"
 
 //buildjs
 import Rails from "@rails/ujs"
