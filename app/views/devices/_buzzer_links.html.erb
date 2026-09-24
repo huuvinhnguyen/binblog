@@ -1,0 +1,34 @@
+<div data-links-ui hidden>
+  <div class="buzzer-device__link-actions">
+    <button type="button" class="buzzer-device__link-button" data-links-open aria-expanded="false" aria-controls="buzzer-link-form">+ Liên kết PIR</button>
+    <button type="button" class="buzzer-device__link-secondary" data-links-refresh>Làm mới danh sách</button>
+  </div>
+  <p data-links-status role="status" aria-live="polite"></p>
+  <p data-links-error class="buzzer-device__link-error" role="alert" hidden></p>
+  <ul class="buzzer-device__source-list" data-links-list></ul>
+  <p class="buzzer-device__empty-state" data-links-empty hidden>Chưa có PIR nào được cấu hình để kích hoạt Buzzer này.</p>
+
+  <form id="buzzer-link-form" class="buzzer-device__link-form" data-links-form data-turbo="false" hidden>
+    <h5>Liên kết PIR</h5>
+    <label for="buzzer-link-pir">PIR</label>
+    <select id="buzzer-link-pir" data-links-pir required aria-describedby="buzzer-link-warning"></select>
+    <p data-links-no-candidates hidden>Không có PIR nào để chọn.</p>
+    <p id="buzzer-link-warning" data-links-warning></p>
+    <div class="buzzer-device__link-fields">
+      <div>
+        <label for="buzzer-link-relay">Kênh relay (từ 0)</label>
+        <input id="buzzer-link-relay" data-links-relay type="number" min="0" step="1" value="0" required>
+      </div>
+      <div>
+        <label for="buzzer-link-duration">Thời lượng (ms)</label>
+        <input id="buzzer-link-duration" data-links-duration type="number" min="100" max="10000" step="1" value="1000" required aria-describedby="buzzer-link-duration-help">
+        <small id="buzzer-link-duration-help">100–10000 ms · 1000 ms = 1 giây</small>
+      </div>
+    </div>
+    <div class="buzzer-device__link-actions">
+      <button type="submit" class="buzzer-device__link-button" data-links-submit>Liên kết</button>
+      <button type="button" class="buzzer-device__link-secondary" data-links-cancel>Hủy</button>
+    </div>
+  </form>
+</div>
+<noscript><p>Bật JavaScript để quản lý liên kết PIR.</p></noscript>

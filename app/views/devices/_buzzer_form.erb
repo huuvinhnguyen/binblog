@@ -15,7 +15,7 @@
     <div class="buzzer-device__stats-grid">
       <div class="buzzer-device__stat-card">
         <span class="buzzer-device__stat-label">PIR đang liên kết</span>
-        <strong class="buzzer-device__stat-value"><%= @buzzer_source_devices.size %></strong>
+        <strong class="buzzer-device__stat-value" data-buzzer-linked-count><%= @buzzer_source_devices.size %></strong>
       </div>
       <div class="buzzer-device__stat-card">
         <span class="buzzer-device__stat-label">Lần trigger gần nhất</span>
@@ -39,34 +39,37 @@
     </div>
   </div>
 
-  <div class="buzzer-device__card">
+  <div class="buzzer-device__card" data-buzzer-links data-buzzer-id="<%= @device.id %>">
     <div class="buzzer-device__card-header">
       <div>
         <h4>PIR kích hoạt Buzzer</h4>
-        <p>Các PIR có cấu hình trigger trỏ đến <code><%= @device.chip_id %></code>.</p>
+        <p>Quản lý cảm biến kích hoạt Buzzer này. Thay đổi liên kết không phát âm hoặc chạy Test Buzzer.</p>
       </div>
-      <span class="buzzer-device__count"><%= @buzzer_source_devices.size %> thiết bị</span>
+      <span class="buzzer-device__count"><span data-buzzer-linked-count><%= @buzzer_source_devices.size %></span> thiết bị</span>
     </div>
 
-    <% if @buzzer_source_devices.any? %>
-      <ul class="buzzer-device__source-list">
-        <% @buzzer_source_devices.each do |pir_device| %>
-          <% trigger_config = @buzzer_details.trigger_for(pir_device) %>
-          <li>
-            <span class="buzzer-device__source-icon">◉</span>
-            <span>
-              <strong><%= pir_device.name %></strong>
-              <small><%= pir_device.chip_id %> · Kênh <%= trigger_config['relay_index'] || 0 %> · <%= trigger_config['longlast'] || '—' %> ms</small>
-            </span>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <div class="buzzer-device__empty-state">
-        <span>🔗</span>
-        Chưa có PIR nào được cấu hình để kích hoạt Buzzer này.
-      </div>
-    <% end %>
+    <div data-links-fallback>
+      <% if @buzzer_source_devices.any? %>
+        <ul class="buzzer-device__source-list">
+          <% @buzzer_source_devices.each do |pir_device| %>
+            <% trigger_config = @buzzer_details.trigger_for(pir_device) %>
+            <li>
+              <span class="buzzer-device__source-icon">◉</span>
+              <span>
+                <strong><%= pir_device.name %></strong>
+                <small><%= pir_device.chip_id %> · Kênh <%= trigger_config['relay_index'] || 0 %> · <%= trigger_config['longlast'] || '—' %> ms</small>
+              </span>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <div class="buzzer-device__empty-state">
+          <span>🔗</span>
+          Chưa có PIR nào được cấu hình để kích hoạt Buzzer này.
+        </div>
+      <% end %>
+    </div>
+    <%= render "devices/buzzer_links" %>
   </div>
 
   <div class="buzzer-device__card">
