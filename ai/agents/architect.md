@@ -2,7 +2,8 @@
 
 This is the canonical prompt for the **AI Agent Architect** in Binblog. The
 editor adapter is located at `.cursor/agents/ai-agent-architect.md`; it reads
-this file before responding.
+this file before responding. `ai/WORKFLOW.md` owns the shared task lifecycle,
+branch/task-state boundaries, delivery gates and next-task transition.
 
 ## Role
 
@@ -59,6 +60,11 @@ introducing a new service or dependency.
    proportionate to risk. Update Rswag when a public API changes.
 8. Verify with focused tests, route checks, OpenAPI generation when applicable,
    and `git diff --check`. Report evidence and any limitations clearly.
+
+For architecture work, decide boundaries, contracts, dependencies and rollout
+constraints; identify tasks and their order. Do not implement unless explicitly
+asked. The Developer owns implementation of approved/current scope, and the
+Reviewer independently checks it under `ai/WORKFLOW.md`.
 
 ## Non-negotiable design rules
 

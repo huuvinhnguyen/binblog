@@ -1,154 +1,230 @@
 # Binblog Engineering Workflow
 
-## Goal
+## Purpose and ownership
 
-Use this workflow for all feature work, bug fixes and operational changes. It
-keeps Rails, device firmware, MQTT, data, APIs, UI and release steps aligned.
+This is the canonical lifecycle for feature, fix, documentation and operational
+tasks, for people and AI tools from any vendor. It defines delivery gates and
+task transitions. Agent files define role-specific responsibilities;
+`ai/CONVENTIONS.md` owns coding/repository conventions; `ai/ARCHITECTURE.md`
+describes the system; `docs/RELEASE_PRODUCTION.md` owns production release
+commands. Follow those documents instead of copying their detailed rules here.
 
-## 1. Start with the boundary
+Use judgment: trivial, low-risk work may combine roles and use a lighter review
+path. Keep the safety gates that apply to the task.
 
-Before editing code:
-
-1. Read `ai/PROJECT.md`, `ai/CONVENTIONS.md` and the relevant section of
-   `ai/ARCHITECTURE.md`.
-2. Inspect the current route, controller, model, service, view, JavaScript,
-   migration and focused specs.
-3. Check `git status` and preserve unrelated changes in a dirty worktree.
-4. Identify whether the task changes browser behavior, public API, device
-   firmware, MQTT payloads, database schema, background jobs or deployment.
-5. For cross-cutting IoT changes, write/update a short decision record under
-   `docs/` before implementation.
-
-## 2. Define the contract first
-
-For any IoT/API feature, decide and document:
-
-- Source and target device identities.
-- HTTP method, authentication, authorization, request and response shape.
-- MQTT topic, payload, timeout/retry and acknowledgement semantics.
-- Event owner, event type, payload metadata and time zone.
-- Empty/loading/error UI behavior.
-- Idempotency, cooldown and duplicate-message behavior when applicable.
-
-Do not change a firmware payload or MQTT topic implicitly. Keep existing ESP
-contracts compatible until a coordinated firmware rollout is approved.
-
-## 3. Implement in layers
-
-Preferred order:
+## Task lifecycle
 
 ```text
-Migration/index (only if required)
-  → model validation/association
-  → service/use case
-  → controller or job
-  → route and API contract
-  → view/JavaScript/SCSS
-  → tests, Swagger and docs
+Select task and reconcile tracker state
+ → establish previous task state and clean task boundary
+ → checkout/pull base, create and verify dedicated branch
+ → architecture/contract pass when needed
+ → implement → focused verification → independent review
+ → fix confirmed findings → targeted re-verification
+ → final verification: READY TO COMMIT
+ → commit when authorized → READY TO PUSH → push when authorized
+ → inspect remote branch → PR → required CI/review → merge
+ → post-merge acceptance when required → reconcile tracker/GitHub/checklist
+ → complete task → restart from updated base for the next task
 ```
 
-- Keep controllers as transport/orchestration only.
-- Put multi-step device/MQTT behavior in a service.
-- Keep events append-only and limit history queries.
-- Use the authenticated user to authorize devices server-side.
-- Keep secrets out of payloads, source code, logs and docs.
+Stop and clarify when scope, contract, authorization or a required acceptance
+gate is materially unclear. Do not claim a gate passed without evidence.
 
-## 4. Device-specific workflow
+## Task tracker state
 
-### Adding a device type
+Before work, identify the task ID and inspect its current state when tracker
+access is available. Move it only to a valid existing active state. If the
+tracker only has To Do and Complete, leave it open and record progress in an
+available progress field or update; do not invent a state.
 
-1. Decide the `device_type`, configuration shape and ownership behavior.
-2. Update creation/rake workflow and relevant registration documentation.
-3. Add the device detail partial in `app/views/devices/`.
-4. Add scoped SCSS and Turbo-safe JavaScript when needed.
-5. Add model/request/view specs and empty/error states.
+If tracker access is unavailable, do not claim the state was inspected or
+changed. Report tracker reconciliation as pending and continue only when task
+identity and scope are otherwise clear. If tracker state is necessary to
+decide whether work may proceed, stop and ask. Reconcile later when authorized
+tracker access or a human is available.
 
-### PIR trigger changes
+After merge, keep the task open while any stated acceptance gate remains, such
+as production or deployment verification, migration verification, hardware or
+device testing, or manual UI smoke testing. Mark it Complete only after its
+acceptance criteria pass and the tracker was actually updated. If tracker
+access is unavailable, report completion reconciliation as pending. Before
+moving on, reconcile PR/GitHub state and task checklist/docs. Reconcile tracker
+state when access is available; until then, report it as pending and proceed
+only if tracker state is not required to decide whether the next task may start.
+Record follow-up debt as separate work.
 
-1. Remember: request `chip_id` is the source PIR.
-2. Store `motion_detected` on the PIR.
-3. Read target relay/Buzzer command from `PIR.trigger`.
-4. Preserve `switch_value` and `longlast` for existing relay firmware.
-5. Store non-secret target metadata in the event payload when dashboard history
-   needs to group events by Buzzer target.
+## Branch boundary
 
-### Device pairing
+For every new implementation, documentation or fix task, complete or explicitly
+reconcile the previous task first. Before switching away from the current
+branch:
 
-1. User starts a pairing request while authenticated.
-2. Rails creates a short-lived, one-time pairing code and stores only its digest.
-3. ESP receives the code in its Wi-Fi captive portal and sends its own chip ID
-   plus the code after Wi-Fi connects.
-4. Rails validates expiry, use count and ownership, then links device to user.
-5. ESP erases the pending code after success; failed requests retry safely.
+1. Inspect the current branch and run `git status`.
+2. If the tree contains unexplained or unrelated changes, stop and understand
+   them. Reconcile them only through an intentional, user-approved workflow;
+   never stash or discard work automatically to satisfy this gate.
+3. Once changes are deliberately reconciled, switch to the intended base branch
+   (normally `main`) and pull its latest remote changes.
+4. Verify the base branch worktree is clean.
+5. Create a new dedicated task branch.
+6. Verify the branch and clean state before editing.
 
-## 5. Test before handoff
+Never start a new task on `main`, silently reuse a previous feature branch, or
+inherit an unmerged branch unless this task explicitly depends on it. After a
+merge, the next task starts from updated `main` by default.
 
-Run the narrowest relevant checks first:
-
-```text
-bundle exec rspec path/to/focused_spec.rb
-bundle exec rails routes | rg 'relevant_route'
-bundle exec rake rswag:specs:swaggerize    # when public API changed
-yarn build                                 # when JavaScript changed
-yarn build:css                             # when SCSS changed
-git diff --check
+```bash
+git status --short --branch
+# Stop and understand/reconcile any unexplained or unrelated changes first.
+git switch main
+git pull --ff-only origin main
+# Continue only when the base branch worktree is clean.
+git status --short
+git switch -c docs/<task-name> # or feature/, fix/, refactor/, chore/
+git branch --show-current
+git status --short
 ```
 
-Use mocks for MQTT/HTTP in tests. Never let tests publish to a real broker or
-depend on a production database.
+## Architecture and implementation
 
-Minimum coverage for a device/API change:
+Read `ai/PROJECT.md`, `ai/CONVENTIONS.md`, the relevant `ai/ARCHITECTURE.md`
+sections, the task, and the appropriate role guide. Inspect executable code,
+tests and relevant docs before deciding behavior. For meaningful boundary,
+API/MQTT/data/device, concurrency, security or multi-component changes, agree
+on architecture/contracts and dependencies before implementation. The
+architect defines decisions and scope; the developer implements approved
+scope. Do not require separate agents for trivial changes.
 
-- Valid request and happy path.
-- Unknown/missing device.
-- Unauthorized or inaccessible device.
-- Invalid JSON/parameters.
-- Retry/duplicate behavior where a device can resend.
-- UI empty state and visible success/error state when a screen changes.
+Preserve useful Binblog-specific rules in `ai/CONVENTIONS.md` and
+`ai/ARCHITECTURE.md`: Rails and MySQL compatibility, MQTT/device contracts,
+Swagger requirements, migration safety, asset release steps, and deployment
+guidance. For API/device work, define source/target identity, auth, request and
+response contracts, event ownership, retry/acknowledgement behavior, and UI
+states as applicable. Do not change firmware contracts implicitly.
 
-## 6. Keep API documentation current
+For Web + Swift + Flutter features, agree on shared semantics first: API,
+validation, confirmation, privacy, loading/empty/error states, retry, uncertain
+mutation handling, refresh and success. Prefer backend contract → Web reference
+→ Swift/Flutter → cross-platform review when useful; this sequence is guidance,
+not a requirement. Require semantic parity, not identical implementation.
 
-When a public API changes:
+For example, the recent Buzzer work used backend → Swagger → PIR/Buzzer
+backend integration → Web → Swift/Flutter → review/fix/final verification →
+PR/CI/merge → post-merge smoke test → task reconciliation. Reuse the order where
+the dependencies fit; it is an example, not a mandatory platform sequence.
 
-1. Add/update an Rswag request spec under `spec/requests/api/`.
-2. Describe authentication, parameters, success and error responses.
-3. Generate `swagger/v1/swagger.yaml` from the full Swagger spec set.
-4. Open `/api-docs` and verify the endpoint remains discoverable.
+## Verification, review and fix pass
 
-Do not generate OpenAPI from only one spec file if it would replace unrelated
-paths in the shared document.
+Run focused tests/builds during implementation. Have a reviewer independently
+inspect the complete task diff, relevant contracts and test evidence. Review is
+read-only. Classify findings by severity and separate confirmed defects from
+hypotheses. A blocker/high finding needs a concrete code path, relevant
+requirement and reproducible or logically demonstrated failure, supported by
+source, tests or runtime evidence where possible.
 
-## 7. Release workflow
+When reviewers disagree, inspect executable code and tests, reproduce the
+failure if practical, and compare it with the actual contract. Record the
+outcome as **confirmed defect**, **false positive**, **unverified risk**, or
+**unrelated existing issue**. Document false-positive resolution in the task or
+review report. Fix confirmed findings only; avoid unrelated refactors and add
+regression coverage for confirmed defects. Then run targeted re-verification.
 
-For frontend changes, follow `docs/RELEASE_PRODUCTION.md` exactly. The minimum
-asset sequence is:
+Final Verification independently checks fixes and the complete diff, runs
+required checks, distinguishes test execution from compile/build-only evidence,
+and returns **READY TO COMMIT** when the commit gate passes. This is a readiness
+result, not authority to commit. Commit and push only when the user/task
+explicitly authorizes those actions or the established execution context clearly
+grants that authority; an explicitly approved checkpoint workflow may authorize
+them in advance. Without commit authority, stop at READY TO COMMIT, report the
+next action, and wait. After an authorized commit, **READY TO PUSH** is likewise
+readiness only; without push authority, stop, report the next action, and wait.
 
-```text
-yarn build
-yarn build:css
-bundle exec rails assets:precompile
-```
+If staged and unstaged changes coexist, inspect the full
+`HEAD`-to-working-tree delta (`git diff HEAD`), not only unstaged `git diff`.
 
-After release, hard refresh the browser and verify the new fingerprinted assets,
-JavaScript console, target device UI and relevant Sidekiq/MQTT logs.
+### Test evidence
 
-For migrations:
+Reports label evidence precisely:
 
-1. Review MySQL compatibility and indexes.
-2. Confirm existing records can satisfy new constraints.
-3. Run the migration during the approved release.
-4. Verify application behavior and rollback procedure.
+| Label | Meaning |
+| --- | --- |
+| `EXECUTED / PASSED` | The named test/check ran and passed. |
+| `EXECUTED / FAILED` | It ran and failed; include the relevant result. |
+| `COMPILED ONLY` | Compilation/build succeeded; behavior was not tested. |
+| `NOT RUN` | The check was not run. |
+| `MANUAL TESTED` | The named manual scenario was exercised in the stated environment. |
+| `NOT TESTED` | The behavior/environment was not tested. |
 
-## 8. Handoff format
+Compilation, an existing test file, a related suite, or a simulator build alone
+does not mean a behavior test passed. For async/state-machine behavior, test
+observable transitions where practical (in-flight request, duplicate action,
+completion, authoritative refresh, and recovery after refresh failure). For
+HTTP/API changes, check method, path, authentication, body and bodyless requests,
+response schema/nullability, and transport failures as applicable.
 
-Every completed task should state:
+## Uncertain remote write outcomes
 
-- Outcome and affected user/device behavior.
-- Files changed.
-- Tests/builds actually run and their result.
-- Documentation/Swagger updates.
-- Required release steps, including assets or migrations.
-- Known limitations or follow-up work.
+When a remote mutation may have succeeded but its response is lost, a timeout
+or network failure does not prove the server rejected it. If duplicate writes
+are unsafe, mark local state uncertain/non-authoritative, do not replay
+automatically, block conflicting writes as needed, refresh authoritative server
+state, and allow writes after reconciliation. Apply this to any remote system;
+do not impose it on operations with explicitly safe idempotent retry semantics.
 
-Never state that an MQTT command reached hardware, an asset is deployed, or a
-production migration completed unless it was verified in that environment.
+## Commit, remote review, PR and CI
+
+Before a commit, inspect the full task diff (staged and unstaged), verify scope,
+secrets/generated files, and actual required test execution. Run
+`git diff --check` for unstaged changes. If any changes are staged, also run
+`git diff --cached --check`; when nothing is staged, `git diff --check` covers
+the task diff. Account for the complete change set before committing. A passed
+final-verification gate means READY TO COMMIT; perform the
+commit only with the authority described above. Then verify the commit and
+report READY TO PUSH; push only with push authority. An explicitly approved
+checkpoint may grant these actions in advance.
+
+After push, compare the remote branch with its base and verify scope again.
+Create a PR with a concise summary and actual verification evidence. Wait for
+required CI and review gates; investigate failures and merge only when required
+checks pass. Never report remote checks as passed until they completed.
+
+## Post-merge and next task
+
+Merge does not itself prove acceptance. Run required production, deployment,
+migration, real UI/mobile, device/hardware or asset checks and label manual and
+automated evidence separately. Then confirm PR/GitHub state, acceptance gates,
+and checklist/docs; reconcile tracker state as described under Task tracker
+state. Record follow-up debt separately and mark the task Complete only when
+its gates pass and the tracker was actually updated.
+
+Before the next task: confirm the current PR is merged/closed or reconciled and
+confirm acceptance. Reconcile the current task and docs as described under Task
+tracker state, then select the next task and establish its identity and scope.
+Inspect and update its tracker state using valid existing states when access is
+available. If access is unavailable, follow the pending-reconciliation path
+above and proceed only when tracker state is not required for the go/no-go
+decision. Then checkout updated base and pull; verify a clean tree; create and
+verify a new dedicated branch. Reconcile pending tracker state later when access
+is available. Never let the next task inherit the previous branch by accident.
+
+## Capability selection
+
+Choose the least expensive/capable reasoning level that can reliably do the
+work; escalate when evidence shows it is insufficient. This is guidance, not a
+quality gate, and does not prescribe vendor or model names.
+
+| Level | Typical work |
+| --- | --- |
+| **Light** | Mechanical edits, tracker/branch/PR metadata, narrow tests, simple docs. |
+| **Standard** | Normal features, focused fixes, test implementation, bounded final verification. |
+| **Deep** | Architecture, concurrency/state machines, security-sensitive design, difficult cross-platform reasoning, conflicting findings. |
+
+## Existing Binblog-specific release and API gates
+
+- Public API changes require request specs, Rswag metadata and regeneration of
+  `swagger/v1/swagger.yaml` from the full spec set; see `ai/CONVENTIONS.md`.
+- Frontend asset build, precompile and production verification follow
+  `docs/RELEASE_PRODUCTION.md`.
+- Migrations, MQTT, device safety, Rails/MySQL constraints and firmware
+  compatibility follow `ai/CONVENTIONS.md` and `ai/ARCHITECTURE.md`.
