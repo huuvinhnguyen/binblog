@@ -1127,6 +1127,494 @@ paths:
                           nullable: true
         '401':
           description: unauthorized
+  "/api/auth/social_sessions":
+    post:
+      summary: Exchange a verified provider credential for a Binblog session
+      tags:
+      - Authentication
+      description: Google ID token is verified server-side. Client email, UID, and
+        verified flags are ignored. Returning and newly created accounts receive the
+        normal Binblog JWT.
+      parameters: []
+      responses:
+        '400':
+          description: malformed request
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - malformed_request
+        '200':
+          description: existing or newly created Binblog session
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - token
+                - user
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  token:
+                    type: string
+                  user:
+                    type: object
+                    required:
+                    - id
+                    - username
+                    - email
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+        '401':
+          description: invalid or expired provider credential
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - invalid_provider_credential
+        '409':
+          description: verified email matches an existing account; explicit Link required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - link_required
+        '422':
+          description: verified contact email unavailable for signup
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - email_verification_required
+                    - unsupported_provider
+        '500':
+          description: identity persistence failure
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - internal_error
+        '503':
+          description: provider verification unavailable or username allocation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - provider_unavailable
+                    - username_unavailable
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - provider
+              - credential
+              properties:
+                provider:
+                  type: string
+                  enum:
+                  - google
+                credential:
+                  type: string
+                  description: Google-issued ID token.
+        required: true
+  "/api/auth/social_identities":
+    post:
+      summary: Link a Google identity to the authenticated Binblog user
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      description: Requires a Binblog Bearer JWT and current local password as fresh
+        reauthentication. A passwordless account without local reauthentication cannot
+        link through this endpoint.
+      parameters: []
+      responses:
+        '400':
+          description: malformed request
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - malformed_request
+        '200':
+          description: linked or already linked to the same user
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  code:
+                    type: string
+                    enum:
+                    - linked
+                    - already_linked
+        '401':
+          description: Binblog authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - authentication_required
+                    - invalid_provider_credential
+        '403':
+          description: fresh local-password proof required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - reauthentication_required
+        '422':
+          description: unsupported provider
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - unsupported_provider
+        '500':
+          description: identity persistence failure
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - internal_error
+        '503':
+          description: provider verification unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - provider_unavailable
+        '409':
+          description: identity belongs to another user or provider already linked
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - identity_conflict
+                    - provider_already_linked
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - provider
+              - credential
+              - current_password
+              properties:
+                provider:
+                  type: string
+                  enum:
+                  - google
+                credential:
+                  type: string
+                  description: Valid, unexpired Google ID token verified by the server
+                    for this request.
+                current_password:
+                  type: string
+                  format: password
+        required: true
+  "/api/auth/social_identities/{provider}":
+    delete:
+      summary: Unlink an owned Google identity
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      description: Requires a Binblog Bearer JWT and current local password for a
+        mutation. Already absent identity returns not_linked. The final usable authentication
+        method cannot be removed.
+      parameters:
+      - name: provider
+        in: path
+        required: true
+        enum:
+        - google
+        schema:
+          type: string
+        description: ":\n * `google` \n "
+      responses:
+        '422':
+          description: unsupported provider
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - unsupported_provider
+        '200':
+          description: unlinked or already absent
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  code:
+                    type: string
+                    enum:
+                    - unlinked
+                    - not_linked
+        '401':
+          description: Binblog authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - authentication_required
+        '403':
+          description: fresh local-password proof required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - reauthentication_required
+        '500':
+          description: identity persistence failure
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - internal_error
+        '409':
+          description: cannot remove the final authentication method
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - last_authentication_method
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - current_password
+              properties:
+                current_password:
+                  type: string
+                  format: password
   "/devices/notify":
     post:
       summary: Send a device notification to Slack

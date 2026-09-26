@@ -3,6 +3,8 @@
 require 'swagger_helper'
 
 RSpec.describe 'API Authentication', type: :request do
+  let(:user) { User.create!(username: 'password_docs', email: 'password_docs@example.com', password: 'password123') }
+
   path '/api/login' do
     post 'Login user and return JWT token' do
       tags 'Authentication'
@@ -20,7 +22,7 @@ RSpec.describe 'API Authentication', type: :request do
 
       response '200', 'successful login' do
         let(:credentials) do
-          { username: 'admin', password: '123456' }
+          { username: user.username, password: 'password123' }
         end
 
         run_test!
@@ -28,7 +30,7 @@ RSpec.describe 'API Authentication', type: :request do
 
       response '401', 'invalid credentials' do
         let(:credentials) do
-          { username: 'admin', password: 'wrong-password' }
+          { username: user.username, password: 'wrong-password' }
         end
 
         run_test!
