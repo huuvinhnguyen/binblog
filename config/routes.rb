@@ -14,6 +14,11 @@ Rails.application.routes.draw do
 
   namespace :api do
     post 'login', to: 'sessions#create'
+    namespace :auth do
+      post 'social_sessions', to: '/api/social_sessions#create'
+      post 'social_identities', to: '/api/social_identities#create'
+      delete 'social_identities/:provider', to: '/api/social_identities#destroy'
+    end
 
     resources :devices, only: [:index] do
       member do

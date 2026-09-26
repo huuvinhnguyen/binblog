@@ -6,19 +6,12 @@ module Api
       user = User.find_by(username: params[:username])
 
       if user&.valid_password?(params[:password])
-        token = JWT.encode(
-          { user_id: user.id, exp: 7.days.from_now.to_i },
-          Rails.application.secret_key_base
-        )
+        token = SocialLogin::BinblogSession.token_for(user)
 
         render json: {
           status: 'success',
           token: token,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email
-          }
+          user: SocialLogin::BinblogSession.user_json(user)
         }, status: :ok
       else
         render json: {
