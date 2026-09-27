@@ -44,6 +44,16 @@ RSpec.describe SocialLogin::GoogleIdentityVerifier do
       .to raise_error(described_class::Unavailable)
   end
 
+  it 'accepts only explicitly supplied nonblank audiences' do
+    web_verifier = described_class.new(jwks: jwks, audiences: [' web-client ', ' '])
+    web_claims = claims.merge('aud' => 'web-client')
+
+    expect(web_verifier.call(credential: token(web_claims)).provider_uid).to eq('Google-Subject')
+    expect { web_verifier.call(credential: token) }.to raise_error(described_class::InvalidCredential)
+    expect { described_class.new(jwks: jwks, audiences: [' ']).call(credential: token(web_claims)) }
+      .to raise_error(described_class::Unavailable)
+  end
+
   it 'withholds an unverified or missing email while preserving a verified subject' do
     [{ 'email_verified' => false }, { 'email' => nil }].each do |change|
       expect(verifier.call(credential: token(claims.merge(change))).verified_email).to be_nil

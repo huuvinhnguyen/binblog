@@ -5,7 +5,7 @@ module SocialLogin
     class InvalidCredential < StandardError; end
     class Unavailable < StandardError; end
 
-    def initialize(jwks: GoogleJwks.new, audiences: ENV.fetch('GOOGLE_CLIENT_IDS', '').split(','))
+    def initialize(jwks: GoogleJwks.new, audiences:)
       @jwks = jwks
       @audiences = audiences.map(&:strip).reject(&:empty?)
     end

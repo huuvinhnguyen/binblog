@@ -82,7 +82,7 @@ module Api
     end
 
     def google_verifier
-      SocialLogin::GoogleIdentityVerifier.new
+      SocialLogin::GoogleIdentityVerifier.new(audiences: ENV.fetch('GOOGLE_CLIENT_IDS', '').split(','))
     end
 
     def error(code, http_status)
