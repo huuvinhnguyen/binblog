@@ -8,6 +8,9 @@ Rails.application.routes.draw do
   resources :posts
   get 'home/index'
   devise_for :users
+  get 'account/authentication', to: 'social_authentication#show', as: :account_authentication
+  delete 'account/authentication/:provider', to: 'social_authentication#destroy', as: :account_social_identity
+  post 'auth/google', to: 'social_logins#create', as: :google_authentication
   mount ActionCable.server => '/cable'
   # mount Sidekiq::Web => '/sidekiq'
   mount Sidekiq::Web => '/sidekiq'

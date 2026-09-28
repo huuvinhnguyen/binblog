@@ -32,6 +32,32 @@ RSpec.describe 'Social authentication API', type: :request do
          params: { provider: provider, credential: credential }, as: :json
   end
 
+  def with_client_ids(mobile:, web:)
+    previous_mobile = ENV['GOOGLE_CLIENT_IDS']
+    previous_web = ENV['GOOGLE_WEB_CLIENT_ID']
+    ENV['GOOGLE_CLIENT_IDS'] = mobile
+    ENV['GOOGLE_WEB_CLIENT_ID'] = web
+    yield
+  ensure
+    ENV['GOOGLE_CLIENT_IDS'] = previous_mobile
+    ENV['GOOGLE_WEB_CLIENT_ID'] = previous_web
+  end
+
+  def signed_audience_credential(audience, key)
+    JWT.encode(
+      { iss: 'https://accounts.google.com', aud: audience, exp: 10.minutes.from_now.to_i,
+        sub: 'api-audience-subject', email: 'api-audience@gmail.com', email_verified: true },
+      key, 'RS256', kid: 'api-audience-key'
+    )
+  end
+
+  def use_real_google_verifier(key)
+    jwk = JWT::JWK.new(key.public_key, { kid: 'api-audience-key', alg: 'RS256', use: 'sig' }).export
+    keys = instance_double(SocialLogin::GoogleJwks, call: { 'keys' => [jwk] })
+    allow(SocialLogin::GoogleIdentityVerifier).to receive(:new).and_call_original
+    allow(SocialLogin::GoogleJwks).to receive(:new).and_return(keys)
+  end
+
   def link(user, provider: 'google', credential: 'signed-google-token', password: 'password123')
     post '/api/auth/social_identities',
          params: { provider: provider, credential: credential, current_password: password },
@@ -48,6 +74,46 @@ RSpec.describe 'Social authentication API', type: :request do
     filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
     expect(filter.filter('credential' => 'provider-secret', 'current_password' => 'local-secret'))
       .to eq('credential' => '[FILTERED]', 'current_password' => '[FILTERED]')
+  end
+
+  it 'keeps the mobile audience configured independently of the Web client ID' do
+    key = OpenSSL::PKey::RSA.generate(2048)
+    use_real_google_verifier(key)
+    with_client_ids(mobile: 'mobile-client', web: 'web-client') do
+      social_session(credential: signed_audience_credential('mobile-client', key))
+      expect(response).to have_http_status(:ok)
+      expect(body.keys).to match_array(%w[status token user])
+
+      social_session(credential: signed_audience_credential('web-client', key))
+      expect(response).to have_http_status(:unauthorized)
+      expect(body).to eq('status' => 'error', 'code' => 'invalid_provider_credential')
+    end
+  end
+
+  it 'does not treat blank mobile client IDs as valid audiences' do
+    key = OpenSSL::PKey::RSA.generate(2048)
+    use_real_google_verifier(key)
+    with_client_ids(mobile: ' , ', web: 'web-client') do
+      social_session(credential: signed_audience_credential('web-client', key))
+      expect(response).to have_http_status(:service_unavailable)
+      expect(body).to eq('status' => 'error', 'code' => 'provider_unavailable')
+    end
+  end
+
+  it 'uses the mobile audience boundary for API Link as well' do
+    key = OpenSSL::PKey::RSA.generate(2048)
+    use_real_google_verifier(key)
+    principal = local_user('audience_link_principal')
+    with_client_ids(mobile: 'mobile-client', web: 'web-client') do
+      link(principal, credential: signed_audience_credential('web-client', key))
+      expect(response).to have_http_status(:unauthorized)
+      expect(body).to eq('status' => 'error', 'code' => 'invalid_provider_credential')
+      expect(principal.user_identities).to be_empty
+
+      link(principal, credential: signed_audience_credential('mobile-client', key))
+      expect(response).to have_http_status(:ok)
+      expect(body).to eq('status' => 'success', 'code' => 'linked')
+    end
   end
 
   it 'signs in the identity owner with the existing Binblog JWT shape' do

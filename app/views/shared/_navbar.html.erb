@@ -25,6 +25,9 @@
         </li>
         <% if user_signed_in? %>
           <li class="nav-item">
+            <%= link_to 'Tài khoản', account_authentication_path, class: 'nav-link' %>
+          </li>
+          <li class="nav-item">
             <%= button_to 'Đăng xuất', destroy_user_session_path, method: :delete, data: { turbo: false }, class: 'nav-link text-danger' %>
 
           </li>

@@ -13,6 +13,7 @@ import "./device_switch"
 import "./pir_motion_chart"
 import "./buzzer_test"
 import "./buzzer_links"
+import "./google_auth"
 
 //buildjs
 import Rails from "@rails/ujs"
