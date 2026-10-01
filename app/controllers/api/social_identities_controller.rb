@@ -1,6 +1,10 @@
 module Api
   class SocialIdentitiesController < ApplicationController
+    include BearerAuthentication
+    include AuthRequestSafety
+
     skip_before_action :verify_authenticity_token
+    before_action :reject_oversized_auth_request!
     before_action :authenticate_bearer_user!
 
     def create
@@ -9,10 +13,13 @@ module Api
       return error(:malformed_request, :bad_request) unless provider.is_a?(String) &&
         credential.is_a?(String) && credential.present? && credential.bytesize <= 8192
       return error(:unsupported_provider, :unprocessable_entity) unless provider.strip.downcase == 'google'
-      return error(:reauthentication_required, :forbidden) unless valid_reauthentication?
+      authorization = reauthentication_authorization(:link_identity)
+      return error(:reauthentication_required, :forbidden) unless authorization.preflight_valid?
 
       identity = google_verifier.call(credential: credential)
-      outcome = SocialLogin::LinkIdentity.new.call(user: @authenticated_user, verified_identity: identity)
+      outcome = SocialLogin::LinkIdentity.new.call(
+        user: @authenticated_user, verified_identity: identity, authorization: authorization
+      )
       case outcome.status
       when :linked, :already_linked
         render json: { status: 'success', code: outcome.status.to_s }, status: :ok
@@ -20,6 +27,10 @@ module Api
         error(:identity_conflict, :conflict)
       when :provider_already_linked
         error(:provider_already_linked, :conflict)
+      when :unsupported_provider
+        error(:unsupported_provider, :unprocessable_entity)
+      when :reauthentication_required
+        error(:reauthentication_required, :forbidden)
       else
         error(:internal_error, :internal_server_error)
       end
@@ -38,18 +49,23 @@ module Api
       existing = @authenticated_user.user_identities.find_by(provider: provider)
       return render json: { status: 'success', code: 'not_linked' }, status: :ok unless existing
 
-      other_identity = @authenticated_user.user_identities.where.not(id: existing.id).exists?
-      unless @authenticated_user.usable_password_authentication? || other_identity
+      methods = Authentication::MethodsProjection.new(user: @authenticated_user)
+      unless methods.usable_method_count(excluding: existing).positive?
         return error(:last_authentication_method, :conflict)
       end
-      return error(:reauthentication_required, :forbidden) unless valid_reauthentication?
 
-      outcome = SocialLogin::UnlinkIdentity.new.call(user: @authenticated_user, provider: provider)
+      outcome = SocialLogin::UnlinkIdentity.new.call(
+        user: @authenticated_user,
+        provider: provider,
+        authorization: reauthentication_authorization(:unlink_identity)
+      )
       case outcome.status
       when :unlinked, :not_linked
         render json: { status: 'success', code: outcome.status.to_s }, status: :ok
       when :last_authentication_method
         error(:last_authentication_method, :conflict)
+      when :reauthentication_required
+        error(:reauthentication_required, :forbidden)
       else
         error(:internal_error, :internal_server_error)
       end
@@ -59,26 +75,14 @@ module Api
 
     private
 
-    def authenticate_bearer_user!
-      header = request.headers['Authorization'].to_s
-      match = /\ABearer ([^\s]+)\z/.match(header)
-      return error(:authentication_required, :unauthorized) unless match
-
-      payload = JWT.decode(
-        match[1], Rails.application.secret_key_base, true,
-        algorithm: 'HS256', verify_expiration: true
-      ).first
-      @authenticated_user = User.find_by(id: payload['user_id'])
-      error(:authentication_required, :unauthorized) unless @authenticated_user
-    rescue JWT::DecodeError
-      error(:authentication_required, :unauthorized)
-    end
-
-    def valid_reauthentication?
-      password = params[:current_password]
-      password.is_a?(String) && password.present? &&
-        @authenticated_user.usable_password_authentication? &&
-        @authenticated_user.valid_password?(password)
+    def reauthentication_authorization(purpose)
+      Reauthentication::Authorization.new(
+        user: @authenticated_user,
+        session_binding_digest: @session_binding_digest,
+        purpose: purpose.to_s,
+        token: params[:reauthentication_token],
+        current_password: params[:current_password]
+      )
     end
 
     def google_verifier

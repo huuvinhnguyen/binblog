@@ -70,6 +70,16 @@ RSpec.describe 'Social authentication API', type: :request do
            headers: user ? bearer(user) : {}, as: :json
   end
 
+  it 'rejects an oversized social-session request before provider verification' do
+    post '/api/auth/social_sessions', params: {
+      provider: 'google', credential: 'signed-google-token'
+    }, headers: { 'CONTENT_LENGTH' => (Api::AuthRequestSafety::MAX_BODY_BYTES + 1).to_s }, as: :json
+
+    expect(response).to have_http_status(:bad_request)
+    expect(body).to eq('status' => 'error', 'code' => 'malformed_request')
+    expect(verifier).not_to have_received(:call)
+  end
+
   it 'filters provider credentials and reauthentication passwords from logs' do
     filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
     expect(filter.filter('credential' => 'provider-secret', 'current_password' => 'local-secret'))
@@ -127,6 +137,17 @@ RSpec.describe 'Social authentication API', type: :request do
     claims = JWT.decode(body.fetch('token'), Rails.application.secret_key_base, true, algorithm: 'HS256').first
     expect(claims['user_id']).to eq(owner.id)
     expect(claims['exp']).to be_within(10).of(7.days.from_now.to_i)
+  end
+
+  it 'does not sign in a locally disabled identity or create a replacement account' do
+    owner = local_user('disabled_identity', 'social@example.com')
+    owner.user_identities.create!(
+      provider: 'google', provider_uid: 'Google-Subject', disabled_at: Time.current
+    )
+
+    expect { social_session }.not_to change(User, :count)
+    expect(response).to have_http_status(:unauthorized)
+    expect(body).to eq('status' => 'error', 'code' => 'invalid_provider_credential')
   end
 
   it 'uses the social-session JWT for existing device authorization' do
@@ -352,6 +373,8 @@ RSpec.describe 'Social authentication API', type: :request do
   it 'holds a passwordless multi-provider unlink until a safe reauthentication path exists' do
     principal = SocialLogin::SignInResolver.new.call(verified_identity: verified('social-only')).user
     principal.user_identities.create!(provider: 'alternate', provider_uid: 'other-subject')
+    allow(SocialLogin::ProviderPolicy).to receive(:enabled?).and_call_original
+    allow(SocialLogin::ProviderPolicy).to receive(:enabled?).with('alternate').and_return(true)
     unlink(principal)
     expect(response).to have_http_status(:forbidden)
     expect(body['code']).to eq('reauthentication_required')

@@ -8,8 +8,10 @@ module SocialLogin
 
     def call(verified_identity:)
       require_verified_identity!(verified_identity)
+      return Outcome.new(status: :identity_disabled) unless ProviderPolicy.enabled?(verified_identity.provider)
+
       identity = find_identity(verified_identity)
-      return sign_in_existing(identity) if identity
+      return resolve_existing(identity) if identity
 
       email = verified_identity.verified_email
       return Outcome.new(status: :email_verification_required) unless usable_email?(email)
@@ -31,6 +33,12 @@ module SocialLogin
     def sign_in_existing(identity)
       identity.update!(last_authenticated_at: Time.current)
       Outcome.new(status: :existing_identity, user: identity.user)
+    end
+
+    def resolve_existing(identity)
+      return Outcome.new(status: :identity_disabled) unless identity.usable?
+
+      sign_in_existing(identity)
     end
 
     def usable_email?(email)
@@ -58,7 +66,7 @@ module SocialLogin
           return Outcome.new(status: :created_account, user: user)
         rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
           identity = find_identity(verified_identity)
-          return sign_in_existing(identity) if identity
+          return resolve_existing(identity) if identity
           return Outcome.new(status: :link_required) if email_taken?(email)
           raise unless User.exists?(username: username)
         end
