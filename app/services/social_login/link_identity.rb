@@ -1,14 +1,23 @@
 module SocialLogin
   class LinkIdentity
-    def call(user:, verified_identity:)
+    def call(user:, verified_identity:, authorization: nil)
       raise ArgumentError, 'Authenticated user required' unless user.is_a?(User) && user.persisted?
       raise ArgumentError, 'Verified identity required' unless verified_identity.is_a?(VerifiedIdentity)
+      return Outcome.new(status: :unsupported_provider, user: user) unless ProviderPolicy.enabled?(verified_identity.provider)
 
-      user.with_lock { resolve_under_lock(user, verified_identity) }
+      user.with_lock do
+        next Outcome.new(status: :reauthentication_required, user: user) unless authorization&.consume!
+
+        resolve_under_lock(user, verified_identity)
+      end
     rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => error
       # A competing transaction may have claimed either unique key. Re-read
       # authoritative state; never return another user's identity or principal.
-      resolve_collision(user, verified_identity, error)
+      user.with_lock do
+        next Outcome.new(status: :reauthentication_required, user: user) unless authorization&.consume!
+
+        resolve_collision(user, verified_identity, error)
+      end
     end
 
     private
@@ -17,6 +26,7 @@ module SocialLogin
       identity = find_identity(verified_identity)
       if identity
         return Outcome.new(status: :identity_conflict, user: user) unless identity.user_id == user.id
+        return Outcome.new(status: :provider_already_linked, user: user) unless identity.usable?
 
         identity.update!(last_authenticated_at: Time.current)
         return Outcome.new(status: :already_linked, user: user)
@@ -37,7 +47,7 @@ module SocialLogin
     def resolve_collision(user, verified_identity, error)
       identity = find_identity(verified_identity)
       return Outcome.new(status: :identity_conflict, user: user) if identity && identity.user_id != user.id
-      return Outcome.new(status: :already_linked, user: user) if identity
+      return Outcome.new(status: identity.usable? ? :already_linked : :provider_already_linked, user: user) if identity
       return Outcome.new(status: :provider_already_linked, user: user) if user.user_identities.exists?(provider: verified_identity.provider)
 
       raise error

@@ -14,6 +14,8 @@ class User < ActiveRecord::Base
   validates :username, presence: true, uniqueness: true
 
   has_many :user_identities, dependent: :destroy
+  has_many :reauthentication_grants, dependent: :destroy
+  has_many :user_recovery_codes, dependent: :destroy
 
   # The caller must have a VerifiedIdentity before using this builder.
   # A blank encrypted_password means no usable local password login.
@@ -30,6 +32,24 @@ class User < ActiveRecord::Base
     true
   rescue BCrypt::Errors::InvalidHash
     false
+  end
+
+  # Devise recoverable remains the normal password-account recovery path.
+  # A social-only account must use the separate email + recovery-code flow.
+  def send_reset_password_instructions
+    return unless usable_password_authentication?
+
+    super
+  end
+
+  # Also reject reset tokens issued before this guard was deployed.
+  def reset_password(new_password, new_password_confirmation)
+    unless usable_password_authentication?
+      errors.add(:reset_password_token, :invalid)
+      return false
+    end
+
+    super
   end
 
   has_and_belongs_to_many :devices

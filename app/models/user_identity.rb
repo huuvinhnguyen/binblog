@@ -3,11 +3,18 @@ class UserIdentity < ActiveRecord::Base
 
   belongs_to :user
 
+  scope :enabled, -> { where(disabled_at: nil) }
+
   validates :provider, presence: true, format: { with: /\A[a-z][a-z0-9_]*\z/ }
   validates :provider_uid, presence: true
   validate :provider_uid_fits_binary_column
   validates :provider_uid, uniqueness: { scope: :provider }
   validates :provider, uniqueness: { scope: :user_id }
+
+  def usable?
+    disabled_at.nil? && SocialLogin::ProviderPolicy.enabled?(provider)
+  end
+
   private
 
   def provider_uid_fits_binary_column

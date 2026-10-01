@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_25_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_01_090200) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -122,6 +122,23 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_25_120000) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "reauthentication_grants", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.binary "token_digest", limit: 32, null: false
+    t.binary "session_binding_digest", limit: 32, null: false
+    t.string "purpose", limit: 64, null: false
+    t.string "method", limit: 32, null: false
+    t.string "provider", limit: 32
+    t.datetime "expires_at", null: false
+    t.datetime "consumed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_reauthentication_grants_on_expires_at"
+    t.index ["token_digest"], name: "index_reauthentication_grants_on_token_digest", unique: true
+    t.index ["user_id", "purpose"], name: "index_reauthentication_grants_on_user_id_and_purpose"
+    t.index ["user_id"], name: "index_reauthentication_grants_on_user_id"
+  end
+
   create_table "relay_logs", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "device_id", null: false
     t.integer "relay_index", null: false, comment: "Chỉ số relay trên thiết bị"
@@ -205,9 +222,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_25_120000) do
     t.datetime "last_authenticated_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "disabled_at"
     t.index ["provider", "provider_uid"], name: "index_user_identities_on_provider_and_uid", unique: true
+    t.index ["user_id", "disabled_at"], name: "index_user_identities_on_user_id_and_disabled_at"
     t.index ["user_id", "provider"], name: "index_user_identities_on_user_and_provider", unique: true
     t.index ["user_id"], name: "index_user_identities_on_user_id"
+  end
+
+  create_table "user_recovery_codes", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.binary "code_digest", limit: 32, null: false
+    t.datetime "used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code_digest"], name: "index_user_recovery_codes_on_code_digest", unique: true
+    t.index ["user_id", "used_at"], name: "index_user_recovery_codes_on_user_id_and_used_at"
+    t.index ["user_id"], name: "index_user_recovery_codes_on_user_id"
   end
 
   create_table "user_relay_features", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -258,6 +288,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_25_120000) do
   add_foreign_key "device_events", "devices"
   add_foreign_key "fingers", "employees"
   add_foreign_key "posts", "categories"
+  add_foreign_key "reauthentication_grants", "users"
   add_foreign_key "relay_logs", "devices"
   add_foreign_key "relay_logs", "users"
   add_foreign_key "reminders", "devices"
@@ -265,6 +296,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_25_120000) do
   add_foreign_key "user_devices", "devices"
   add_foreign_key "user_devices", "users"
   add_foreign_key "user_identities", "users"
+  add_foreign_key "user_recovery_codes", "users"
   add_foreign_key "user_relay_features", "devices"
   add_foreign_key "user_relay_features", "users"
 end

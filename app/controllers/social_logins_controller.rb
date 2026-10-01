@@ -38,7 +38,15 @@ class SocialLoginsController < ApplicationController
 
   def link_identity
     verified_identity = google_verifier.call(credential: params[:credential])
-    outcome = SocialLogin::LinkIdentity.new.call(user: current_user, verified_identity: verified_identity)
+    authorization = Reauthentication::Authorization.new(
+      user: current_user,
+      session_binding_digest: nil,
+      purpose: 'link_identity',
+      current_password: params[:current_password]
+    )
+    outcome = SocialLogin::LinkIdentity.new.call(
+      user: current_user, verified_identity: verified_identity, authorization: authorization
+    )
     case outcome.status
     when :linked, :already_linked
       render json: { status: 'success', code: outcome.status.to_s }, status: :ok
@@ -46,6 +54,8 @@ class SocialLoginsController < ApplicationController
       render_result(:identity_conflict, :conflict)
     when :provider_already_linked
       render_result(:provider_already_linked, :conflict)
+    when :unsupported_provider
+      render_result(:unsupported_provider, :unprocessable_entity)
     else
       render_result(:internal_error, :internal_server_error)
     end
@@ -63,6 +73,8 @@ class SocialLoginsController < ApplicationController
       render_result(:email_verification_required, :unprocessable_entity)
     when :username_unavailable
       render_result(:username_unavailable, :service_unavailable)
+    when :identity_disabled
+      render_result(:invalid_provider_credential, :unauthorized)
     else
       render_result(:internal_error, :internal_server_error)
     end

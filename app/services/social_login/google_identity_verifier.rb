@@ -28,7 +28,8 @@ module SocialLogin
 
       email = authoritative_verified_email(payload)
       VerifiedIdentity.from_verified_claims(
-        provider: 'google', provider_uid: subject, verified_email: email
+        provider: 'google', provider_uid: subject, verified_email: email,
+        issued_at: verified_issued_at(payload['iat'])
       )
     rescue GoogleJwks::Unavailable
       raise Unavailable
@@ -37,6 +38,14 @@ module SocialLogin
     end
 
     private
+
+    def verified_issued_at(value)
+      return unless value.is_a?(Integer)
+
+      Time.zone.at(value)
+    rescue ArgumentError, RangeError
+      nil
+    end
 
     def authoritative_verified_email(payload)
       email = payload['email']

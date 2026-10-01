@@ -11,7 +11,8 @@ RSpec.describe SocialLogin::GoogleIdentityVerifier do
     {
       'iss' => 'https://accounts.google.com', 'aud' => 'client-one',
       'exp' => 10.minutes.from_now.to_i, 'sub' => 'Google-Subject',
-      'email' => 'owner@gmail.com', 'email_verified' => true
+      'email' => 'owner@gmail.com', 'email_verified' => true,
+      'iat' => 1.minute.ago.to_i
     }
   end
 
@@ -21,8 +22,8 @@ RSpec.describe SocialLogin::GoogleIdentityVerifier do
 
   it 'cryptographically verifies a valid token and derives the durable subject' do
     identity = verifier.call(credential: token)
-    expect([identity.provider, identity.provider_uid, identity.verified_email])
-      .to eq(['google', 'Google-Subject', 'owner@gmail.com'])
+    expect([identity.provider, identity.provider_uid, identity.verified_email, identity.issued_at.to_i])
+      .to eq(['google', 'Google-Subject', 'owner@gmail.com', claims['iat']])
   end
 
   it 'rejects an invalid signature' do
@@ -65,5 +66,9 @@ RSpec.describe SocialLogin::GoogleIdentityVerifier do
     expect(identity.verified_email).to be_nil
     hosted = verifier.call(credential: token(claims.merge('email' => 'person@example.com', 'hd' => 'example.com')))
     expect(hosted.verified_email).to eq('person@example.com')
+  end
+
+  it 'keeps normal sign-in compatible when iat is absent' do
+    expect(verifier.call(credential: token(claims.except('iat'))).issued_at).to be_nil
   end
 end

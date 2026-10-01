@@ -245,3 +245,41 @@ The following are not fixed by this architecture decision and must be checked du
 - Backend Identity Foundation settles social-signup username assignment/collision behavior before Google signup work.
 - Swift and Flutter share consistent auth outcomes while keeping provider integration out of device repositories.
 - Rollout and task dependencies are documented; provider/version/data questions remain explicit for implementation-time verification.
+
+## Account recovery and reauthentication contract
+
+Social-only users are active Binblog accounts. Their blank Devise password is
+not a usable authentication method. A provider identity is usable only while it
+is enabled by server policy and `disabled_at` is null. Recovery codes are
+recovery factors and never count toward the last-authentication-method rule.
+
+Sensitive API mutations use a five-minute `ReauthenticationGrant`. Rails stores
+only digests of the random grant and exact bearer-JWT binding. A grant is bound
+to its user and one enumerated purpose and is consumed in the same transaction
+as the mutation. Password reauthentication verifies the existing Devise
+password. Google reauthentication verifies a newly issued ID token whose
+provider UID belongs to an enabled identity of the current user. The verified
+Google `iat` supplies freshness; a client timestamp is never accepted.
+
+The account-management API is:
+
+- `GET /api/auth/methods` for the current authoritative method projection.
+- `POST /api/auth/reauthentications` for password or Google proof.
+- `PUT /api/auth/password` to establish the first password only.
+- `POST /api/auth/recovery_codes` to rotate recovery codes after reauthentication.
+- `POST /api/auth/password_recovery` for a non-enumerating recovery request.
+- `PUT /api/auth/password_recovery` to complete password or social-only recovery.
+
+Ordinary Devise reset remains available to accounts with a usable password. It
+cannot establish the first password for a social-only account, including with a
+reset token issued before the guard. Social-only recovery requires both an
+encrypted, expiring email challenge and one unused high-entropy recovery code.
+Successful recovery establishes the password, invalidates all recovery codes,
+preserves provider identities, issues no JWT, and requires explicit sign-in.
+
+API Link and Unlink prefer purpose-bound reauthentication grants. The legacy
+`current_password` parameter remains accepted during rollout. Unlink recomputes
+usable methods under the user lock before consuming the grant and deleting the
+identity. An ambiguous client result must be reconciled through
+`GET /api/auth/methods`; clients do not replay a consumed grant or retained
+provider credential.

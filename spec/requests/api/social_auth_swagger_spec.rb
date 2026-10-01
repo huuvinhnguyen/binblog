@@ -96,12 +96,13 @@ RSpec.describe 'Social authentication API documentation', type: :request do
       consumes 'application/json'
       produces 'application/json'
       security [bearerAuth: []]
-      description 'Requires a Binblog Bearer JWT and current local password as fresh reauthentication. A passwordless account without local reauthentication cannot link through this endpoint.'
+      description 'Requires a Binblog Bearer JWT plus either a purpose-bound reauthentication token or the legacy current_password compatibility field. Link preserves the authenticated principal.'
       parameter name: :payload, in: :body, required: true, schema: {
-        type: :object, required: %w[provider credential current_password], properties: {
+        type: :object, required: %w[provider credential], properties: {
           provider: { type: :string, enum: ['google'] },
           credential: { type: :string, description: 'Valid, unexpired Google ID token verified by the server for this request.' },
-          current_password: { type: :string, format: :password }
+          reauthentication_token: { type: :string, description: 'Preferred one-time link_identity grant.' },
+          current_password: { type: :string, format: :password, description: 'Legacy compatibility reauthentication.' }
         }
       }
       let(:payload) { { provider: 'google', credential: 'signed-google-token', current_password: 'password123' } }
@@ -175,11 +176,12 @@ RSpec.describe 'Social authentication API documentation', type: :request do
       consumes 'application/json'
       produces 'application/json'
       security [bearerAuth: []]
-      description 'Requires a Binblog Bearer JWT and current local password for a mutation. Already absent identity returns not_linked. The final usable authentication method cannot be removed.'
+      description 'Requires a Binblog Bearer JWT plus either a purpose-bound reauthentication token or legacy current_password. Already absent identity returns not_linked. The server rechecks the final usable method under lock.'
       parameter name: :provider, in: :path, type: :string, required: true, enum: ['google']
       parameter name: :payload, in: :body, required: false, schema: {
-        type: :object, required: %w[current_password], properties: {
-          current_password: { type: :string, format: :password }
+        type: :object, properties: {
+          reauthentication_token: { type: :string, description: 'Preferred one-time unlink_identity grant.' },
+          current_password: { type: :string, format: :password, description: 'Legacy compatibility reauthentication.' }
         }
       }
       let(:provider) { 'google' }

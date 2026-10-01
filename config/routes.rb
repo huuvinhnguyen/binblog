@@ -21,6 +21,12 @@ Rails.application.routes.draw do
       post 'social_sessions', to: '/api/social_sessions#create'
       post 'social_identities', to: '/api/social_identities#create'
       delete 'social_identities/:provider', to: '/api/social_identities#destroy'
+      get 'methods', to: '/api/authentication_methods#show'
+      post 'reauthentications', to: '/api/reauthentications#create'
+      put 'password', to: '/api/passwords#update'
+      post 'recovery_codes', to: '/api/recovery_codes#create'
+      post 'password_recovery', to: '/api/password_recovery#create'
+      put 'password_recovery', to: '/api/password_recovery#update'
     end
 
     resources :devices, only: [:index] do

@@ -4,6 +4,556 @@ info:
   title: API V1
   version: v1
 paths:
+  "/api/auth/methods":
+    get:
+      summary: List current user authentication methods
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      description: Returns password usability, linked provider usability, advisory
+        can_unlink, and recovery-code enrollment. It never returns provider UID or
+        external account data.
+      responses:
+        '200':
+          description: authentication method projection
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - password
+                - providers
+                - recovery
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  password:
+                    type: object
+                    required:
+                    - usable
+                    properties:
+                      usable:
+                        type: boolean
+                  providers:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                      - provider
+                      - usable
+                      - can_unlink
+                      properties:
+                        provider:
+                          type: string
+                        usable:
+                          type: boolean
+                        can_unlink:
+                          type: boolean
+                  recovery:
+                    type: object
+                    required:
+                    - codes_enrolled
+                    properties:
+                      codes_enrolled:
+                        type: boolean
+        '401':
+          description: Binblog authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - authentication_required
+  "/api/auth/reauthentications":
+    post:
+      summary: Create a short-lived reauthentication grant
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      description: Verifies the current password or a fresh credential for an enabled
+        identity already owned by the current user. The returned grant is JWT-bound,
+        purpose-bound, five-minute, and one-time.
+      parameters: []
+      responses:
+        '200':
+          description: reauthentication grant issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - reauthentication_token
+                - expires_at
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  reauthentication_token:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+        '403':
+          description: reauthentication failed without disclosing provider ownership
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - reauthentication_failed
+        '401':
+          description: Binblog authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - authentication_required
+        '422':
+          description: unsupported reauthentication method or provider
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - unsupported_method
+                    - unsupported_provider
+        '429':
+          description: reauthentication attempts rate limited
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - rate_limited
+        '503':
+          description: provider verification unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - provider_unavailable
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - purpose
+              - method
+              properties:
+                purpose:
+                  type: string
+                  enum:
+                  - link_identity
+                  - unlink_identity
+                  - add_password
+                  - rotate_recovery_codes
+                method:
+                  type: string
+                  enum:
+                  - password
+                  - google
+                password:
+                  type: string
+                  format: password
+                credential:
+                  type: string
+        required: true
+  "/api/auth/password":
+    put:
+      summary: Establish the first usable password
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      description: Only passwordless accounts may use this operation. It consumes
+        an add_password grant and confirms or changes the username.
+      parameters: []
+      responses:
+        '200':
+          description: first password established
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  code:
+                    type: string
+                    enum:
+                    - password_added
+        '409':
+          description: account already has a usable password
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - password_already_set
+        '401':
+          description: Binblog authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - authentication_required
+        '403':
+          description: fresh add_password reauthentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - reauthentication_required
+        '422':
+          description: password policy or username validation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - invalid_password
+                    - username_unavailable
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - username
+              - password
+              - password_confirmation
+              - reauthentication_token
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                password_confirmation:
+                  type: string
+                  format: password
+                reauthentication_token:
+                  type: string
+        required: true
+  "/api/auth/recovery_codes":
+    post:
+      summary: Rotate one-time account recovery codes
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      description: Consumes a rotate_recovery_codes grant, invalidates the prior set
+        atomically, and returns new raw codes once.
+      parameters: []
+      responses:
+        '200':
+          description: recovery codes rotated and returned once
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - codes
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  code:
+                    type: string
+                    enum:
+                    - recovery_codes_rotated
+                  codes:
+                    type: array
+                    items:
+                      type: string
+        '403':
+          description: fresh reauthentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - reauthentication_required
+        '401':
+          description: Binblog authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - authentication_required
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reauthentication_token
+              properties:
+                reauthentication_token:
+                  type: string
+        required: true
+  "/api/auth/password_recovery":
+    post:
+      summary: Request password or social-only account recovery
+      tags:
+      - Authentication
+      description: Always returns the same accepted response. Password accounts receive
+        Devise reset instructions; eligible social-only accounts receive a challenge
+        that also requires a saved recovery code.
+      parameters: []
+      responses:
+        '202':
+          description: request accepted without account enumeration
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - accepted
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              properties:
+                email:
+                  type: string
+                  format: email
+        required: true
+    put:
+      summary: Complete password or social-only recovery
+      tags:
+      - Authentication
+      description: Password accounts use their Devise reset token. Social-only accounts
+        require an encrypted email challenge, one unused recovery code, username confirmation,
+        and a new password. Success does not issue a JWT.
+      parameters: []
+      responses:
+        '200':
+          description: password updated; explicit sign-in remains required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  code:
+                    type: string
+                    enum:
+                    - password_updated
+        '422':
+          description: invalid or expired recovery proof
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - invalid_or_expired_recovery
+        '429':
+          description: recovery completion attempts rate limited
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                    enum:
+                    - rate_limited
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - recovery_token
+              - password
+              - password_confirmation
+              properties:
+                recovery_token:
+                  type: string
+                recovery_code:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                password_confirmation:
+                  type: string
+                  format: password
+        required: true
   "/api/login":
     post:
       summary: Login user and return JWT token
@@ -1301,9 +1851,9 @@ paths:
       - Authentication
       security:
       - bearerAuth: []
-      description: Requires a Binblog Bearer JWT and current local password as fresh
-        reauthentication. A passwordless account without local reauthentication cannot
-        link through this endpoint.
+      description: Requires a Binblog Bearer JWT plus either a purpose-bound reauthentication
+        token or the legacy current_password compatibility field. Link preserves the
+        authenticated principal.
       parameters: []
       responses:
         '400':
@@ -1461,7 +2011,6 @@ paths:
               required:
               - provider
               - credential
-              - current_password
               properties:
                 provider:
                   type: string
@@ -1471,9 +2020,13 @@ paths:
                   type: string
                   description: Valid, unexpired Google ID token verified by the server
                     for this request.
+                reauthentication_token:
+                  type: string
+                  description: Preferred one-time link_identity grant.
                 current_password:
                   type: string
                   format: password
+                  description: Legacy compatibility reauthentication.
         required: true
   "/api/auth/social_identities/{provider}":
     delete:
@@ -1482,9 +2035,9 @@ paths:
       - Authentication
       security:
       - bearerAuth: []
-      description: Requires a Binblog Bearer JWT and current local password for a
-        mutation. Already absent identity returns not_linked. The final usable authentication
-        method cannot be removed.
+      description: Requires a Binblog Bearer JWT plus either a purpose-bound reauthentication
+        token or legacy current_password. Already absent identity returns not_linked.
+        The server rechecks the final usable method under lock.
       parameters:
       - name: provider
         in: path
@@ -1609,12 +2162,14 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-              - current_password
               properties:
+                reauthentication_token:
+                  type: string
+                  description: Preferred one-time unlink_identity grant.
                 current_password:
                   type: string
                   format: password
+                  description: Legacy compatibility reauthentication.
   "/devices/notify":
     post:
       summary: Send a device notification to Slack

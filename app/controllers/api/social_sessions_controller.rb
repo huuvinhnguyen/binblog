@@ -1,6 +1,10 @@
 module Api
   class SocialSessionsController < ApplicationController
+    include AuthRequestSafety
+
     skip_before_action :verify_authenticity_token
+    before_action :reject_oversized_auth_request!
+
     def create
       provider = params[:provider]
       credential = params[:credential]
@@ -23,6 +27,8 @@ module Api
         error(:email_verification_required, :unprocessable_entity)
       when :username_unavailable
         error(:username_unavailable, :service_unavailable)
+      when :identity_disabled
+        error(:invalid_provider_credential, :unauthorized)
       else
         error(:internal_error, :internal_server_error)
       end

@@ -14,6 +14,14 @@ RSpec.describe UserIdentity, type: :model do
     expect(UserIdentity.exists?(identity.id)).to be(false)
   end
 
+  it 'treats only an enabled identity under active server policy as usable' do
+    identity = user('identity_state').user_identities.create!(provider: 'google', provider_uid: 'state-subject')
+    expect(identity).to be_usable
+
+    identity.update!(disabled_at: Time.current)
+    expect(identity).not_to be_usable
+  end
+
   it 'stores the provider UID as a binary key with both unique indexes' do
     expect(UserIdentity.columns_hash.fetch('provider_uid').type).to eq(:binary)
     unique_indexes = UserIdentity.connection.indexes(:user_identities).select(&:unique).map(&:columns)

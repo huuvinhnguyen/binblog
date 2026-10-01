@@ -11,6 +11,10 @@ RSpec.describe 'SocialLogin identity foundation' do
     User.create!(username: name, email: email || "#{name}@example.com", password: 'password123')
   end
 
+  def authorized_mutation
+    instance_double(Reauthentication::Authorization, consume!: true)
+  end
+
   describe SocialLogin::VerifiedIdentity do
     it 'normalizes trusted claims and rejects empty keys' do
       identity = verified('Subject-1', ' SOCIAL@Example.com ', provider: ' Google ')
@@ -30,6 +34,30 @@ RSpec.describe 'SocialLogin identity foundation' do
 
       expect(outcome.status).to eq(:existing_identity)
       expect(outcome.user).to eq(owner)
+    end
+
+    it 'does not sign in a locally disabled identity' do
+      owner = local_user('disabled_owner')
+      owner.user_identities.create!(
+        provider: 'google', provider_uid: 'disabled-subject', disabled_at: Time.current
+      )
+
+      outcome = described_class.new.call(
+        verified_identity: verified('disabled-subject', owner.email)
+      )
+      expect(outcome.status).to eq(:identity_disabled)
+      expect(outcome.user).to be_nil
+    end
+
+    it 'does not sign in or create an account while the provider is disabled by server policy' do
+      allow(SocialLogin::ProviderPolicy).to receive(:enabled?).with('google').and_return(false)
+
+      outcome = described_class.new.call(
+        verified_identity: verified('policy-disabled', 'policy-disabled@example.com')
+      )
+
+      expect(outcome.status).to eq(:identity_disabled)
+      expect(User.where(email: 'policy-disabled@example.com')).to be_empty
     end
 
     it 'does not resolve a case-variant provider UID to the existing owner' do
@@ -102,17 +130,33 @@ RSpec.describe 'SocialLogin identity foundation' do
   describe SocialLogin::LinkIdentity do
     it 'links an unused identity to the authenticated principal' do
       principal = local_user('principal')
-      outcome = described_class.new.call(user: principal, verified_identity: verified('new-link'))
+      outcome = described_class.new.call(
+        user: principal, verified_identity: verified('new-link'), authorization: authorized_mutation
+      )
 
       expect(outcome.status).to eq(:linked)
       expect(outcome.user).to eq(principal)
       expect(principal.user_identities.find_by!(provider: 'google').provider_uid).to eq('new-link')
     end
 
+    it 'does not link an identity while its provider is disabled by server policy' do
+      principal = local_user('policy_link_principal')
+      allow(SocialLogin::ProviderPolicy).to receive(:enabled?).with('google').and_return(false)
+
+      outcome = described_class.new.call(
+        user: principal, verified_identity: verified('policy-link'), authorization: authorized_mutation
+      )
+
+      expect(outcome.status).to eq(:unsupported_provider)
+      expect(principal.user_identities).to be_empty
+    end
+
     it 'is idempotent when the principal already owns the identity' do
       principal = local_user('principal')
       principal.user_identities.create!(provider: 'google', provider_uid: 'owned')
-      outcome = described_class.new.call(user: principal, verified_identity: verified('owned'))
+      outcome = described_class.new.call(
+        user: principal, verified_identity: verified('owned'), authorization: authorized_mutation
+      )
 
       expect(outcome.status).to eq(:already_linked)
       expect(outcome.user).to eq(principal)
@@ -123,7 +167,9 @@ RSpec.describe 'SocialLogin identity foundation' do
       principal = local_user('principal')
       other = local_user('other')
       identity = other.user_identities.create!(provider: 'google', provider_uid: 'owned')
-      outcome = described_class.new.call(user: principal, verified_identity: verified('owned'))
+      outcome = described_class.new.call(
+        user: principal, verified_identity: verified('owned'), authorization: authorized_mutation
+      )
 
       expect(outcome.status).to eq(:identity_conflict)
       expect(outcome.user).to eq(principal)
@@ -134,7 +180,9 @@ RSpec.describe 'SocialLogin identity foundation' do
     it 'rejects a different identity for the same provider' do
       principal = local_user('principal')
       principal.user_identities.create!(provider: 'google', provider_uid: 'first')
-      outcome = described_class.new.call(user: principal, verified_identity: verified('second'))
+      outcome = described_class.new.call(
+        user: principal, verified_identity: verified('second'), authorization: authorized_mutation
+      )
 
       expect(outcome.status).to eq(:provider_already_linked)
       expect(outcome.user).to eq(principal)
@@ -145,7 +193,9 @@ RSpec.describe 'SocialLogin identity foundation' do
     it 'removes an identity when local password auth remains usable' do
       principal = local_user('principal')
       principal.user_identities.create!(provider: 'google', provider_uid: 'subject')
-      outcome = described_class.new.call(user: principal, provider: 'google')
+      outcome = described_class.new.call(
+        user: principal, provider: 'google', authorization: authorized_mutation
+      )
 
       expect(outcome.status).to eq(:unlinked)
       expect(principal.user_identities.count).to eq(0)
@@ -162,7 +212,11 @@ RSpec.describe 'SocialLogin identity foundation' do
     it 'can remove one identity while another identity remains' do
       principal = SocialLogin::SignInResolver.new.call(verified_identity: verified('subject')).user
       principal.user_identities.create!(provider: 'alternate', provider_uid: 'alternate-subject')
-      outcome = described_class.new.call(user: principal, provider: 'google')
+      allow(SocialLogin::ProviderPolicy).to receive(:enabled?).and_call_original
+      allow(SocialLogin::ProviderPolicy).to receive(:enabled?).with('alternate').and_return(true)
+      outcome = described_class.new.call(
+        user: principal, provider: 'google', authorization: authorized_mutation
+      )
 
       expect(outcome.status).to eq(:unlinked)
       expect(principal.user_identities.pluck(:provider)).to eq(['alternate'])

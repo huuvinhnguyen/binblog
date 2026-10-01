@@ -20,7 +20,15 @@ class SocialAuthenticationController < ApplicationController
     end
     return redirect_with_alert('Enter your current password to confirm this change.') unless valid_current_password?
 
-    outcome = SocialLogin::UnlinkIdentity.new.call(user: current_user, provider: provider)
+    authorization = Reauthentication::Authorization.new(
+      user: current_user,
+      session_binding_digest: nil,
+      purpose: 'unlink_identity',
+      current_password: params[:current_password]
+    )
+    outcome = SocialLogin::UnlinkIdentity.new.call(
+      user: current_user, provider: provider, authorization: authorization
+    )
     case outcome.status
     when :unlinked, :not_linked
       redirect_with_notice('Google was unlinked from this account.')
