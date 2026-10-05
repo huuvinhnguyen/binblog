@@ -7,10 +7,23 @@ RSpec.describe DeviceTriggerConfigurationResolver do
     Device.create!({ chip_id: SecureRandom.hex(8), device_type: type }.merge(attributes)).tap { |record| record.users << user }
   end
 
-  it 'classifies none, invalid legacy, and valid legacy states' do
-    expect(described_class.new(source_device: device('pir')).mode).to eq('none')
+  it 'classifies blank and empty-object trigger values as none' do
+    [nil, '', '   ', '{}'].each do |trigger|
+      source = device('pir', trigger: trigger)
+
+      expect(described_class.new(source_device: source).mode).to eq('none'), "expected #{trigger.inspect} to resolve as none"
+    end
+  end
+
+  it 'keeps malformed and incomplete non-empty trigger values invalid' do
     expect(described_class.new(source_device: device('pir', trigger: '{bad')).mode).to eq('invalid_legacy')
+    expect(described_class.new(source_device: device('pir', trigger: { relay_index: 0 }.to_json)).mode)
+      .to eq('invalid_legacy')
+  end
+
+  it 'classifies a valid legacy payload as legacy' do
     legacy = device('pir', trigger: { chip_id: 'target', relay_index: 0, longlast: 1000 }.to_json)
+
     expect(described_class.new(source_device: legacy).mode).to eq('legacy')
   end
 
