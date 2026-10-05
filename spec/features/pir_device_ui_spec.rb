@@ -53,6 +53,10 @@ RSpec.describe 'PIR Device UI', type: :request do
       expect(response.body).to include('PIR Phòng khách Test')
       expect(response.body).to include('192.168.1.100')
       expect(response.body).to include('1.0.0')
+      expect(response.body).to include('data-pir-trigger-actions')
+      expect(response.body).to include(%(data-chip-id="#{pir_device.chip_id}"))
+      expect(response.body).to include('Thêm hành động')
+      expect(response.body).to include('Chuyển đổi cấu hình')
     end
 
     it 'displays motion detection history' do

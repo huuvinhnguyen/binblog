@@ -1,0 +1,69 @@
+<section
+  class="pir-device__actions-card"
+  data-pir-trigger-actions
+  data-chip-id="<%= @device.chip_id %>"
+  aria-labelledby="pir-trigger-actions-title">
+  <div class="pir-device__history-header">
+    <div>
+      <h4 id="pir-trigger-actions-title" class="pir-device__history-title">⚡ Hành động khi phát hiện chuyển động</h4>
+      <p class="pir-device__chart-description">Điều khiển nhiều công tắc và buzzer theo thứ tự đã cấu hình.</p>
+    </div>
+    <div class="pir-device__actions-toolbar">
+      <button type="button" class="pir-device__action-button pir-device__action-button--secondary" data-actions-refresh>Làm mới</button>
+      <button type="button" class="pir-device__action-button" data-actions-add aria-expanded="false">+ Thêm hành động</button>
+    </div>
+  </div>
+
+  <p class="pir-device__actions-status" data-actions-status aria-live="polite">Đang tải cấu hình…</p>
+  <p class="pir-device__actions-error" data-actions-error role="alert" hidden></p>
+
+  <div class="pir-device__actions-notice" data-actions-legacy hidden>
+    <strong>Cấu hình cũ đang được sử dụng.</strong>
+    <p>Hành động bên dưới chỉ có thể đọc. Chuyển đổi sang cấu hình mới để thêm nhiều thiết bị.</p>
+    <button type="button" class="pir-device__action-button" data-actions-migrate>Chuyển đổi cấu hình</button>
+  </div>
+
+  <div class="pir-device__actions-notice pir-device__actions-notice--danger" data-actions-invalid-legacy hidden>
+    <strong>Cấu hình cũ không hợp lệ.</strong>
+    <p>Không thể tự động suy đoán hoặc sửa cấu hình. Vui lòng kiểm tra cấu hình thiết bị trước khi tiếp tục.</p>
+  </div>
+
+  <p class="pir-device__empty-state pir-device__empty-state--compact" data-actions-empty hidden>
+    Chưa có hành động nào. Thêm công tắc hoặc buzzer để chạy khi PIR phát hiện chuyển động.
+  </p>
+  <ol class="pir-device__actions-list" data-actions-list></ol>
+
+  <form class="pir-device__action-form" data-actions-form hidden novalidate>
+    <h5 data-actions-form-title>Thêm hành động</h5>
+    <div class="pir-device__action-fields">
+      <label>
+        Thiết bị đích
+        <select data-actions-target required></select>
+      </label>
+      <label>
+        Kênh relay
+        <select data-actions-relay required></select>
+      </label>
+      <label>
+        Thời lượng (ms)
+        <input data-actions-duration type="number" step="1" required>
+        <small data-actions-duration-help></small>
+      </label>
+      <label>
+        Độ trễ (ms)
+        <input data-actions-delay type="number" min="0" max="300000" step="1" value="0" required>
+        <small>0–300.000 ms</small>
+      </label>
+      <label class="pir-device__action-checkbox">
+        <input data-actions-enabled type="checkbox" checked>
+        Bật hành động
+      </label>
+    </div>
+    <p data-actions-no-targets hidden>Không có công tắc hoặc buzzer phù hợp để chọn.</p>
+    <div class="pir-device__action-form-buttons">
+      <button type="submit" class="pir-device__action-button" data-actions-submit>Lưu</button>
+      <button type="button" class="pir-device__action-button pir-device__action-button--secondary" data-actions-cancel>Hủy</button>
+    </div>
+  </form>
+  <noscript><p>Bật JavaScript để quản lý hành động của PIR.</p></noscript>
+</section>
