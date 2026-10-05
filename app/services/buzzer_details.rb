@@ -7,11 +7,13 @@ class BuzzerDetails
   def initialize(device:, user:)
     @device = device
     @user = user
-    # Trigger is stored as text JSON, so linked PIRs are filtered in Ruby (O(n)).
-    # Keep this bounded to the user's accessible PIR set; denormalization is out of scope.
-    @linked_pirs = @user.devices_for_current_user.where(device_type: 'pir').to_a.select do |pir|
-      trigger_for(pir)['chip_id'] == @device.chip_id
-    end
+    @source_scope = @user.devices_for_current_user.where(device_type: 'pir')
+    @relationships = DeviceTriggerConfigurationResolver.relationships_for_target(
+      target_device: @device,
+      source_scope: @source_scope
+    )
+    @relationship_by_source_id = @relationships.index_by { |relationship| relationship.source_device.id }
+    @linked_pirs = @relationships.map(&:source_device).uniq
     @events = load_events
   end
 
@@ -31,7 +33,28 @@ class BuzzerDetails
   end
 
   def trigger_for(pir)
-    parse_json(pir.trigger)
+    relationship = @relationship_by_source_id[pir.id]
+    return {} unless relationship
+
+    {
+      'chip_id' => device.chip_id,
+      'relay_index' => relationship.relay_index,
+      'longlast' => relationship.duration_ms,
+      'configuration_mode' => relationship.origin
+    }
+  end
+
+  def event_payload(event)
+    execution = @execution_by_event_id[event.id]
+    return event.parsed_payload unless execution
+
+    event.parsed_payload.merge(
+      'target_chip_id' => execution.target_chip_id,
+      'relay_index' => execution.relay_index,
+      'longlast' => execution.duration_ms,
+      'execution_status' => execution.status,
+      'error_code' => execution.error_code
+    )
   end
 
   private
@@ -48,7 +71,23 @@ class BuzzerDetails
   end
 
   def load_events
+    accessible_source_ids = @source_scope.pluck(:id)
+    new_executions = DeviceTriggerActionExecution
+                     .includes(device_event: :device)
+                     .joins(:device_event)
+                     .where(target_device_id: device.id, device_events: { device_id: accessible_source_ids })
+                     .order('device_events.occurred_at DESC, device_events.id DESC')
+                     .limit(HISTORY_LIMIT)
+                     .to_a
+    @execution_by_event_id = new_executions.index_by(&:device_event_id)
+
     source_ids = linked_pirs.map(&:id)
+    legacy_matches = load_legacy_events(source_ids)
+    events = (new_executions.map(&:device_event) + legacy_matches).uniq(&:id)
+    events.sort_by { |event| [event.occurred_at, event.id] }.reverse.first(HISTORY_LIMIT)
+  end
+
+  def load_legacy_events(source_ids)
     return [] if source_ids.empty?
 
     matches = []
@@ -61,7 +100,9 @@ class BuzzerDetails
       batch = scope.order(occurred_at: :desc, id: :desc).limit(HISTORY_BATCH_SIZE).to_a
       break if batch.empty?
 
-      matches.concat(batch.select { |event| event.parsed_payload['target_chip_id'] == device.chip_id })
+      matches.concat(batch.select do |event|
+        !@execution_by_event_id.key?(event.id) && event.parsed_payload['target_chip_id'] == device.chip_id
+      end)
       break if matches.size >= HISTORY_LIMIT || batch.size < HISTORY_BATCH_SIZE
 
       cursor = batch.last

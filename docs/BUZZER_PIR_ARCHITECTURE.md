@@ -1,90 +1,8 @@
-# Kiến trúc màn hình Buzzer được kích hoạt từ PIR
+# Kiến trúc PIR fan-out và Buzzer
 
-## Quyết định
+## Contract firmware giữ nguyên
 
-Tái sử dụng nguyên `POST /api/devices/trigger`. Không đổi firmware PIR,
-payload HTTP, topic MQTT hoặc firmware Buzzer trong luồng PIR → Buzzer.
-
-Màn hình Buzzer có thêm chức năng **Test Buzzer** độc lập. Nó không dùng
-`POST /api/devices/trigger`, mà dùng một web endpoint có Devise session, CSRF
-và kiểm tra quyền sở hữu. Command test vẫn publish vào topic MQTT hiện có của
-Buzzer và giữ nguyên các field firmware đang hỗ trợ.
-
-`params[:chip_id]` là chip ID của **PIR nguồn**. Rails tìm PIR, lưu event
-`motion_detected` cho PIR, đọc `trigger` của PIR và publish command tới Buzzer
-đích được khai báo trong cấu hình đó.
-
-```text
-PIR ESP
-  │ POST /api/devices/trigger
-  │ { "chip_id": "ESP32_PIR_01" }
-  ▼
-Rails
-  ├─ tìm PIR theo chip_id
-  ├─ lưu DeviceEvent(motion_detected) cho PIR
-  ├─ đọc devices.trigger của PIR
-  ▼
-MQTT Broker
-  │ ESP32_BUZZER_02/switchon
-  ▼
-Buzzer ESP / relay
-  ├─ switch_value: 1 → bật relay
-  └─ longlast: 1000 → tự tắt sau 1 giây
-```
-
-## Logic hiện tại của `POST /api/devices/trigger`
-
-Controller hiện thực hiện các bước sau:
-
-1. Nhận `params[:chip_id]` từ PIR.
-2. `Device.find_by(chip_id: params[:chip_id])` để tìm **PIR nguồn**.
-3. Tạo `DeviceEvent(event_type: "motion_detected")` cho PIR.
-4. Đọc JSON từ `pir.trigger`.
-5. Thêm `sent_time`.
-6. Publish JSON đó vào topic `#{trigger['chip_id']}/switchon`.
-
-Vì topic được lấy từ `trigger['chip_id']`, Buzzer đích không nằm trong request
-từ PIR; Buzzer đích nằm trong cấu hình `trigger` của PIR.
-
-## Cấu hình device
-
-### PIR nguồn
-
-PIR giữ cấu hình `trigger` trỏ đến Buzzer:
-
-```text
-device_type: "pir"
-chip_id: "ESP32_PIR_01"
-```
-
-```json
-{
-  "chip_id": "ESP32_BUZZER_02",
-  "relay_index": 0,
-  "switch_value": 1,
-  "longlast": 1000
-}
-```
-
-- `chip_id` trong JSON `trigger` là Buzzer đích.
-- `relay_index` là relay nối với Buzzer.
-- `switch_value: 1` bắt buộc giữ lại vì firmware Buzzer hiện parse field này để bật relay.
-- `longlast` là thời gian Buzzer phát âm, tính bằng milliseconds.
-
-### Buzzer đích
-
-Buzzer là record riêng trong bảng `devices`:
-
-```text
-device_type: "buzzer"
-chip_id: "ESP32_BUZZER_02"
-```
-
-Buzzer không cần `trigger` riêng cho luồng này. Nó nhận command MQTT từ cấu hình của một hoặc nhiều PIR.
-
-## Payload từ firmware PIR
-
-Firmware giữ nguyên request:
+Firmware PIR tiếp tục gửi:
 
 ```http
 POST /api/devices/trigger
@@ -92,152 +10,196 @@ Content-Type: application/json
 ```
 
 ```json
-{
-  "chip_id": "ESP32_PIR_01"
-}
+{ "chip_id": "ESP32_PIR_01" }
 ```
 
-Trong `AppApi::sendTrigger(String deviceId)`, `chip_id` được gán trực tiếp từ đối số `deviceId`. Khi PIR gọi hàm với device ID của nó, `chip_id` chính là PIR nguồn.
+Response thành công giữ nguyên:
 
-## DeviceEvent và truy vết PIR nguồn
+```json
+{ "status": "success", "message": "Message sent successfully" }
+```
 
-`motion_detected` thuộc về PIR. Vì vậy, Buzzer screen biết PIR nguồn trực tiếp từ `event.device`.
+Response này xác nhận Rails đã lưu event và enqueue các execution. Nó không xác
+nhận broker hoặc thiết bị đã nhận command.
 
-Để biết event nào đã target đúng Buzzer hiện tại, backend nên bổ sung metadata từ `pir.trigger` vào `DeviceEvent.payload` trước khi publish:
+## Mô hình cấu hình
+
+`DeviceTriggerAction` biểu diễn một action từ một PIR nguồn đến một Switch hoặc
+Buzzer đích. Phiên bản hiện tại chỉ hỗ trợ `relay_pulse`:
+
+- `relay_index` phải tồn tại trong cấu hình target.
+- Buzzer duration: 100–10000 ms.
+- Switch duration: 100–86400000 ms.
+- Delay: 0–300000 ms.
+- Tối đa 20 row cho một source, kể cả row disabled.
+- Thứ tự chạy: `position`, rồi `id`; `position` không unique.
+- Source và target phải khác nhau và còn dùng chung ownership.
+
+`DeviceTriggerConfigurationResolver` là nơi duy nhất chọn mode:
+
+- PIR có bất kỳ action row nào dùng mode `actions`; row disabled vẫn chặn
+  fallback.
+- PIR chưa có action row dùng `devices.trigger` hợp lệ ở mode `legacy`.
+- PIR có JSON hỏng dùng mode `invalid_legacy`; PIR trống dùng `none`.
+- Thiết bị không phải PIR tiếp tục dùng cấu hình legacy.
+
+Không merge hai nguồn cấu hình trong cùng một request.
+
+## Runtime
+
+```text
+PIR request
+  -> DeviceTriggerDispatcher
+     -> transaction: one DeviceEvent + N immutable execution snapshots
+  -> commit
+  -> enqueue one DeviceTriggerActionJob per pending_enqueue execution
+  -> return existing HTTP success response
+
+DeviceTriggerActionJob(execution_id)
+  -> reject terminal/duplicate execution
+  -> recheck action, target, ownership, target type and relay
+  -> connect with config/mqtt.yml
+  -> atomically mark publish_attempted immediately before publish
+  -> publish
+  -> mark publish_returned, or failed with a machine-readable error_code
+```
+
+Một execution hỏng hoặc enqueue thất bại không chặn execution khác. Nếu event
+hoặc snapshot không lưu được, transaction rollback và không enqueue job nào.
+
+Worker dùng `retry: false`: timeout sau khi publish bắt đầu có delivery outcome
+không chắc chắn. Trạng thái `publish_attempted` cùng `publish_outcome_unknown` cho phép
+vận hành điều tra mà không tự phát lại command vật lý.
+
+## MQTT
+
+Topic:
+
+```text
+<target_chip_id>/switchon
+```
+
+Payload action mới:
 
 ```json
 {
-  "target_chip_id": "ESP32_BUZZER_02",
+  "chip_id": "ESP32_TARGET_01",
   "relay_index": 0,
+  "switch_value": 1,
   "longlast": 1000,
-  "triggered_from": "<remote_ip>",
-  "user_agent": "<user_agent>"
+  "sent_time": "unix-seconds"
 }
 ```
 
-Đây chỉ là thay đổi Rails, không đổi request PIR hay MQTT payload. Nó giữ đúng lịch sử nếu PIR sau này đổi target sang Buzzer khác.
+`sent_time` được tạo ngay trước publish. Publish giữ `retain: false`. Hệ thống
+không tuyên bố QoS/PUBACK hoặc device ACK. Legacy execution giữ nguyên payload
+JSON cũ và chỉ thay `sent_time` mới.
 
-Không có ACK từ firmware trong luồng hiện tại. `motion_detected` chỉ xác nhận Rails đã nhận request từ PIR; nó không chứng minh MQTT publish thành công hoặc Buzzer đã phát âm.
+## Event và execution audit
 
-## UI Buzzer
+Mỗi request ghi đúng một `DeviceEvent(event_type: "motion_detected")` trên
+source. Payload event chứa request metadata, configuration mode và số action đã
+chọn. Mỗi target có `DeviceTriggerActionExecution` riêng với snapshot target,
+relay, duration, delay, order và command.
 
-Tạo `_buzzer_form.erb` và render khi:
-
-```erb
-<% if @device.device_type == "buzzer" %>
-  <%= render "buzzer_form" %>
-<% end %>
-```
-
-Màn hình gồm:
-
-1. Tên Buzzer, `chip_id`, trạng thái online/offline và lần kết nối gần nhất.
-2. Danh sách PIR có `trigger.chip_id` trỏ đến Buzzer này.
-3. Lịch sử 20 event gần nhất với `payload.target_chip_id == @device.chip_id`; mỗi dòng hiển thị tên/chip ID PIR nguồn, thời điểm và duration.
-4. Empty state khi chưa có PIR nào cấu hình trigger Buzzer.
-5. Nút **Test Buzzer**, chỉ hiển thị với user có quyền trên Buzzer. Nút có xác
-   nhận trước khi gửi lệnh và disabled/loading state để tránh bấm lặp.
-
-Không gọi `POST /api/devices/trigger` với chip ID Buzzer: endpoint đó coi
-`chip_id` là PIR nguồn nên sẽ ghi sai ngữ nghĩa event và đọc sai cấu hình
-`trigger`.
-
-## Test Buzzer thủ công
-
-### Web endpoint
-
-```http
-POST /devices/:id/test_buzzer
-```
-
-Đây là web endpoint cho màn hình quản trị, dùng Devise session và CSRF, không
-phải public firmware API. Vì vậy không thêm JWT, không thay đổi Swagger của
-`POST /api/devices/trigger`, và không nhận `chip_id` từ browser.
-
-Controller phải lấy device qua phạm vi thiết bị user được phép truy cập, ví dụ
-`current_user.devices_for_current_user.find(params[:id])`, rồi xác minh
-`device_type == "buzzer"`.
-
-Response thành công có thể redirect lại Buzzer page với flash message. Các lỗi
-config hoặc MQTT trả flash lỗi phù hợp; user không có quyền hoặc ID không tồn
-tại nhận `404` để không lộ device khác.
-
-### MQTT command
-
-`BuzzerTestService` đọc relay mặc định từ `buzzer.device_info`, validate dữ
-liệu và publish:
+Execution đi theo chiều:
 
 ```text
-{buzzer_chip_id}/switchon
+pending_enqueue -> queued -> publish_attempted -> publish_returned
+                                  \-> failed
+pending_enqueue/queued -> failed | skipped
 ```
+
+Snapshot bất biến sau khi tạo. Các timestamp phân biệt enqueue, publish bắt đầu,
+publish return và failure. Xóa action hoặc target không xóa audit snapshot;
+foreign key tương ứng chuyển về NULL. Xóa request event sẽ cascade executions.
+Relay không còn hợp lệ tại thời điểm chạy được ghi bằng error code chuẩn
+`invalid_relay_index` và được trả nguyên trạng trong Buzzer history.
+
+## API quản lý
+
+Các endpoint dưới `/api/devices/:chip_id/trigger_actions` hỗ trợ:
+
+- list mode và action
+- list target hợp lệ
+- create/update/delete
+- thay toàn bộ order
+- explicit legacy migration
+
+List luôn trả một contract chung cho Web, Swift và Flutter:
 
 ```json
 {
-  "chip_id": "ESP32_BUZZER_02",
-  "relay_index": 0,
-  "longlast": 1000,
-  "sent_time": "2026-09-17 10:30:00"
+  "status": "success",
+  "configuration_mode": "none|legacy|actions|invalid_legacy",
+  "source_device": { "id": 1, "name": "Hall PIR", "chip_id": "PIR_01" },
+  "actions": []
 }
 ```
 
-- `relay_index`, `longlast` lấy từ cấu hình Buzzer, không nhận từ browser ở
-  phiên bản đầu.
-- Command test gửi `chip_id`, `relay_index`, `longlast` và `sent_time`; không
-  gửi `switch_value`. `sent_time` phải do Rails tạo ngay trước khi publish,
-  theo format `YYYY-MM-DD HH:MM:SS` và không được dùng timestamp tĩnh/cũ.
-  Firmware Buzzer hiện bỏ qua command thiếu `sent_time` hoặc có thời điểm quá
-  cũ. `longlast` xác định thời lượng beep và firmware tự tắt sau thời lượng đó.
-- Publish test dùng MQTT QoS 1. Rails chỉ ghi audit event và báo thành công sau
-  khi MQTT broker trả `PUBACK`; đây là xác nhận broker nhận command, không phải
-  xác nhận Buzzer đã phát âm.
-- Giới hạn duration an toàn cần được validate server-side.
-- Dùng cooldown server-side ngắn (ví dụ 3 giây trên mỗi Buzzer) để giảm
-  double-click/retry; browser không được là cơ chế chống trùng duy nhất.
-- Service phải đóng MQTT client trong mọi trường hợp.
-- Chưa có firmware ACK, nên publish không lỗi chỉ có nghĩa Rails đã gửi command
-  tới broker; không khẳng định Buzzer đã phát âm.
+Action lưu trong database có `origin: "persisted"`; cấu hình JSON cũ hợp lệ
+được chuẩn hóa thành một action chỉ đọc trong cùng mảng với `id: null` và
+`origin: "legacy"`. Target list trả Rails ID, chip ID dùng để hiển thị, tên,
+loại thiết bị, relay indexes và giới hạn duration theo loại. Client không được
+chọn `position` khi create/update; server append khi create và chỉ endpoint
+`order` được thay đổi thứ tự.
 
-### Audit
+Các code ổn định để client xử lý là:
 
-Sau khi MQTT publish không lỗi, có thể ghi một `DeviceEvent` mới trên Buzzer:
+- `409 duplicate_action`, `action_limit_reached`,
+  `configuration_mode_conflict`,
+  `legacy_configuration_requires_reconciliation`,
+  `trigger_actions_managed`.
+- `422 invalid_action_type`, `invalid_relay_index`, `invalid_duration`,
+  `invalid_delay`, `invalid_enabled`, `invalid_order`.
+- `404 source_not_found`, `target_not_found`, `action_not_found`; target thiếu,
+  không có quyền hoặc sai loại cùng dùng `target_not_found` để tránh tiết lộ.
+- `503 feature_disabled`.
 
-```text
-event_type: "buzzer_test_requested"
-payload: { relay_index, longlast, requested_by_user_id }
-```
+Authority giữ đúng code trên `main`: bearer JWT từ `POST /api/login`, hoặc
+Devise session. Source và target đều được lấy qua
+`User#devices_for_current_user`; inaccessible và missing dùng cùng contract
+not-found. Endpoint quản lý chỉ sửa cấu hình, không publish MQTT.
 
-Event type này biểu thị yêu cầu test được gửi từ Rails, không được dùng các
-event ACK như `buzzer_started` hoặc `buzzer_finished` khi firmware chưa xác
-nhận. Nếu thêm event type, cần mở rộng validation của `DeviceEvent`; không cần
-migration vì bảng event hiện có đã có payload linh hoạt.
+Feature flag `DEVICE_TRIGGER_ACTIONS_ENABLED` mặc định bật ở non-production và
+tắt ở production. Khi flag tắt, management trả `503 feature_disabled`. Action
+mode không fallback về JSON legacy dù flag tắt.
 
-## Giới hạn đã biết
+## Legacy migration và Buzzer transition
 
-- Event cũ chưa có `payload.target_chip_id` không thể gắn Buzzer đích chắc chắn.
-- Một PIR retry request có thể làm Buzzer phát lại.
-- Không có xác nhận Buzzer đã bật/tắt từ firmware.
-- Endpoint hiện chưa xác thực firmware PIR; đây là rủi ro hiện hữu, ngoài phạm vi màn hình Buzzer.
-- Test Buzzer thủ công chỉ chống request lặp ở Rails trong một khoảng ngắn;
-  firmware hiện chưa có `command_id` để idempotent xuyên suốt MQTT.
+Migration legacy là explicit và idempotent. Nó yêu cầu:
 
-## Kế hoạch triển khai
+- source là PIR accessible
+- chưa có action row, hoặc đúng một row đã migrate khớp hoàn toàn
+- target accessible và thuộc loại hỗ trợ
+- relay/duration trong JSON là integer hợp lệ
 
-1. Thêm `buzzer` vào rake task tạo device; Buzzer không cần `trigger` riêng.
-2. Cập nhật `Api::DevicesController#trigger`: parse `pir.trigger` trước, thêm `target_chip_id`, relay và duration vào event payload, rồi publish như cũ.
-3. Trong `DevicesController#show`, tìm PIR có `trigger.chip_id` trỏ đến Buzzer hiện tại; tải tối đa 20 event của các PIR target Buzzer này.
-4. Tạo `_buzzer_form.erb` và SCSS tương ứng.
-5. Thêm request/UI specs cho source PIR, target Buzzer và event metadata.
-6. Cập nhật tài liệu đăng ký Buzzer. Swagger không đổi vì request/response của `POST /api/devices/trigger` giữ nguyên.
-7. Thêm route `POST /devices/:id/test_buzzer`, `BuzzerTestService`, kiểm tra
-   ownership, validate cấu hình và cooldown server-side.
-8. Thêm nút Test Buzzer cùng confirm/loading/empty/error states; thêm UI,
-   request và service specs cho owner, non-owner, invalid config, MQTT failure
-   và payload MQTT.
-9. Cập nhật tài liệu đăng ký Buzzer; build asset, precompile và kiểm tra giao
-   diện sau release.
+JSON cũ được giữ để rollback. Ngay khi action row đầu tiên tồn tại, action mode
+thắng.
 
-## Rollback
+`BuzzerLinks` và `BuzzerDetails` dùng resolver chung. Link/Unlink cũ trả
+`409 trigger_actions_managed` cho PIR đã vào action mode. Buzzer history kết hợp
+execution snapshot mới với event payload legacy, tối đa 20 event mới nhất, và
+trả execution status/error khi có.
 
-Rollback Test Buzzer chỉ cần gỡ route/nút và ngừng gọi service; không cần flash
-firmware hoặc đổi cấu hình PIR. Luồng PIR → `POST /api/devices/trigger` → MQTT
-không đổi. Nếu đã ghi audit event, giữ lại lịch sử thay vì xóa.
+Test Buzzer thủ công vẫn là luồng độc lập qua `BuzzerTestService`; nó không dùng
+dispatcher fan-out.
+
+## Rollout và rollback
+
+1. Deploy schema, code và workers với production flag tắt.
+2. Xác nhận worker, Redis, MQTT config và quan sát execution status.
+3. Bật management cho nhóm vận hành phù hợp và migrate từng PIR explicit.
+4. Bật runtime action mode, kiểm tra event/execution/target thực tế.
+5. Mở rộng Web/Mobile dựa trên OpenAPI sau khi backend ổn định.
+
+Rollback runtime bằng cách tắt flag. Không xóa execution audit. Chỉ xóa action
+rows khi đã xác nhận JSON legacy của từng PIR vẫn hợp lệ; vì sự tồn tại của row
+luôn chặn fallback, row disabled không phải cơ chế rollback.
+
+## Giới hạn hiện tại
+
+- Firmware trigger endpoint vẫn không xác thực thiết bị; đây là rủi ro legacy.
+- Không có device ACK nên `publish_returned` chỉ có nghĩa lệnh publish đã return.
+- Request PIR retry có thể tạo event/execution mới và phát lại command.
+- Không lưu MQTT/provider credential trong action hoặc execution.

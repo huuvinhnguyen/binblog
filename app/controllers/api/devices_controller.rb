@@ -22,7 +22,8 @@ module Api
       render json: { status: 'success', linked_pirs: details.linked_pirs.map do |pir|
         trigger = details.trigger_for(pir)
         { id: pir.id, name: pir.name, chip_id: pir.chip_id,
-          relay_index: trigger['relay_index'] || 0, longlast: trigger['longlast'] }
+          relay_index: trigger['relay_index'] || 0, longlast: trigger['longlast'],
+          configuration_mode: trigger['configuration_mode'] }
       end }
     end
 
@@ -37,6 +38,8 @@ module Api
       render json: { status: 'error', message: e.message }, status: :not_found
     rescue BuzzerLinks::ValidationError => e
       render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+    rescue BuzzerLinks::ConflictError => e
+      render json: { status: 'error', code: 'trigger_actions_managed', message: e.message }, status: :conflict
     end
 
     def buzzer_unlink_pir
@@ -44,15 +47,18 @@ module Api
       render json: { status: 'success', pir_id: pir_id }
     rescue BuzzerLinks::NotFoundError => e
       render json: { status: 'error', message: e.message }, status: :not_found
+    rescue BuzzerLinks::ConflictError => e
+      render json: { status: 'error', code: 'trigger_actions_managed', message: e.message }, status: :conflict
     end
 
     def buzzer_history
       details = BuzzerDetails.new(device: @buzzer, user: current_user)
       render json: { status: 'success', events: details.events.map do |event|
-        payload = event.parsed_payload
+        payload = details.event_payload(event)
         { id: event.id, event_type: event.event_type, occurred_at: event.occurred_at.iso8601,
           pir: { id: event.device.id, name: event.device.name, chip_id: event.device.chip_id },
-          relay_index: payload['relay_index'], longlast: payload['longlast'] }
+          relay_index: payload['relay_index'], longlast: payload['longlast'],
+          execution_status: payload['execution_status'], error_code: payload['error_code'] }
       end }
     end
 
@@ -316,44 +322,21 @@ module Api
     end
 
     def trigger
-      # Lấy JSON từ body của request
-      # raw_body = request.body.read
+      device = Device.find_by(chip_id: params[:chip_id])
+      return render json: { status: 'error', message: 'Device not found' }, status: :not_found unless device
 
-      begin
-
-        device = Device.find_by(chip_id: params[:chip_id])
-
-        unless device
-          return render json: { status: 'error', message: 'Device not found' }, status: :not_found
-        end
-
-        # `chip_id` identifies the PIR that detected motion. Its trigger config
-        # identifies the target device that receives the existing MQTT command.
-        trigger_config = JSON.parse(device.trigger)
-
-        # Log motion detection on the PIR while retaining the target metadata so
-        # the Buzzer UI can later show which PIR caused a command.
-        device.device_events.create!(
-          event_type: 'motion_detected',
-          occurred_at: Time.current,
-          payload: {
-            triggered_from: request.remote_ip,
-            user_agent: request.user_agent,
-            target_chip_id: trigger_config['chip_id'],
-            relay_index: trigger_config['relay_index'],
-            longlast: trigger_config['longlast']
-          }
-        )
-
-        # Execute existing relay trigger via MQTT
-        trigger_device device, trigger_config
-
-        render json: { status: 'success', message: 'Message sent successfully' }, status: :ok
-      rescue JSON::ParserError
+      DeviceTriggerDispatcher.new(
+        source_device: device,
+        request_metadata: {
+          'triggered_from' => request.remote_ip,
+          'user_agent' => request.user_agent
+        }
+      ).call
+      render json: { status: 'success', message: 'Message sent successfully' }, status: :ok
+    rescue DeviceTriggerDispatcher::InvalidConfiguration
         render json: { status: 'error', message: 'Invalid JSON format' }, status: :unprocessable_entity
-      rescue StandardError => e
-        render json: { status: 'error', message: e.message }, status: :internal_server_error
-      end
+    rescue StandardError => e
+      render json: { status: 'error', message: e.message }, status: :internal_server_error
     end
 
     def switchon
@@ -527,24 +510,6 @@ module Api
       )
     end
     
-    def trigger_device(device, trigger_config = nil)
-      json_params = trigger_config || JSON.parse(device.trigger)
-    
-      # Tạo topic từ chip_id
-      topic = "#{json_params['chip_id']}/switchon"
-      raise "chip_id is missing" unless json_params['chip_id'].present?
-    
-      # Thêm sent_time
-      json_params["sent_time"] = Time.current.strftime('%Y-%m-%d %H:%M:%S')
-      message_with_timestamp = json_params.to_json
-    
-      # Gửi raw JSON (message) qua MQTT
-      client = mqtt_client
-    
-      client.publish(topic, message_with_timestamp, retain: false) if topic.present?
-      client.disconnect
-    end
-
     def refresh(chip_id, log_id = nil)
       topic = "#{chip_id}/refresh"
   

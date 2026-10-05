@@ -176,6 +176,21 @@ RSpec.describe 'Buzzer PIR link management', type: :request do
     expect(pir.reload.trigger).to eq('{}')
   end
 
+  it 'returns trigger_actions_managed for legacy link and unlink writes in action mode' do
+    switch = device('switch', device_info: { relays: [{}] }.to_json)
+    pir.update!(device_info: '{}')
+    pir.trigger_actions.create!(target_device: switch, action_type: 'relay_pulse', relay_index: 0,
+                                duration_ms: 1000, delay_ms: 0, enabled: true, position: 0)
+
+    link
+    expect(response).to have_http_status(:conflict)
+    expect(body).to include('code' => 'trigger_actions_managed')
+
+    delete "#{base}/linked_pirs/#{pir.id}", headers: headers
+    expect(response).to have_http_status(:conflict)
+    expect(body).to include('code' => 'trigger_actions_managed')
+  end
+
   it 'does not clear another target, malformed JSON, or unrelated trigger configurations' do
     [nil, '{broken', '[]', { chip_id: 'another', switch_value: 1 }.to_json, { note: 'keep' }.to_json].each do |stored|
       pir.update!(trigger: stored)
@@ -205,6 +220,9 @@ RSpec.describe 'Buzzer PIR link management', type: :request do
     expect(MQTT::Client).not_to have_received(:connect)
 
     post '/api/devices/trigger', params: { chip_id: pir.chip_id }, as: :json
+
+    execution_id = DeviceTriggerActionJob.jobs.last.fetch('args').first
+    DeviceTriggerActionJob.new.perform(execution_id)
 
     expect(response).to have_http_status(:ok)
     expect(client).to have_received(:publish) do |topic, message, options|

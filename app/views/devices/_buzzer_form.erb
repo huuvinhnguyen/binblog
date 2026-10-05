@@ -93,7 +93,7 @@
           </thead>
           <tbody>
             <% @buzzer_events.each do |event| %>
-              <% payload = event.parsed_payload %>
+              <% payload = @buzzer_details.event_payload(event) %>
               <tr>
                 <td><%= event.occurred_at.in_time_zone('Asia/Ho_Chi_Minh').strftime('%d/%m/%Y %H:%M:%S') %></td>
                 <td>
