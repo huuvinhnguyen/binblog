@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_11_174147) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_04_090200) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -43,6 +43,52 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_11_174147) do
     t.index ["occurred_at"], name: "index_device_events_on_occurred_at"
   end
 
+  create_table "device_trigger_action_executions", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "device_event_id", null: false
+    t.bigint "device_trigger_action_id"
+    t.bigint "target_device_id"
+    t.string "action_key", null: false
+    t.string "target_chip_id", null: false
+    t.string "action_type", null: false
+    t.integer "relay_index"
+    t.integer "duration_ms"
+    t.integer "delay_ms", default: 0, null: false
+    t.integer "configured_position", null: false
+    t.text "command_payload", null: false
+    t.string "status", null: false
+    t.datetime "scheduled_for", null: false
+    t.datetime "queued_at"
+    t.datetime "publish_attempted_at"
+    t.datetime "publish_returned_at"
+    t.datetime "failed_at"
+    t.string "error_code"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["device_event_id", "action_key"], name: "idx_trigger_executions_event_action_key", unique: true
+    t.index ["device_event_id"], name: "index_device_trigger_action_executions_on_device_event_id"
+    t.index ["device_trigger_action_id"], name: "idx_trigger_executions_on_action"
+    t.index ["status", "created_at"], name: "idx_trigger_executions_status_created"
+    t.index ["target_device_id", "created_at"], name: "idx_trigger_executions_target_created"
+    t.index ["target_device_id"], name: "index_device_trigger_action_executions_on_target_device_id"
+  end
+
+  create_table "device_trigger_actions", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "source_device_id", null: false
+    t.bigint "target_device_id", null: false
+    t.string "action_type", null: false
+    t.integer "relay_index", null: false
+    t.integer "duration_ms", null: false
+    t.integer "delay_ms", default: 0, null: false
+    t.boolean "enabled", default: true, null: false
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_device_id", "enabled", "position", "id"], name: "idx_trigger_actions_runtime_order"
+    t.index ["source_device_id", "target_device_id", "action_type"], name: "idx_trigger_actions_unique_target", unique: true
+    t.index ["source_device_id"], name: "index_device_trigger_actions_on_source_device_id"
+    t.index ["target_device_id"], name: "index_device_trigger_actions_on_target_device_id"
+  end
+
   create_table "devices", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "chip_id", null: false
@@ -62,6 +108,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_11_174147) do
   create_table "devices_users", id: false, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "device_id", null: false
     t.bigint "user_id", null: false
+    t.index ["device_id", "user_id"], name: "idx_devices_users_unique_device_user", unique: true
+    t.index ["user_id", "device_id"], name: "idx_devices_users_user_device"
   end
 
   create_table "employees", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -244,6 +292,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_11_174147) do
 
   add_foreign_key "attendances", "employees"
   add_foreign_key "device_events", "devices"
+  add_foreign_key "device_trigger_action_executions", "device_events", on_delete: :cascade
+  add_foreign_key "device_trigger_action_executions", "device_trigger_actions", on_delete: :nullify
+  add_foreign_key "device_trigger_action_executions", "devices", column: "target_device_id", on_delete: :nullify
+  add_foreign_key "device_trigger_actions", "devices", column: "source_device_id", on_delete: :cascade
+  add_foreign_key "device_trigger_actions", "devices", column: "target_device_id", on_delete: :cascade
   add_foreign_key "fingers", "employees"
   add_foreign_key "posts", "categories"
   add_foreign_key "relay_logs", "devices"

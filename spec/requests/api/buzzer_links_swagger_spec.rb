@@ -3,7 +3,8 @@ require 'swagger_helper'
 RSpec.describe 'Buzzer PIR management API documentation', type: :request do
   let(:user) { User.create!(username: 'links_swagger', email: 'links_swagger@example.com', password: 'password123') }
   let(:buzzer) do
-    Device.create!(chip_id: 'links_buzzer', device_type: 'buzzer', name: 'Hall Buzzer').tap { |device| device.users << user }
+    Device.create!(chip_id: 'links_buzzer', device_type: 'buzzer', name: 'Hall Buzzer',
+                   device_info: { relays: [{}] }.to_json).tap { |device| device.users << user }
   end
   let(:pir) do
     Device.create!(chip_id: 'links_pir', device_type: 'pir').tap { |device| device.users << user }
@@ -27,21 +28,22 @@ RSpec.describe 'Buzzer PIR management API documentation', type: :request do
       security [bearerAuth: []]
       parameter name: :id, in: :path, type: :integer, required: true,
                 description: 'Rails ID of an accessible Buzzer.'
-      description 'Returns accessible PIRs ordered by ID, including already linked PIRs. linked_buzzer contains only an accessible current Buzzer ID and name; otherwise null. requires_confirmation indicates an existing configuration that would be replaced. Clients should show Move & Link for a different visible Buzzer, or a generic replace-configuration confirmation when its identity is unavailable. POST performs the replacement; this flag is advisory, not a confirmation token.'
+      description 'Returns accessible PIRs ordered by ID, including legacy and action-mode configuration. linked_buzzer contains only accessible target identity. configuration_mode tells clients whether legacy editing remains available; action-mode writes must use the trigger-actions API.'
 
       response '200', 'available PIRs; empty array when none are accessible' do
         schema type: :object, required: %w[status available_pirs], properties: {
           status: { type: :string, enum: ['success'] },
           available_pirs: {
             type: :array, items: {
-              type: :object, required: %w[id name chip_id linked_buzzer requires_confirmation], properties: {
+              type: :object, required: %w[id name chip_id linked_buzzer requires_confirmation configuration_mode], properties: {
                 id: { type: :integer }, name: { type: :string, nullable: true }, chip_id: { type: :string },
                 linked_buzzer: {
                   type: :object, nullable: true, required: %w[id name], properties: {
                     id: { type: :integer }, name: { type: :string, nullable: true }
                   }
                 },
-                requires_confirmation: { type: :boolean }
+                requires_confirmation: { type: :boolean },
+                configuration_mode: { type: :string, enum: %w[none legacy actions invalid_legacy] }
               }
             }
           }
@@ -81,7 +83,7 @@ RSpec.describe 'Buzzer PIR management API documentation', type: :request do
       consumes 'application/json'
       produces 'application/json'
       security [bearerAuth: []]
-      description 'Configuration only: replaces the PIR trigger with chip_id, relay_index and longlast. Repeating the same request produces the same state. Existing configuration is replaced, including malformed JSON. Does not connect to MQTT, test, or sound the Buzzer.'
+      description 'Legacy configuration only: replaces the PIR trigger with chip_id, relay_index and longlast. PIRs with any persisted trigger action return 409 trigger_actions_managed. Does not publish MQTT.'
       parameter name: :id, in: :path, type: :integer, required: true,
                 description: 'Rails ID of an accessible Buzzer.'
       parameter name: :payload, in: :body, required: true, schema: {
@@ -126,6 +128,18 @@ RSpec.describe 'Buzzer PIR management API documentation', type: :request do
         }
         run_test!
       end
+      response '409', 'PIR is managed by persisted trigger actions' do
+        before do
+          pir.trigger_actions.create!(target_device: buzzer, action_type: 'relay_pulse', relay_index: 0,
+                                      duration_ms: 1000, delay_ms: 0, enabled: true, position: 0)
+        end
+        schema type: :object, required: %w[status code message], properties: {
+          status: { type: :string, enum: ['error'] },
+          code: { type: :string, enum: ['trigger_actions_managed'] },
+          message: { type: :string }
+        }
+        run_test!
+      end
     end
   end
 
@@ -138,7 +152,7 @@ RSpec.describe 'Buzzer PIR management API documentation', type: :request do
                 description: 'Rails ID of an accessible Buzzer.'
       parameter name: :pir_id, in: :path, type: :integer, required: true,
                 description: 'Rails ID of an accessible PIR.'
-      description 'Body-less, configuration-only operation. Removes command fields only if the stored target matches this Buzzer, retaining other metadata. Repeated unlink, another target, missing configuration, and malformed existing JSON are successful no-ops. A normalized link becomes {}. Never connects to MQTT or tests the Buzzer.'
+      description 'Body-less legacy configuration operation. Removes matching legacy command fields while retaining other metadata. PIRs with any persisted trigger action return 409 trigger_actions_managed. Never publishes MQTT.'
 
       response '200', 'PIR is no longer linked to this Buzzer, or no matching configuration was found' do
         before { pir.update!(trigger: { chip_id: buzzer.chip_id, relay_index: 0, longlast: 1000 }.to_json) }
@@ -156,6 +170,18 @@ RSpec.describe 'Buzzer PIR management API documentation', type: :request do
         let(:pir_id) { 0 }
         schema type: :object, required: %w[status message], properties: {
           status: { type: :string, enum: ['error'] }, message: { type: :string, example: 'PIR device not found' }
+        }
+        run_test!
+      end
+      response '409', 'PIR is managed by persisted trigger actions' do
+        before do
+          pir.trigger_actions.create!(target_device: buzzer, action_type: 'relay_pulse', relay_index: 0,
+                                      duration_ms: 1000, delay_ms: 0, enabled: true, position: 0)
+        end
+        schema type: :object, required: %w[status code message], properties: {
+          status: { type: :string, enum: ['error'] },
+          code: { type: :string, enum: ['trigger_actions_managed'] },
+          message: { type: :string }
         }
         run_test!
       end

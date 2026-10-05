@@ -15,6 +15,14 @@ Rails.application.routes.draw do
   namespace :api do
     post 'login', to: 'sessions#create'
 
+    get 'devices/:chip_id/trigger_actions/targets', to: 'device_trigger_actions#targets'
+    put 'devices/:chip_id/trigger_actions/order', to: 'device_trigger_actions#order'
+    post 'devices/:chip_id/trigger_actions/migrate_legacy', to: 'device_trigger_actions#migrate_legacy'
+    get 'devices/:chip_id/trigger_actions', to: 'device_trigger_actions#index'
+    post 'devices/:chip_id/trigger_actions', to: 'device_trigger_actions#create'
+    put 'devices/:chip_id/trigger_actions/:id', to: 'device_trigger_actions#update'
+    delete 'devices/:chip_id/trigger_actions/:id', to: 'device_trigger_actions#destroy'
+
     resources :devices, only: [:index] do
       member do
         get 'buzzer', action: :buzzer

@@ -116,14 +116,15 @@ RSpec.describe 'Buzzer mobile API documentation', type: :request do
           status: { type: :string, enum: ['success'] },
           linked_pirs: {
             type: :array,
-            description: 'Accessible PIRs whose trigger.chip_id matches this Buzzer. Empty array when none match.',
+            description: 'Accessible PIRs resolved from persisted trigger actions or legacy trigger JSON. Action rows take precedence and disabled rows suppress legacy fallback. Empty array when none match.',
             items: {
               type: :object,
-              required: %w[id name chip_id relay_index longlast],
+              required: %w[id name chip_id relay_index longlast configuration_mode],
               properties: {
                 id: { type: :integer }, name: { type: :string, nullable: true }, chip_id: { type: :string },
                 relay_index: { description: 'Stored trigger.relay_index JSON value, without coercion; defaults to 0 when null or false.', example: 0 },
-                longlast: { nullable: true, description: 'Stored trigger.longlast JSON value, without coercion; null when absent. Duration in milliseconds.', example: 1000 }
+                longlast: { nullable: true, description: 'Resolved duration in milliseconds.', example: 1000 },
+                configuration_mode: { type: :string, enum: %w[legacy actions] }
               }
             }
           }
@@ -191,9 +192,9 @@ RSpec.describe 'Buzzer mobile API documentation', type: :request do
           status: { type: :string, enum: ['success'] },
           events: {
             type: :array, maxItems: 20,
-            description: 'Latest 20 motion_detected events from accessible linked PIRs with matching payload.target_chip_id, ordered by occurred_at descending then id descending. Empty array when none match; events without target metadata are excluded.',
+            description: 'Latest 20 motion events for this target, combining immutable action execution snapshots with legacy payload.target_chip_id events. Ordered by occurred_at descending then id descending.',
             items: {
-              type: :object, required: %w[id event_type occurred_at pir relay_index longlast], properties: {
+              type: :object, required: %w[id event_type occurred_at pir relay_index longlast execution_status error_code], properties: {
                 id: { type: :integer }, event_type: { type: :string, enum: ['motion_detected'] },
                 occurred_at: { type: :string, format: 'date-time' },
                 pir: {
@@ -202,7 +203,13 @@ RSpec.describe 'Buzzer mobile API documentation', type: :request do
                   }
                 },
                 relay_index: { nullable: true, description: 'Stored payload.relay_index JSON value, without coercion; null when absent.', example: 0 },
-                longlast: { nullable: true, description: 'Stored payload.longlast JSON value, without coercion; null when absent. Duration in milliseconds.', example: 1000 }
+                longlast: { nullable: true, description: 'Execution snapshot or legacy payload duration in milliseconds.', example: 1000 },
+                execution_status: { type: :string, nullable: true,
+                                    enum: %w[pending_enqueue queued publish_attempted publish_returned failed skipped],
+                                    description: 'Null for historical legacy events.' },
+                error_code: { type: :string, nullable: true,
+                              description: 'Machine-readable execution failure/skip code; null otherwise.',
+                              example: 'invalid_relay_index' }
               }
             }
           }

@@ -4,7 +4,7 @@ require 'swagger_helper'
 
 RSpec.describe 'Device trigger API', type: :request do
   path '/api/devices/trigger' do
-    post 'Publish the configured device trigger through MQTT' do
+    post 'Persist and enqueue the configured device trigger' do
       tags 'Devices'
       consumes 'application/json'
       produces 'application/json'
@@ -15,13 +15,13 @@ RSpec.describe 'Device trigger API', type: :request do
         properties: {
           chip_id: {
             type: :string,
-            description: 'Chip ID used to find the device whose stored trigger will be published.',
+            description: 'Chip ID used to find the source device and resolve its effective trigger configuration.',
             example: 'ESP32_ABC123'
           }
         }
       }
 
-      response '200', 'trigger message published successfully' do
+      response '200', 'trigger request persisted and execution queued' do
         let!(:device) do
           Device.create!(
             name: 'Living room device',
@@ -51,6 +51,9 @@ RSpec.describe 'Device trigger API', type: :request do
 
         run_test! do |response|
           expect(response).to have_http_status(:ok)
+          expect(mqtt_client).not_to have_received(:publish)
+          execution_id = DeviceTriggerActionJob.jobs.last.fetch('args').first
+          DeviceTriggerActionJob.new.perform(execution_id)
           expect(mqtt_client).to have_received(:publish) do |topic, message, options|
             expect(topic).to eq('ESP32_ABC123/switchon')
             expect(JSON.parse(message)).to include(
