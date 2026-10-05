@@ -15,6 +15,7 @@ class DeviceTriggerConfigurationResolver
     return legacy_payload.present? ? 'legacy' : 'none' unless source_device.device_type == 'pir'
     return 'actions' if actions_present?
     return 'none' if raw_trigger.blank?
+    return 'none' if parse_trigger == {}
 
     legacy_payload.present? ? 'legacy' : 'invalid_legacy'
   end
