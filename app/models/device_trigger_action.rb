@@ -25,6 +25,7 @@ class DeviceTriggerAction < ActiveRecord::Base
   validate :duration_must_match_target
   validate :source_and_target_must_share_owner
   validate :source_action_limit, on: :create
+  validate :delay_must_be_supported, if: :delay_requires_validation?
 
   scope :runtime_order, -> { order(:position, :id) }
   scope :usable, -> { where(enabled: true) }
@@ -57,6 +58,7 @@ class DeviceTriggerAction < ActiveRecord::Base
     return 'ownership_changed' unless shared_owner?
     return 'invalid_relay_index' unless available_relay_indexes.include?(relay_index)
     return 'invalid_duration' unless valid_duration?
+    return 'delay_not_supported' unless delay_ms.zero?
 
     nil
   end
@@ -112,6 +114,14 @@ class DeviceTriggerAction < ActiveRecord::Base
     return if self.class.where(source_device_id: source_device_id).count < MAX_ACTIONS_PER_SOURCE
 
     errors.add(:base, 'maximum number of trigger actions reached')
+  end
+
+  def delay_requires_validation?
+    new_record? || will_save_change_to_delay_ms?
+  end
+
+  def delay_must_be_supported
+    errors.add(:delay_ms, 'must be zero for synchronous execution') unless delay_ms == 0
   end
 
   def target_device_info

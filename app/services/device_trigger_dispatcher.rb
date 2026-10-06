@@ -25,7 +25,7 @@ class DeviceTriggerDispatcher
       [event, executions]
     end
 
-    executions.each { |execution| enqueue(execution) }
+    executions.each { |execution| execute(execution) }
     event
   end
 
@@ -73,7 +73,7 @@ class DeviceTriggerDispatcher
         delay_ms: action.delay_ms,
         configured_position: action.position,
         command_payload: action_command_payload(action),
-        status: error_code ? 'skipped' : 'pending_enqueue',
+        status: error_code ? 'skipped' : 'pending_publish',
         scheduled_for: Time.current + (action.delay_ms / 1000.0),
         failed_at: error_code ? Time.current : nil,
         error_code: error_code
@@ -96,7 +96,7 @@ class DeviceTriggerDispatcher
       delay_ms: 0,
       configured_position: 0,
       command_payload: payload,
-      status: 'pending_enqueue',
+      status: 'pending_publish',
       scheduled_for: Time.current
     )
   end
@@ -105,7 +105,6 @@ class DeviceTriggerDispatcher
     {
       'chip_id' => action.target_device&.chip_id,
       'relay_index' => action.relay_index,
-      'switch_value' => 1,
       'longlast' => action.duration_ms
     }
   end
@@ -114,23 +113,11 @@ class DeviceTriggerDispatcher
     value.is_a?(Integer) ? value : nil
   end
 
-  def enqueue(execution)
-    return unless execution.status == 'pending_enqueue'
+  def execute(execution)
+    return unless execution.status == 'pending_publish'
 
-    if execution.scheduled_for > Time.current
-      DeviceTriggerActionJob.perform_at(execution.scheduled_for, execution.id)
-    else
-      DeviceTriggerActionJob.perform_async(execution.id)
-    end
-    now = Time.current
-    execution.class.where(id: execution.id, status: 'pending_enqueue').update_all(
-      status: 'queued', queued_at: now, updated_at: now
-    )
+    DeviceTriggerActionExecutor.new(execution: execution).call
   rescue StandardError => e
-    now = Time.current
-    execution.class.where(id: execution.id, status: %w[pending_enqueue queued]).update_all(
-      status: 'failed', failed_at: now, error_code: 'enqueue_failed', updated_at: now
-    )
-    Rails.logger.error("Device trigger execution #{execution.id} enqueue failed: #{e.class}")
+    Rails.logger.error("Device trigger execution #{execution.id} dispatch failed: #{e.class}")
   end
 end

@@ -210,7 +210,7 @@ RSpec.describe 'Device trigger action management', type: :request do
       action_type: 'relay_pulse',
       relay_index: 0,
       duration_ms: 2000,
-      delay_ms: 250,
+      delay_ms: 0,
       enabled: false,
       position: 77
     }, headers: headers, as: :json
@@ -224,7 +224,7 @@ RSpec.describe 'Device trigger action management', type: :request do
       action_type: 'relay_pulse',
       relay_index: 0,
       duration_ms: 2000,
-      delay_ms: 250,
+      delay_ms: 0,
       enabled: false,
       position: 77
     }, headers: headers, as: :json
@@ -232,7 +232,7 @@ RSpec.describe 'Device trigger action management', type: :request do
     expect(json.fetch('action')).to include(
       'target' => include('id' => buzzer.id),
       'duration_ms' => 2000,
-      'delay_ms' => 250,
+      'delay_ms' => 0,
       'enabled' => false,
       'position' => 1
     )
@@ -252,7 +252,7 @@ RSpec.describe 'Device trigger action management', type: :request do
       [valid_payload.merge(action_type: 'toggle'), :unprocessable_entity, 'invalid_action_type'],
       [valid_payload.merge(relay_index: 9), :unprocessable_entity, 'invalid_relay_index'],
       [valid_payload.merge(duration_ms: 99), :unprocessable_entity, 'invalid_duration'],
-      [valid_payload.merge(delay_ms: 300_001), :unprocessable_entity, 'invalid_delay'],
+      [valid_payload.merge(delay_ms: 1), :unprocessable_entity, 'invalid_delay'],
       [valid_payload.merge(enabled: 'yes'), :unprocessable_entity, 'invalid_enabled']
     ]
     cases.each do |payload, status, code|
@@ -269,6 +269,26 @@ RSpec.describe 'Device trigger action management', type: :request do
     put "#{base_path}/order", params: { action_ids: [] }, headers: headers, as: :json
     expect(response).to have_http_status(:unprocessable_entity)
     expect(json).to include('code' => 'invalid_order')
+  end
+
+  it 'keeps a grandfathered nonzero delay visible and manageable while rejecting explicit nonzero updates' do
+    action = persisted_action
+    action.update_columns(delay_ms: 250)
+
+    get base_path, headers: headers
+    expect(json.dig('actions', 0, 'delay_ms')).to eq(250)
+
+    put "#{base_path}/#{action.id}", params: { enabled: false }, headers: headers, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(action.reload.enabled).to eq(false)
+
+    put "#{base_path}/#{action.id}", params: { delay_ms: 250 }, headers: headers, as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(json).to include('code' => 'invalid_delay')
+
+    put "#{base_path}/#{action.id}", params: { delay_ms: 0 }, headers: headers, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(action.reload.delay_ms).to eq(0)
   end
 
   it 'returns action_limit_reached as a conflict after 20 persisted rows' do

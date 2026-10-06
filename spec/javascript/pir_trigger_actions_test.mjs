@@ -80,7 +80,8 @@ try {
   openWith(10)
   check(q('relay').options.length===3, 'Switch relay constraints missing')
   check(q('duration').max==='86400000', 'Switch duration constraints missing')
-  q('relay').value='1'; q('duration').value='5000'; q('delay').value='250'
+  check(q('delay').max==='0', 'Synchronous delay constraint missing')
+  q('relay').value='1'; q('duration').value='5000'; q('delay').value='0'
   let from=calls.length; submit(); await settled(); refreshedAfter(from)
   check(q('list').textContent.includes('Công tắc phòng') && q('list').textContent.includes('Công tắc'), 'Switch action missing')
   passed.push('add and authoritative refresh')
@@ -91,11 +92,13 @@ try {
   check(q('list').children.length===2 && q('list').textContent.includes('Buzzer'), 'Multiple target types missing')
   passed.push('multiple switch and buzzer rendering')
 
+  actions.find(item=>item.id===3).delay_ms=500; q('refresh').click(); await settled()
   let edit=root.querySelector('[data-action-id="3"] [data-action-operation="edit"]'); edit.click()
-  q('target').value='10'; q('target').dispatchEvent(new Event('change')); q('relay').value='0'; q('duration').value='8000'; q('delay').value='500'; q('enabled').checked=false
+  check(q('delay').value==='500', 'Grandfathered delay not visible')
+  q('target').value='10'; q('target').dispatchEvent(new Event('change')); q('relay').value='0'; q('duration').value='8000'; q('delay').value='0'; q('enabled').checked=false
   from=calls.length; submit(); await settled(); refreshedAfter(from)
-  check(q('list').textContent.includes('8000 ms') && q('list').textContent.includes('trễ 500 ms') && q('list').textContent.includes('Đã tắt'), 'Edit fields not reflected')
-  passed.push('edit all mutable fields')
+  check(q('list').textContent.includes('8000 ms') && q('list').textContent.includes('trễ 0 ms') && q('list').textContent.includes('Đã tắt'), 'Delay recovery not reflected')
+  passed.push('edit and grandfathered delay recovery')
 
   from=calls.length; root.querySelector('[data-action-id="3"] [data-action-operation="toggle"]').click(); await settled(); refreshedAfter(from)
   check(q('list').textContent.includes('Đang bật'), 'Toggle not reflected')
@@ -111,11 +114,11 @@ try {
   openWith(10); q('relay').value='999'; from=writes().length; submit()
   check(writes().length===from && q('error').textContent.includes('Kiểm tra'), 'Invalid relay sent')
   q('relay').value='0'; q('duration').value='99'; submit(); check(writes().length===from, 'Invalid duration sent')
-  q('duration').value='100'; q('delay').value='300001'; submit(); check(writes().length===from, 'Invalid delay sent')
+  q('duration').value='100'; q('delay').value='1'; submit(); check(writes().length===from, 'Invalid delay sent')
   q('cancel').click()
   passed.push('client constraints')
 
-  for (const [code,text] of [['duplicate_action','đã được cấu hình'],['invalid_relay_index','không còn hợp lệ'],['invalid_duration','ngoài giới hạn'],['invalid_delay','Độ trễ']]) {
+  for (const [code,text] of [['duplicate_action','đã được cấu hình'],['invalid_relay_index','không còn hợp lệ'],['invalid_duration','ngoài giới hạn'],['invalid_delay','độ trễ']]) {
     openWith(10); q('relay').value='0'; q('duration').value='100'; q('delay').value='0'; fail={status:code==='duplicate_action'?409:422,code}; submit(); await settled()
     check(q('error').textContent.includes(text), 'Safe error missing: '+code)
     q('refresh').click(); await settled(); q('cancel').click()

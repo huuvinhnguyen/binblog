@@ -55,7 +55,7 @@ RSpec.describe 'PIR trigger action API documentation', type: :request do
       },
       relay_index: { type: :integer, minimum: 0 },
       duration_ms: { type: :integer, minimum: 100, maximum: 86_400_000 },
-      delay_ms: { type: :integer, minimum: 0, maximum: 300_000 },
+      delay_ms: { type: :integer, minimum: 0, maximum: 0 },
       enabled: { type: :boolean },
       position: { type: :integer, minimum: 0 }
     }
@@ -209,7 +209,7 @@ RSpec.describe 'PIR trigger action API documentation', type: :request do
           action_type: { type: :string, enum: ['relay_pulse'] },
           relay_index: { type: :integer, minimum: 0 },
           duration_ms: { type: :integer },
-          delay_ms: { type: :integer, minimum: 0, maximum: 300_000, default: 0 },
+          delay_ms: { type: :integer, minimum: 0, maximum: 0, default: 0 },
           enabled: { type: :boolean, default: true }
         }
       }
@@ -341,13 +341,13 @@ RSpec.describe 'PIR trigger action API documentation', type: :request do
                     action_type: { type: :string, enum: ['relay_pulse'] },
                     relay_index: { type: :integer, minimum: 0 },
                     duration_ms: { type: :integer },
-                    delay_ms: { type: :integer, minimum: 0, maximum: 300_000 },
+                    delay_ms: { type: :integer, minimum: 0, maximum: 0 },
                     enabled: { type: :boolean }
                   }
                 }
       let(:body) do
         { target_device_id: alternate_target.id, action_type: 'relay_pulse', relay_index: 1,
-          duration_ms: 2000, delay_ms: 250, enabled: false }
+          duration_ms: 2000, delay_ms: 0, enabled: false }
       end
 
       response '200', 'action updated' do

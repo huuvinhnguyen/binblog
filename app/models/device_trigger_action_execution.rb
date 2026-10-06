@@ -1,5 +1,5 @@
 class DeviceTriggerActionExecution < ActiveRecord::Base
-  STATUSES = %w[pending_enqueue queued publish_attempted publish_returned failed skipped].freeze
+  STATUSES = %w[pending_publish pending_enqueue queued publish_attempted publish_returned failed skipped].freeze
   TERMINAL_STATUSES = %w[publish_returned failed skipped].freeze
   SNAPSHOT_FIELDS = %w[
     device_event_id device_trigger_action_id target_device_id action_key target_chip_id
@@ -34,6 +34,7 @@ class DeviceTriggerActionExecution < ActiveRecord::Base
     return unless will_save_change_to_status?
 
     allowed = {
+      'pending_publish' => %w[publish_attempted failed skipped],
       'pending_enqueue' => %w[queued publish_attempted failed skipped],
       'queued' => %w[publish_attempted failed skipped],
       'publish_attempted' => %w[publish_returned failed],

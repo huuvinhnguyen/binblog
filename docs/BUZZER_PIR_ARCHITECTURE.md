@@ -19,8 +19,9 @@ Response thành công giữ nguyên:
 { "status": "success", "message": "Message sent successfully" }
 ```
 
-Response này xác nhận Rails đã lưu event và enqueue các execution. Nó không xác
-nhận broker hoặc thiết bị đã nhận command.
+Response này được trả sau khi Rails đã lưu event, execution snapshots và đã thử
+publish tuần tự từng action. Nó không xác nhận thiết bị đã nhận hoặc thực thi
+command.
 
 ## Mô hình cấu hình
 
@@ -30,7 +31,8 @@ Buzzer đích. Phiên bản hiện tại chỉ hỗ trợ `relay_pulse`:
 - `relay_index` phải tồn tại trong cấu hình target.
 - Buzzer duration: 100–10000 ms.
 - Switch duration: 100–86400000 ms.
-- Delay: 0–300000 ms.
+- Delay mới chỉ hỗ trợ `0`. Row cũ có delay khác 0 vẫn được hiển thị và quản lý,
+  nhưng runtime ghi `skipped/delay_not_supported` thay vì chờ hoặc publish.
 - Tối đa 20 row cho một source, kể cả row disabled.
 - Thứ tự chạy: `position`, rồi `id`; `position` không unique.
 - Source và target phải khác nhau và còn dùng chung ownership.
@@ -52,24 +54,28 @@ PIR request
   -> DeviceTriggerDispatcher
      -> transaction: one DeviceEvent + N immutable execution snapshots
   -> commit
-  -> enqueue one DeviceTriggerActionJob per pending_enqueue execution
+  -> execute each pending_publish snapshot sequentially in request process
+     -> atomically claim publish_attempted before MQTT network work
+     -> connect + publish with a hard 5-second bound per action
   -> return existing HTTP success response
 
-DeviceTriggerActionJob(execution_id)
+DeviceTriggerActionExecutor(execution_id)
   -> reject terminal/duplicate execution
-  -> recheck action, target, ownership, target type and relay
-  -> connect with config/mqtt.yml
-  -> atomically mark publish_attempted immediately before publish
-  -> publish
+  -> recheck action, target, ownership, target type, relay and zero delay
+  -> atomically mark publish_attempted before any MQTT network side effect
+  -> connect with config/mqtt.yml and publish
   -> mark publish_returned, or failed with a machine-readable error_code
 ```
 
-Một execution hỏng hoặc enqueue thất bại không chặn execution khác. Nếu event
-hoặc snapshot không lưu được, transaction rollback và không enqueue job nào.
+Một execution hỏng không chặn execution sau. Nếu event hoặc snapshot không lưu
+được, transaction rollback và không publish action nào. `DeviceTriggerActionJob`
+chỉ còn là compatibility wrapper gọi cùng executor, `retry: false`; request mới
+không enqueue Sidekiq và không phụ thuộc Redis.
 
-Worker dùng `retry: false`: timeout sau khi publish bắt đầu có delivery outcome
-không chắc chắn. Trạng thái `publish_attempted` cùng `publish_outcome_unknown` cho phép
-vận hành điều tra mà không tự phát lại command vật lý.
+MQTT connect failure đã biết dùng `mqtt_connect_failed`. Lỗi hoặc timeout sau
+khi connect dùng `publish_outcome_unknown`, vì delivery có thể đã xảy ra. Trạng
+thái `publish_attempted` cho phép vận hành điều tra mà không tự phát lại command
+vật lý.
 
 ## MQTT
 
@@ -85,15 +91,17 @@ Payload action mới:
 {
   "chip_id": "ESP32_TARGET_01",
   "relay_index": 0,
-  "switch_value": 1,
   "longlast": 1000,
-  "sent_time": "unix-seconds"
+  "sent_time": "2026-10-06 09:50:01"
 }
 ```
 
-`sent_time` được tạo ngay trước publish. Publish giữ `retain: false`. Hệ thống
-không tuyên bố QoS/PUBACK hoặc device ACK. Legacy execution giữ nguyên payload
-JSON cũ và chỉ thay `sent_time` mới.
+Payload `relay_pulse` dùng cùng contract duration hiện hữu cho Buzzer và Switch:
+`longlast` điều khiển thời lượng pulse và không gửi `switch_value`, vì firmware
+hiểu `switch_value: 1` là bật liên tục. `sent_time` được tạo ngay trước publish
+theo format firmware hiện hữu `YYYY-MM-DD HH:MM:SS`. Publish giữ
+`retain: false`. Hệ thống không tuyên bố QoS/PUBACK hoặc device ACK. Legacy
+execution giữ nguyên payload JSON cũ và chỉ thay `sent_time` mới.
 
 ## Event và execution audit
 
@@ -105,13 +113,15 @@ relay, duration, delay, order và command.
 Execution đi theo chiều:
 
 ```text
-pending_enqueue -> queued -> publish_attempted -> publish_returned
-                                  \-> failed
-pending_enqueue/queued -> failed | skipped
+pending_publish -> publish_attempted -> publish_returned
+                         \-> failed
+pending_publish -> failed | skipped
 ```
 
-Snapshot bất biến sau khi tạo. Các timestamp phân biệt enqueue, publish bắt đầu,
-publish return và failure. Xóa action hoặc target không xóa audit snapshot;
+`pending_enqueue` và `queued` vẫn được đọc bởi executor để xử lý dữ liệu lịch sử;
+request mới không tạo hai trạng thái này. Snapshot bất biến sau khi tạo. Các
+timestamp phân biệt publish bắt đầu, publish return và failure. Xóa action hoặc
+target không xóa audit snapshot;
 foreign key tương ứng chuyển về NULL. Xóa request event sẽ cascade executions.
 Relay không còn hợp lệ tại thời điểm chạy được ghi bằng error code chuẩn
 `invalid_relay_index` và được trả nguyên trạng trong Buzzer history.
@@ -161,9 +171,11 @@ Devise session. Source và target đều được lấy qua
 `User#devices_for_current_user`; inaccessible và missing dùng cùng contract
 not-found. Endpoint quản lý chỉ sửa cấu hình, không publish MQTT.
 
-Feature flag `DEVICE_TRIGGER_ACTIONS_ENABLED` mặc định bật ở non-production và
-tắt ở production. Khi flag tắt, management trả `503 feature_disabled`. Action
-mode không fallback về JSON legacy dù flag tắt.
+Feature flag `DEVICE_TRIGGER_ACTIONS_ENABLED` mặc định bật ở development, test
+và production; production không có default-off riêng. Có thể đặt explicit thành
+`false` như một override vận hành tạm thời hoặc emergency kill switch; khi đó
+management trả `503 feature_disabled`. Action mode không fallback về JSON legacy
+dù flag tắt.
 
 ## Legacy migration và Buzzer transition
 
@@ -187,10 +199,13 @@ dispatcher fan-out.
 
 ## Rollout và rollback
 
-1. Deploy schema, code và workers với production flag tắt.
-2. Xác nhận worker, Redis, MQTT config và quan sát execution status.
-3. Bật management cho nhóm vận hành phù hợp và migrate từng PIR explicit.
-4. Bật runtime action mode, kiểm tra event/execution/target thực tế.
+1. Deploy schema và code với default-on giữ nguyên ở mọi môi trường. Nếu cần
+   kiểm soát rollout tạm thời, operator có thể đặt explicit
+   `DEVICE_TRIGGER_ACTIONS_ENABLED=false`; đây không phải production default.
+2. Xác nhận MQTT config, giới hạn thời gian request và quan sát execution status.
+3. Cho nhóm vận hành phù hợp migrate từng PIR explicit.
+4. Gỡ override explicit `false` nếu đã dùng, rồi kiểm tra
+   event/execution/target thực tế.
 5. Mở rộng Web/Mobile dựa trên OpenAPI sau khi backend ổn định.
 
 Rollback runtime bằng cách tắt flag. Không xóa execution audit. Chỉ xóa action
@@ -199,7 +214,9 @@ luôn chặn fallback, row disabled không phải cơ chế rollback.
 
 ## Giới hạn hiện tại
 
-- Firmware trigger endpoint vẫn không xác thực thiết bị; đây là rủi ro legacy.
+- Firmware trigger endpoint vẫn không xác thực thiết bị; security hardening cho
+  `POST /api/devices/trigger` được hoãn sang phase tương lai theo quyết định sản
+  phẩm hiện tại.
 - Không có device ACK nên `publish_returned` chỉ có nghĩa lệnh publish đã return.
 - Request PIR retry có thể tạo event/execution mới và phát lại command.
 - Không lưu MQTT/provider credential trong action hoặc execution.

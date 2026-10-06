@@ -14,7 +14,7 @@ RSpec.describe DeviceTriggerActionExecution, type: :model do
       delay_ms: 0,
       configured_position: 0,
       command_payload: { chip_id: 'target' },
-      status: 'pending_enqueue',
+      status: 'pending_publish',
       scheduled_for: Time.current
     )
   end
@@ -26,14 +26,24 @@ RSpec.describe DeviceTriggerActionExecution, type: :model do
   end
 
   it 'allows forward transitions and rejects backward or terminal transitions' do
-    execution.status = 'queued'
-    expect(execution.save).to eq(true)
     execution.status = 'publish_attempted'
     expect(execution.save).to eq(true)
     execution.status = 'publish_returned'
     expect(execution.save).to eq(true)
-    execution.status = 'pending_enqueue'
+    execution.status = 'pending_publish'
     expect(execution).not_to be_valid
+  end
+
+
+  it 'keeps historical queue states readable and transitionable' do
+    historical = execution.dup
+    historical.action_key = 'historical'
+    historical.status = 'pending_enqueue'
+    historical.save!
+    historical.status = 'queued'
+    expect(historical.save).to eq(true)
+    historical.status = 'publish_attempted'
+    expect(historical.save).to eq(true)
   end
 
   it 'enforces a unique action key per event' do
