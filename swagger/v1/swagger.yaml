@@ -655,6 +655,7 @@ paths:
                           type: string
                           nullable: true
                           enum:
+                          - pending_publish
                           - pending_enqueue
                           - queued
                           - publish_attempted
@@ -1175,7 +1176,7 @@ paths:
                         delay_ms:
                           type: integer
                           minimum: 0
-                          maximum: 300000
+                          maximum: 0
                         enabled:
                           type: boolean
                         position:
@@ -1340,7 +1341,7 @@ paths:
                       delay_ms:
                         type: integer
                         minimum: 0
-                        maximum: 300000
+                        maximum: 0
                       enabled:
                         type: boolean
                       position:
@@ -1518,7 +1519,7 @@ paths:
                 delay_ms:
                   type: integer
                   minimum: 0
-                  maximum: 300000
+                  maximum: 0
                   default: 0
                 enabled:
                   type: boolean
@@ -1764,7 +1765,7 @@ paths:
                       delay_ms:
                         type: integer
                         minimum: 0
-                        maximum: 300000
+                        maximum: 0
                       enabled:
                         type: boolean
                       position:
@@ -1937,7 +1938,7 @@ paths:
                 delay_ms:
                   type: integer
                   minimum: 0
-                  maximum: 300000
+                  maximum: 0
                 enabled:
                   type: boolean
         required: true
@@ -2131,7 +2132,7 @@ paths:
                         delay_ms:
                           type: integer
                           minimum: 0
-                          maximum: 300000
+                          maximum: 0
                         enabled:
                           type: boolean
                         position:
@@ -2357,7 +2358,7 @@ paths:
                       delay_ms:
                         type: integer
                         minimum: 0
-                        maximum: 300000
+                        maximum: 0
                       enabled:
                         type: boolean
                       position:
@@ -2479,13 +2480,13 @@ paths:
                     type: string
   "/api/devices/trigger":
     post:
-      summary: Persist and enqueue the configured device trigger
+      summary: Persist and synchronously execute the configured device trigger
       tags:
       - Devices
       parameters: []
       responses:
         '200':
-          description: trigger request persisted and execution queued
+          description: trigger request persisted and publish attempts recorded
           content:
             application/json:
               schema:

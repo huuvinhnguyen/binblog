@@ -40,13 +40,29 @@ RSpec.describe DeviceTriggerAction, type: :model do
     expect(action(action_type: 'toggle')).not_to be_valid
   end
 
-  it 'enforces target-specific duration, delay, and position bounds' do
+  it 'enforces target-specific duration, zero-delay synchronous execution, and position bounds' do
     expect(action(duration_ms: 99)).not_to be_valid
     expect(action(duration_ms: 10_001)).not_to be_valid
     expect(action(target: switch, duration_ms: 86_400_001)).not_to be_valid
     expect(action(delay_ms: -1)).not_to be_valid
+    expect(action(delay_ms: 1)).not_to be_valid
     expect(action(delay_ms: 300_001)).not_to be_valid
     expect(action(position: -1)).not_to be_valid
+  end
+
+  it 'keeps grandfathered nonzero delay rows manageable but marks them unsupported at runtime' do
+    record = action
+    record.save!
+    record.update_columns(delay_ms: 250)
+
+    record.enabled = false
+    expect(record.save).to eq(true)
+    expect(record.reload.runtime_error_code).to eq('delay_not_supported')
+
+    record.delay_ms = 0
+    record.enabled = true
+    expect(record.save).to eq(true)
+    expect(record.runtime_error_code).to be_nil
   end
 
   it 'uses explicit relay_indexes when the target does not expose a relays array' do

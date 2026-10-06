@@ -7,7 +7,7 @@ const ERROR_MESSAGES = {
   invalid_action_type: 'Loại hành động không hợp lệ.',
   invalid_relay_index: 'Kênh relay không còn hợp lệ. Danh sách thiết bị sẽ được tải lại.',
   invalid_duration: 'Thời lượng nằm ngoài giới hạn của thiết bị.',
-  invalid_delay: 'Độ trễ phải là số nguyên từ 0 đến 300.000 ms.',
+  invalid_delay: 'Thực thi đồng bộ hiện chỉ hỗ trợ độ trễ 0 ms.',
   invalid_order: 'Thứ tự hành động không hợp lệ. Danh sách sẽ được tải lại.',
   invalid_enabled: 'Trạng thái hành động không hợp lệ.',
   target_not_found: 'Không thể sử dụng thiết bị đích. Danh sách sẽ được tải lại.',
@@ -211,7 +211,7 @@ class PirTriggerActionsPanel {
     const target = this.targets.find((item) => String(item.id) === this.find('target').value)
     const relay = this.integer('relay', 0, Number.MAX_SAFE_INTEGER)
     const duration = this.integer('duration', target?.duration_ms?.minimum ?? 1, target?.duration_ms?.maximum ?? 0)
-    const delay = this.integer('delay', 0, 300000)
+    const delay = this.integer('delay', 0, 0)
     if (!target || !target.relay_indexes.includes(relay) || duration == null || delay == null) {
       this.showError('Kiểm tra thiết bị, relay, thời lượng và độ trễ theo giới hạn hiển thị.')
       return
@@ -261,7 +261,7 @@ class PirTriggerActionsPanel {
       if (this.abort.signal.aborted) return
       this.busy = false
       const reconcile = ['configuration_mode_conflict', 'legacy_configuration_requires_reconciliation', 'invalid_relay_index',
-        'invalid_duration', 'invalid_order', 'target_not_found'].includes(error.code)
+        'invalid_duration', 'invalid_delay', 'invalid_order', 'target_not_found'].includes(error.code)
       if (reconcile) {
         await this.refresh()
         this.showError(error.message)

@@ -162,7 +162,10 @@ module Api
       attributes[:action_type] = permitted.key?(:action_type) ? permitted[:action_type] : 'relay_pulse' if permitted.key?(:action_type) || creating
       attributes[:relay_index] = strict_integer(permitted[:relay_index]) if permitted.key?(:relay_index) || creating
       attributes[:duration_ms] = strict_integer(permitted[:duration_ms]) if permitted.key?(:duration_ms) || creating
-      attributes[:delay_ms] = permitted.key?(:delay_ms) ? strict_integer(permitted[:delay_ms]) : 0 if permitted.key?(:delay_ms) || creating
+      if permitted.key?(:delay_ms) || creating
+        delay_ms = permitted.key?(:delay_ms) ? strict_integer(permitted[:delay_ms]) : 0
+        attributes[:delay_ms] = delay_ms == 0 ? 0 : nil
+      end
       attributes[:enabled] = permitted.key?(:enabled) ? strict_boolean(permitted[:enabled]) : true if permitted.key?(:enabled) || creating
       attributes
     end

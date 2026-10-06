@@ -24,10 +24,12 @@ RSpec.describe DeviceTriggerDispatcher do
 
   before do
     allow(DeviceTriggerFeature).to receive(:enabled?).and_return(true)
+    allow(DeviceTriggerActionExecutor).to receive(:new)
+      .and_return(instance_double(DeviceTriggerActionExecutor, call: nil))
   end
 
   it 'creates one event and one immutable execution per enabled action in configured order' do
-    second = add_action(target: second_target, position: 2, delay_ms: 500, relay_index: 1)
+    second = add_action(target: second_target, position: 2, relay_index: 1)
     first = add_action(target: first_target, position: 1)
 
     event = described_class.new(source_device: source, request_metadata: { 'triggered_from' => '127.0.0.1' }).call
@@ -35,34 +37,53 @@ RSpec.describe DeviceTriggerDispatcher do
     expect(event.parsed_payload).to include('configuration_mode' => 'actions', 'selected_action_count' => 2)
     executions = event.trigger_action_executions.order(:configured_position)
     expect(executions.map(&:device_trigger_action_id)).to eq([first.id, second.id])
-    expect(executions.map(&:status)).to eq(%w[queued queued])
-    expect(executions.second.scheduled_for).to be_within(1.second).of(event.occurred_at + 0.5)
-    expect(DeviceTriggerActionJob.jobs.map { |job| job['args'].first }).to match_array(executions.ids)
+    expect(executions.map(&:status)).to eq(%w[pending_publish pending_publish])
+    expect(executions.map(&:queued_at)).to eq([nil, nil])
+    expect(executions.map(&:command_payload)).to eq(
+      [
+        {
+          'chip_id' => first_target.chip_id,
+          'relay_index' => 0,
+          'longlast' => 1000
+        },
+        {
+          'chip_id' => second_target.chip_id,
+          'relay_index' => 1,
+          'longlast' => 1000
+        }
+      ]
+    )
+    expect(DeviceTriggerActionExecutor).to have_received(:new).with(execution: executions.first).ordered
+    expect(DeviceTriggerActionExecutor).to have_received(:new).with(execution: executions.second).ordered
+    expect(DeviceTriggerActionJob.jobs).to be_empty
   end
 
-  it 'commits event and execution before enqueueing each independent job' do
+  it 'commits event and execution before invoking each synchronous executor' do
     add_action(target: first_target, position: 0)
-    expect(DeviceTriggerActionJob).to receive(:perform_async) do |execution_id|
-      expect(DeviceTriggerActionExecution.find(execution_id).device_event).to be_persisted
-    end.and_return('jid')
+    expect(DeviceTriggerActionExecutor).to receive(:new) do |execution:|
+      expect(DeviceTriggerActionExecution.find(execution.id).device_event).to be_persisted
+      instance_double(DeviceTriggerActionExecutor, call: nil)
+    end
 
     described_class.new(source_device: source).call
   end
 
-  it 'marks one enqueue failure without blocking another execution' do
+  it 'does not let one executor failure block a sibling' do
     add_action(target: first_target, position: 0)
     add_action(target: second_target, position: 1)
-    calls = 0
-    allow(DeviceTriggerActionJob).to receive(:perform_async) do
-      calls += 1
-      raise Redis::CannotConnectError if calls == 1
-      'jid'
+    calls = []
+    allow(Rails.logger).to receive(:error)
+    allow(DeviceTriggerActionExecutor).to receive(:new) do |execution:|
+      runner = instance_double(DeviceTriggerActionExecutor)
+      allow(runner).to receive(:call) do
+        calls << execution.configured_position
+        raise 'first failed' if execution.configured_position.zero?
+      end
+      runner
     end
 
-    event = described_class.new(source_device: source).call
-    expect(event.trigger_action_executions.order(:configured_position).pluck(:status, :error_code)).to eq(
-      [['failed', 'enqueue_failed'], ['queued', nil]]
-    )
+    expect { described_class.new(source_device: source).call }.not_to raise_error
+    expect(calls).to eq([0, 1])
   end
 
   it 'rolls the request event back when execution persistence fails before commit' do
@@ -72,7 +93,7 @@ RSpec.describe DeviceTriggerDispatcher do
 
     expect { dispatcher.call }.to raise_error(ActiveRecord::RecordInvalid)
     expect(source.device_events.reload).to be_empty
-    expect(DeviceTriggerActionJob.jobs).to be_empty
+    expect(DeviceTriggerActionExecutor).not_to have_received(:new)
   end
 
   it 'skips an invalid action independently when ownership changed after configuration' do
@@ -82,7 +103,7 @@ RSpec.describe DeviceTriggerDispatcher do
 
     event = described_class.new(source_device: source).call
     expect(event.trigger_action_executions.order(:configured_position).pluck(:status, :error_code)).to eq(
-      [['queued', nil], ['skipped', 'ownership_changed']]
+      [['pending_publish', nil], ['skipped', 'ownership_changed']]
     )
   end
 
@@ -93,16 +114,16 @@ RSpec.describe DeviceTriggerDispatcher do
     event = described_class.new(source_device: source).call
     expect(event.parsed_payload).to include('configuration_mode' => 'actions', 'selected_action_count' => 0)
     expect(event.trigger_action_executions).to be_empty
-    expect(DeviceTriggerActionJob.jobs).to be_empty
+    expect(DeviceTriggerActionExecutor).not_to have_received(:new)
   end
 
-  it 'creates an asynchronous compatibility execution for legacy PIR configuration' do
+  it 'creates a synchronous compatibility execution for legacy PIR configuration' do
     source.update!(trigger: { chip_id: first_target.chip_id, relay_index: 0, longlast: 1000, note: 'keep' }.to_json)
 
     event = described_class.new(source_device: source).call
     execution = event.trigger_action_executions.first
     expect(event.parsed_payload).to include('target_chip_id' => first_target.chip_id, 'relay_index' => 0, 'longlast' => 1000)
-    expect(execution).to have_attributes(action_key: 'legacy', target_chip_id: first_target.chip_id, status: 'queued')
+    expect(execution).to have_attributes(action_key: 'legacy', target_chip_id: first_target.chip_id, status: 'pending_publish')
     expect(execution.command_payload).to include('note' => 'keep')
   end
 
@@ -120,8 +141,20 @@ RSpec.describe DeviceTriggerDispatcher do
     expect(event.trigger_action_executions).to be_empty
   end
 
+  it 'persists and skips a grandfathered nonzero-delay action without invoking the executor' do
+    delayed = add_action(target: first_target, position: 0)
+    delayed.update_columns(delay_ms: 250)
+
+    event = described_class.new(source_device: source).call
+
+    expect(event.trigger_action_executions.first).to have_attributes(
+      status: 'skipped', error_code: 'delay_not_supported', delay_ms: 250
+    )
+    expect(DeviceTriggerActionExecutor).not_to have_received(:new)
+  end
+
   it 'rejects missing or malformed legacy configuration without creating an event' do
-    [nil, '{bad', '[]'].each do |trigger|
+    [nil, '{}', '{bad', '[]'].each do |trigger|
       source.update!(trigger: trigger)
       before_count = DeviceEvent.count
       expect { described_class.new(source_device: source).call }.to raise_error(described_class::InvalidConfiguration)

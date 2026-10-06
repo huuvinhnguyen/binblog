@@ -214,24 +214,23 @@ RSpec.describe 'Buzzer PIR link management', type: :request do
   end
 
   it 'feeds newly written configuration to the unchanged PIR runtime', :runtime do
-    client = instance_double(MQTT::Client, publish: nil, disconnect: nil)
-    allow(MQTT::Client).to receive(:connect).and_return(client)
+    client = instance_double(MQTT::Client, connect: nil, publish: nil, disconnect: nil)
+    allow(MQTT::Client).to receive(:new).and_return(client)
     link
-    expect(MQTT::Client).not_to have_received(:connect)
+    expect(MQTT::Client).not_to have_received(:new)
 
     post '/api/devices/trigger', params: { chip_id: pir.chip_id }, as: :json
 
-    execution_id = DeviceTriggerActionJob.jobs.last.fetch('args').first
-    DeviceTriggerActionJob.new.perform(execution_id)
-
     expect(response).to have_http_status(:ok)
-    expect(client).to have_received(:publish) do |topic, message, options|
+    expect(client).to have_received(:publish) do |topic, message, retain|
       expect(topic).to eq("#{buzzer.chip_id}/switchon")
       expect(JSON.parse(message)).to include('chip_id' => buzzer.chip_id, 'relay_index' => 0, 'longlast' => 1000,
                                             'sent_time' => a_kind_of(String))
-      expect(options).to eq(retain: false)
+      expect(retain).to be(false)
     end
-    expect(client).to have_received(:disconnect)
+    expect(client).to have_received(:disconnect).with(false)
+    expect(DeviceTriggerActionJob.jobs).to be_empty
+    expect(pir.device_events.last.trigger_action_executions.first.status).to eq('publish_returned')
     expect(pir.device_events.last.parsed_payload).to include('target_chip_id' => buzzer.chip_id)
   end
 end

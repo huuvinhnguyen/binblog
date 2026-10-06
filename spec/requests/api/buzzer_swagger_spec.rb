@@ -205,7 +205,7 @@ RSpec.describe 'Buzzer mobile API documentation', type: :request do
                 relay_index: { nullable: true, description: 'Stored payload.relay_index JSON value, without coercion; null when absent.', example: 0 },
                 longlast: { nullable: true, description: 'Execution snapshot or legacy payload duration in milliseconds.', example: 1000 },
                 execution_status: { type: :string, nullable: true,
-                                    enum: %w[pending_enqueue queued publish_attempted publish_returned failed skipped],
+                                    enum: %w[pending_publish pending_enqueue queued publish_attempted publish_returned failed skipped],
                                     description: 'Null for historical legacy events.' },
                 error_code: { type: :string, nullable: true,
                               description: 'Machine-readable execution failure/skip code; null otherwise.',
