@@ -171,9 +171,11 @@ Devise session. Source và target đều được lấy qua
 `User#devices_for_current_user`; inaccessible và missing dùng cùng contract
 not-found. Endpoint quản lý chỉ sửa cấu hình, không publish MQTT.
 
-Feature flag `DEVICE_TRIGGER_ACTIONS_ENABLED` mặc định bật ở non-production và
-tắt ở production. Khi flag tắt, management trả `503 feature_disabled`. Action
-mode không fallback về JSON legacy dù flag tắt.
+Feature flag `DEVICE_TRIGGER_ACTIONS_ENABLED` mặc định bật ở development, test
+và production; production không có default-off riêng. Có thể đặt explicit thành
+`false` như một override vận hành tạm thời hoặc emergency kill switch; khi đó
+management trả `503 feature_disabled`. Action mode không fallback về JSON legacy
+dù flag tắt.
 
 ## Legacy migration và Buzzer transition
 
@@ -197,10 +199,13 @@ dispatcher fan-out.
 
 ## Rollout và rollback
 
-1. Deploy schema và code với production flag tắt.
+1. Deploy schema và code với default-on giữ nguyên ở mọi môi trường. Nếu cần
+   kiểm soát rollout tạm thời, operator có thể đặt explicit
+   `DEVICE_TRIGGER_ACTIONS_ENABLED=false`; đây không phải production default.
 2. Xác nhận MQTT config, giới hạn thời gian request và quan sát execution status.
-3. Bật management cho nhóm vận hành phù hợp và migrate từng PIR explicit.
-4. Bật runtime action mode, kiểm tra event/execution/target thực tế.
+3. Cho nhóm vận hành phù hợp migrate từng PIR explicit.
+4. Gỡ override explicit `false` nếu đã dùng, rồi kiểm tra
+   event/execution/target thực tế.
 5. Mở rộng Web/Mobile dựa trên OpenAPI sau khi backend ổn định.
 
 Rollback runtime bằng cách tắt flag. Không xóa execution audit. Chỉ xóa action
@@ -209,7 +214,9 @@ luôn chặn fallback, row disabled không phải cơ chế rollback.
 
 ## Giới hạn hiện tại
 
-- Firmware trigger endpoint vẫn không xác thực thiết bị; đây là rủi ro legacy.
+- Firmware trigger endpoint vẫn không xác thực thiết bị; security hardening cho
+  `POST /api/devices/trigger` được hoãn sang phase tương lai theo quyết định sản
+  phẩm hiện tại.
 - Không có device ACK nên `publish_returned` chỉ có nghĩa lệnh publish đã return.
 - Request PIR retry có thể tạo event/execution mới và phát lại command.
 - Không lưu MQTT/provider credential trong action hoặc execution.
