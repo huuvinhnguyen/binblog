@@ -1,5 +1,9 @@
 class DeviceEvent < ActiveRecord::Base
   belongs_to :device
+  has_many :trigger_action_executions,
+           class_name: 'DeviceTriggerActionExecution',
+           inverse_of: :device_event,
+           dependent: :destroy
 
   EVENT_TYPES = %w[
     motion_detected

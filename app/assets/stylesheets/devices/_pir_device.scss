@@ -116,6 +116,146 @@
     background: linear-gradient(135deg, var(--pir-surface-2) 0%, var(--pir-surface-3) 100%);
   }
 
+  &__actions-card {
+    background: linear-gradient(135deg, var(--pir-surface-2), var(--pir-surface-3));
+    border: 2px solid var(--pir-surface-4);
+    border-radius: var(--pir-radius-card);
+    color: var(--pir-text-primary);
+    margin-top: var(--pir-spacing-lg);
+    padding: var(--pir-spacing-lg);
+  }
+
+  &__actions-toolbar,
+  &__action-form-buttons,
+  &__action-row-buttons {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pir-spacing-xs);
+  }
+
+  &__action-button,
+  &__action-row-buttons button {
+    background: var(--pir-accent);
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: var(--pir-surface-2);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    min-height: 40px;
+    padding: 8px 13px;
+
+    &:disabled { cursor: not-allowed; opacity: 0.45; }
+    &:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  }
+
+  &__action-button--secondary,
+  &__action-row-buttons button {
+    background: var(--pir-surface-4);
+    border-color: var(--pir-surface-5);
+    color: var(--pir-text-primary);
+  }
+
+  &__actions-status { color: var(--pir-text-secondary); margin: 0 0 var(--pir-spacing-sm); }
+
+  &__actions-error,
+  &__actions-notice {
+    background: #422006;
+    border-left: 4px solid #f59e0b;
+    border-radius: 6px;
+    color: #fde68a;
+    margin: var(--pir-spacing-sm) 0;
+    padding: var(--pir-spacing-sm);
+
+    p { margin: 5px 0 12px; }
+  }
+
+  &__actions-error,
+  &__actions-notice--danger { background: #450a0a; border-color: #ef4444; color: #fecaca; }
+
+  &__empty-state--compact { padding: 28px 12px; }
+
+  &__actions-list {
+    display: grid;
+    gap: var(--pir-spacing-sm);
+    list-style: none;
+    margin: var(--pir-spacing-md) 0;
+    padding: 0;
+  }
+
+  &__action-row {
+    align-items: center;
+    background: var(--pir-surface-4);
+    border: 1px solid var(--pir-surface-5);
+    border-radius: 9px;
+    display: flex;
+    gap: var(--pir-spacing-sm);
+    justify-content: space-between;
+    padding: var(--pir-spacing-sm);
+  }
+
+  &__action-row--disabled { opacity: 0.68; }
+
+  &__action-info {
+    min-width: 0;
+
+    > div { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
+    strong { overflow-wrap: anywhere; }
+    small { color: var(--pir-text-secondary); display: block; margin-top: 5px; }
+  }
+
+  &__action-type {
+    border-radius: var(--pir-radius-pill);
+    font-size: var(--pir-text-xs);
+    font-weight: 700;
+    padding: 3px 9px;
+  }
+
+  &__action-type--switch { background: #1e40af; color: #dbeafe; }
+  &__action-type--buzzer { background: #7c2d12; color: #ffedd5; }
+  &__action-type--unknown { background: #374151; color: #e5e7eb; }
+
+  &__action-row-buttons { justify-content: flex-end; }
+  &__action-row-buttons button { min-height: 34px; padding: 5px 9px; }
+
+  &__action-form {
+    background: var(--pir-surface-4);
+    border-radius: 9px;
+    margin-top: var(--pir-spacing-md);
+    padding: var(--pir-spacing-md);
+
+    h5 { color: var(--pir-accent); margin: 0 0 var(--pir-spacing-md); }
+  }
+
+  &__action-fields {
+    display: grid;
+    gap: var(--pir-spacing-sm);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: var(--pir-spacing-md);
+
+    label { color: var(--pir-text-secondary); display: grid; font-size: var(--pir-text-sm); gap: 5px; }
+    input, select {
+      background: var(--pir-surface-2);
+      border: 1px solid var(--pir-surface-5);
+      border-radius: 7px;
+      color: var(--pir-text-primary);
+      font: inherit;
+      min-height: 42px;
+      padding: 8px;
+      width: 100%;
+    }
+    small { color: var(--pir-text-muted); }
+  }
+
+  &__action-checkbox {
+    align-items: center;
+    display: flex !important;
+    grid-template-columns: auto 1fr;
+
+    input { min-height: auto; width: auto; }
+  }
+
   &__history-header {
     display: flex;
     align-items: center;
@@ -378,5 +518,10 @@
     &__heatmap { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 
     &__heatmap-legend { width: 100%; }
+
+    &__actions-card { padding: var(--pir-spacing-md); }
+    &__action-row { align-items: stretch; flex-direction: column; }
+    &__action-row-buttons { justify-content: flex-start; }
+    &__action-fields { grid-template-columns: 1fr; }
   }
 }

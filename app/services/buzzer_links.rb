@@ -2,6 +2,7 @@
 class BuzzerLinks
   NotFoundError = Class.new(StandardError)
   ValidationError = Class.new(StandardError)
+  ConflictError = Class.new(StandardError)
   COMMAND_FIELDS = %w[chip_id relay_index longlast switch_value sent_time].freeze
 
   def initialize(buzzer:, user:)
@@ -11,13 +12,21 @@ class BuzzerLinks
 
   def available_pirs
     buzzers = @devices.where(device_type: 'buzzer').index_by(&:chip_id)
-    @devices.where(device_type: 'pir').order(:id).map do |pir|
-      trigger = parsed_trigger(pir)
-      target = buzzers[trigger['chip_id']]
+    @devices.where(device_type: 'pir').includes(trigger_actions: :target_device).order(:id).map do |pir|
+      resolver = DeviceTriggerConfigurationResolver.new(source_device: pir)
+      target = if resolver.mode == 'actions'
+                 relationships = resolver.relationships
+                 relationship = relationships.find { |item| item.target_device&.id == @buzzer.id } ||
+                                relationships.find { |item| buzzers.key?(item.target_device&.chip_id) }
+                 relationship&.target_device && buzzers[relationship.target_device.chip_id]
+               else
+                 buzzers[resolver.legacy_payload&.fetch('chip_id', nil)]
+               end
       {
         id: pir.id, name: pir.name, chip_id: pir.chip_id,
         linked_buzzer: target && { id: target.id, name: target.name },
-        requires_confirmation: configured?(pir) && trigger['chip_id'] != @buzzer.chip_id
+        requires_confirmation: resolver.mode != 'none' && target&.id != @buzzer.id,
+        configuration_mode: resolver.mode
       }
     end
   end
@@ -35,7 +44,10 @@ class BuzzerLinks
     end
 
     trigger = { chip_id: @buzzer.chip_id, relay_index: relay_index, longlast: longlast }
-    pir.with_lock { pir.update!(trigger: trigger.to_json) }
+    pir.with_lock do
+      reject_action_managed!(pir)
+      pir.update!(trigger: trigger.to_json)
+    end
     { id: pir.id, name: pir.name, chip_id: pir.chip_id, relay_index: relay_index, longlast: longlast }
   end
 
@@ -45,6 +57,7 @@ class BuzzerLinks
 
     pir = accessible_pir(pir_id)
     pir.with_lock do
+      reject_action_managed!(pir)
       trigger = parsed_trigger(pir)
       if trigger['chip_id'] == @buzzer.chip_id
         pir.update!(trigger: trigger.except(*COMMAND_FIELDS).to_json)
@@ -55,14 +68,14 @@ class BuzzerLinks
 
   private
 
-  def accessible_pir(id)
-    @devices.find_by(id: id, device_type: 'pir') || raise(NotFoundError, 'PIR device not found')
+  def reject_action_managed!(pir)
+    return unless pir.trigger_actions.exists?
+
+    raise ConflictError, 'This PIR is managed by trigger actions.'
   end
 
-  def configured?(pir)
-    JSON.parse(pir.trigger.presence || '{}').present?
-  rescue JSON::ParserError, TypeError
-    true
+  def accessible_pir(id)
+    @devices.find_by(id: id, device_type: 'pir') || raise(NotFoundError, 'PIR device not found')
   end
 
   def parsed_trigger(pir)

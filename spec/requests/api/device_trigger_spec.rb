@@ -4,7 +4,7 @@ require 'swagger_helper'
 
 RSpec.describe 'Device trigger API', type: :request do
   path '/api/devices/trigger' do
-    post 'Publish the configured device trigger through MQTT' do
+    post 'Persist and synchronously execute the configured device trigger' do
       tags 'Devices'
       consumes 'application/json'
       produces 'application/json'
@@ -15,13 +15,13 @@ RSpec.describe 'Device trigger API', type: :request do
         properties: {
           chip_id: {
             type: :string,
-            description: 'Chip ID used to find the device whose stored trigger will be published.',
+            description: 'Chip ID used to find the source device and resolve its effective trigger configuration.',
             example: 'ESP32_ABC123'
           }
         }
       }
 
-      response '200', 'trigger message published successfully' do
+      response '200', 'trigger request persisted and publish attempts recorded' do
         let!(:device) do
           Device.create!(
             name: 'Living room device',
@@ -37,7 +37,8 @@ RSpec.describe 'Device trigger API', type: :request do
         let(:mqtt_client) { instance_double(MQTT::Client) }
 
         before do
-          allow(MQTT::Client).to receive(:connect).and_return(mqtt_client)
+          allow(MQTT::Client).to receive(:new).and_return(mqtt_client)
+          allow(mqtt_client).to receive(:connect)
           allow(mqtt_client).to receive(:publish)
           allow(mqtt_client).to receive(:disconnect)
         end
@@ -51,7 +52,7 @@ RSpec.describe 'Device trigger API', type: :request do
 
         run_test! do |response|
           expect(response).to have_http_status(:ok)
-          expect(mqtt_client).to have_received(:publish) do |topic, message, options|
+          expect(mqtt_client).to have_received(:publish) do |topic, message, retain|
             expect(topic).to eq('ESP32_ABC123/switchon')
             expect(JSON.parse(message)).to include(
               'chip_id' => 'ESP32_ABC123',
@@ -59,9 +60,11 @@ RSpec.describe 'Device trigger API', type: :request do
               'switch_value' => 1,
               'sent_time' => be_a(String)
             )
-            expect(options).to eq(retain: false)
+            expect(retain).to be(false)
           end
-          expect(mqtt_client).to have_received(:disconnect)
+          expect(mqtt_client).to have_received(:disconnect).with(false)
+          expect(DeviceTriggerActionJob.jobs).to be_empty
+          expect(device.device_events.last.trigger_action_executions.first.status).to eq('publish_returned')
         end
       end
 

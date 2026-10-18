@@ -176,6 +176,21 @@ RSpec.describe 'Buzzer PIR link management', type: :request do
     expect(pir.reload.trigger).to eq('{}')
   end
 
+  it 'returns trigger_actions_managed for legacy link and unlink writes in action mode' do
+    switch = device('switch', device_info: { relays: [{}] }.to_json)
+    pir.update!(device_info: '{}')
+    pir.trigger_actions.create!(target_device: switch, action_type: 'relay_pulse', relay_index: 0,
+                                duration_ms: 1000, delay_ms: 0, enabled: true, position: 0)
+
+    link
+    expect(response).to have_http_status(:conflict)
+    expect(body).to include('code' => 'trigger_actions_managed')
+
+    delete "#{base}/linked_pirs/#{pir.id}", headers: headers
+    expect(response).to have_http_status(:conflict)
+    expect(body).to include('code' => 'trigger_actions_managed')
+  end
+
   it 'does not clear another target, malformed JSON, or unrelated trigger configurations' do
     [nil, '{broken', '[]', { chip_id: 'another', switch_value: 1 }.to_json, { note: 'keep' }.to_json].each do |stored|
       pir.update!(trigger: stored)
@@ -199,21 +214,23 @@ RSpec.describe 'Buzzer PIR link management', type: :request do
   end
 
   it 'feeds newly written configuration to the unchanged PIR runtime', :runtime do
-    client = instance_double(MQTT::Client, publish: nil, disconnect: nil)
-    allow(MQTT::Client).to receive(:connect).and_return(client)
+    client = instance_double(MQTT::Client, connect: nil, publish: nil, disconnect: nil)
+    allow(MQTT::Client).to receive(:new).and_return(client)
     link
-    expect(MQTT::Client).not_to have_received(:connect)
+    expect(MQTT::Client).not_to have_received(:new)
 
     post '/api/devices/trigger', params: { chip_id: pir.chip_id }, as: :json
 
     expect(response).to have_http_status(:ok)
-    expect(client).to have_received(:publish) do |topic, message, options|
+    expect(client).to have_received(:publish) do |topic, message, retain|
       expect(topic).to eq("#{buzzer.chip_id}/switchon")
       expect(JSON.parse(message)).to include('chip_id' => buzzer.chip_id, 'relay_index' => 0, 'longlast' => 1000,
                                             'sent_time' => a_kind_of(String))
-      expect(options).to eq(retain: false)
+      expect(retain).to be(false)
     end
-    expect(client).to have_received(:disconnect)
+    expect(client).to have_received(:disconnect).with(false)
+    expect(DeviceTriggerActionJob.jobs).to be_empty
+    expect(pir.device_events.last.trigger_action_executions.first.status).to eq('publish_returned')
     expect(pir.device_events.last.parsed_payload).to include('target_chip_id' => buzzer.chip_id)
   end
 end

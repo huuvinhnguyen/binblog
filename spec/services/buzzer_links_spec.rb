@@ -35,7 +35,8 @@ RSpec.describe BuzzerLinks do
   it 'safely lists malformed stored triggers without exposing their contents' do
     pir
     expect(service.available_pirs).to eq([
-      { id: pir.id, name: nil, chip_id: pir.chip_id, linked_buzzer: nil, requires_confirmation: true }
+      { id: pir.id, name: nil, chip_id: pir.chip_id, linked_buzzer: nil,
+        requires_confirmation: true, configuration_mode: 'invalid_legacy' }
     ])
   end
 end
