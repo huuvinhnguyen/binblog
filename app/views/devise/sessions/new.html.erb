@@ -31,6 +31,8 @@
   </div>
 <% end %>
 
+<%= render 'shared/google_auth', intent: 'sign_in' %>
+
 <script>
   document.addEventListener("turbo:load", function() {
     const passwordField = document.getElementById("password_field");
@@ -43,4 +45,3 @@
     }
   });
 </script>
-

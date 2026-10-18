@@ -1,0 +1,10 @@
+<% client_id = ENV['GOOGLE_WEB_CLIENT_ID'].to_s.strip %>
+<section class="google-auth" data-google-auth data-intent="<%= intent %>" data-client-id="<%= client_id %>" data-sign-in-url="<%= new_user_session_path %>">
+  <h3><%= intent == 'link' ? 'Liên kết Google' : 'hoặc' %></h3>
+  <% if client_id.present? %>
+    <div data-google-button></div>
+    <p data-google-auth-status role="status" aria-live="polite">Đóng cửa sổ Google nếu bạn muốn hủy; bạn có thể thử lại.</p>
+  <% else %>
+    <p role="status">Đăng nhập Google hiện chưa được cấu hình.</p>
+  <% end %>
+</section>

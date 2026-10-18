@@ -398,7 +398,7 @@ module Api
           "action": "restart",
           "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
        }.to_json
-  
+
       client.publish(topic, message) if topic.present?
       client.disconnect()
       render json: { status: 'ok', message: 'Restart command sent' }
@@ -411,7 +411,7 @@ module Api
           "action": "set_offline_mode",
           "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
        }.to_json
-  
+
       client.publish(topic, message) if topic.present?
       client.disconnect()
       render json: { status: 'ok', message: 'Set offline command sent' }
@@ -451,7 +451,7 @@ module Api
           "action": "update_version",
           "sent_time": Time.current.strftime('%Y-%m-%d %H:%M:%S')
        }.to_json
-  
+
       client.publish(topic, message) if topic.present?
       client.disconnect()
       render json: { status: 'ok', message: 'Update version command sent', topic: topic, message: message }

@@ -19,9 +19,9 @@ Select task and reconcile tracker state
  → establish previous task state and clean task boundary
  → checkout/pull base, create and verify dedicated branch
  → architecture/contract pass when needed
- → implement → focused verification → independent review
- → fix confirmed findings → targeted re-verification
- → final verification: READY TO COMMIT
+ → Developer implementation → focused verification → independent Reviewer
+ → Developer fix pass when needed → focused verification → targeted Reviewer re-review
+ → Final Verifier evidence gate: READY TO COMMIT
  → commit when authorized → READY TO PUSH → push when authorized
  → inspect remote branch → PR → required CI/review → merge
  → post-merge acceptance when required → reconcile tracker/GitHub/checklist
@@ -30,6 +30,54 @@ Select task and reconcile tracker state
 
 Stop and clarify when scope, contract, authorization or a required acceptance
 gate is materially unclear. Do not claim a gate passed without evidence.
+
+## Agent roles and handoffs
+
+The workflow has four explicit roles:
+
+- **Architect Agent** defines boundaries, contracts, dependencies, rollout
+  constraints and approved scope when architecture work is needed. The
+  Developer owns implementation; the Architect does not implement unless the
+  user explicitly asks.
+- **Developer Agent** implements the approved scope, runs focused verification
+  and reports the complete changed-file set and evidence. Confirmed review
+  findings return to the Developer for a fix pass.
+- **Reviewer Agent** independently answers: “Is the implementation correct,
+  secure, and complete? What defects or regressions remain?” The Reviewer
+  evaluates implementation correctness, security and completeness. Review is
+  read-only; the Reviewer inspects the complete change set, reports findings
+  and evidence, and does not implement fixes.
+- **Final Verifier Agent** performs the final read-only evidence gate before
+  **READY TO COMMIT**. It answers: “Given the completed review process, the
+  current working tree, and the available verification evidence, is there
+  sufficient verified evidence to proceed to the commit gate?” The Final
+  Verifier evaluates commit-readiness evidence; it is not a second broad
+  Reviewer and does not replace independent review.
+
+Independent review must occur before Final Verification. If a fix pass is
+needed, it goes back to the Developer, followed by focused verification and
+targeted re-review by the Reviewer before Final Verification. Final Verification
+checks that review findings are closed and that the current file set matches the
+file set the Reviewer examined. Route a newly discovered architecture issue to
+the Architect, an implementation defect to the Developer, and a disputed
+correctness or security finding to the Reviewer. The Final Verifier reports the
+blocker and routes it; it remains read-only and never repairs it.
+
+Final Verification checks the branch and integration base, the complete
+working-tree change set, scope and diff hygiene, closed review findings, and
+accurate evidence labels for executed tests, builds, manual checks and untested
+behavior. Inspect `git status --short`, `git diff HEAD`, and `git diff --cached`.
+`git diff HEAD` does not include untracked file contents; `git diff --cached`
+does not include untracked files. Explicitly inspect and account for every `??`
+path shown by status. Unexpected or unreviewed files block **READY TO COMMIT**
+until they are reconciled and reviewed. Readiness is a gate result, not
+authority to commit, push, create a PR or merge.
+
+The Final Verifier reports exactly one outcome:
+
+- `FINAL VERIFICATION PASSED — READY TO COMMIT`
+- `FINAL VERIFICATION FAILED — FIX REQUIRED`
+- `FINAL VERIFICATION BLOCKED — INSUFFICIENT EVIDENCE`
 
 ## Task tracker state
 
@@ -130,7 +178,7 @@ outcome as **confirmed defect**, **false positive**, **unverified risk**, or
 review report. Fix confirmed findings only; avoid unrelated refactors and add
 regression coverage for confirmed defects. Then run targeted re-verification.
 
-Final Verification independently checks fixes and the complete diff, runs
+The Final Verifier independently checks fixes and the complete change set, runs
 required checks, distinguishes test execution from compile/build-only evidence,
 and returns **READY TO COMMIT** when the commit gate passes. This is a readiness
 result, not authority to commit. Commit and push only when the user/task
@@ -142,6 +190,9 @@ readiness only; without push authority, stop, report the next action, and wait.
 
 If staged and unstaged changes coexist, inspect the full
 `HEAD`-to-working-tree delta (`git diff HEAD`), not only unstaged `git diff`.
+Account for untracked files separately, including their paths and contents,
+when inspecting the complete change set and comparing it with the reviewed
+file set.
 
 ### Test evidence
 
@@ -157,7 +208,11 @@ Reports label evidence precisely:
 | `NOT TESTED` | The behavior/environment was not tested. |
 
 Compilation, an existing test file, a related suite, or a simulator build alone
-does not mean a behavior test passed. For async/state-machine behavior, test
+does not mean a behavior test passed. Mocked evidence must not be reported as
+real browser, device, provider, network or production testing. For example, a
+mocked JavaScript lifecycle exercise may be `EXECUTED / PASSED` as a mock, while
+real browser behavior remains `NOT TESTED` unless it was actually exercised.
+For async/state-machine behavior, test
 observable transitions where practical (in-flight request, duplicate action,
 completion, authoritative refresh, and recovery after refresh failure). For
 HTTP/API changes, check method, path, authentication, body and bodyless requests,

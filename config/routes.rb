@@ -8,12 +8,26 @@ Rails.application.routes.draw do
   resources :posts
   get 'home/index'
   devise_for :users
+  get 'account/authentication', to: 'social_authentication#show', as: :account_authentication
+  delete 'account/authentication/:provider', to: 'social_authentication#destroy', as: :account_social_identity
+  post 'auth/google', to: 'social_logins#create', as: :google_authentication
   mount ActionCable.server => '/cable'
   # mount Sidekiq::Web => '/sidekiq'
   mount Sidekiq::Web => '/sidekiq'
 
   namespace :api do
     post 'login', to: 'sessions#create'
+    namespace :auth do
+      post 'social_sessions', to: '/api/social_sessions#create'
+      post 'social_identities', to: '/api/social_identities#create'
+      delete 'social_identities/:provider', to: '/api/social_identities#destroy'
+      get 'methods', to: '/api/authentication_methods#show'
+      post 'reauthentications', to: '/api/reauthentications#create'
+      put 'password', to: '/api/passwords#update'
+      post 'recovery_codes', to: '/api/recovery_codes#create'
+      post 'password_recovery', to: '/api/password_recovery#create'
+      put 'password_recovery', to: '/api/password_recovery#update'
+    end
 
     get 'devices/:chip_id/trigger_actions/targets', to: 'device_trigger_actions#targets'
     put 'devices/:chip_id/trigger_actions/order', to: 'device_trigger_actions#order'

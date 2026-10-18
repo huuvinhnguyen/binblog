@@ -14,6 +14,7 @@ import "./pir_motion_chart"
 import "./pir_trigger_actions"
 import "./buzzer_test"
 import "./buzzer_links"
+import "./google_auth"
 
 //buildjs
 import Rails from "@rails/ujs"

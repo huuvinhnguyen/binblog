@@ -1,0 +1,35 @@
+<h2>Phương thức đăng nhập</h2>
+<p>Đang đăng nhập với <%= current_user.username %>.</p>
+
+<% if notice.present? %>
+  <p class="alert alert-success" role="status"><%= notice %></p>
+<% end %>
+<% if alert.present? %>
+  <p class="alert alert-warning" role="alert"><%= alert %></p>
+<% end %>
+
+<section aria-labelledby="google-auth-heading">
+  <h3 id="google-auth-heading">Google</h3>
+  <% if @google_identity %>
+    <p>Google đã được liên kết.</p>
+    <% if @has_local_password %>
+      <%= form_with url: account_social_identity_path(provider: 'google'), method: :delete do |form| %>
+        <%= form.label :current_password, 'Mật khẩu hiện tại để xác nhận' %>
+        <%= form.password_field :current_password, autocomplete: 'current-password', required: true %>
+        <%= form.submit 'Hủy liên kết Google', data: { turbo_confirm: 'Bạn có chắc muốn hủy liên kết Google?' } %>
+      <% end %>
+    <% else %>
+      <p>Tài khoản cần có mật khẩu để xác nhận thay đổi phương thức đăng nhập. <%= link_to 'Đặt mật khẩu qua email khôi phục', new_user_password_path %>.</p>
+    <% end %>
+  <% elsif @has_local_password %>
+    <p>Xác nhận bằng mật khẩu hiện tại, sau đó đăng nhập Google để liên kết.</p>
+    <div data-google-reauth-form>
+      <label for="google_link_current_password">Mật khẩu hiện tại</label>
+      <input id="google_link_current_password" type="password" autocomplete="current-password"
+             required data-google-current-password>
+    </div>
+    <%= render 'shared/google_auth', intent: 'link' %>
+  <% else %>
+    <p>Tài khoản cần có mật khẩu để xác nhận thay đổi phương thức đăng nhập. <%= link_to 'Đặt mật khẩu qua email khôi phục', new_user_password_path %>.</p>
+  <% end %>
+</section>

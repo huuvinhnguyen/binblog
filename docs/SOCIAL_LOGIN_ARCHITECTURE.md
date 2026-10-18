@@ -81,7 +81,7 @@ The system must reliably determine whether a user still has a usable local/passw
 
 Clients obtain provider credentials. Rails verifies provider credentials and derives provider, subject/UID, and verified contact data from the verified credential. Rails must not trust client-supplied email, provider UID, or a `verified` flag.
 
-Verification must cover signature/JWKS, issuer, audience/client ID, expiry, subject, nonce/state where applicable, and replay protection. Google is the first provider. Apple follows. Facebook remains discovery/optional until the current official credential flow is verified.
+For the Google mobile ID-token exchange, Rails verifies the RS256 signature against Google's JWKS, trusted issuer, configured audience/client ID, expiry, and a usable `sub`. A still-valid verified ID token may be exchanged more than once for the same `(provider, sub)` owner; this bearer-credential flow does not require a Binblog-issued nonce or one-time token consumption. Browser flows retain the CSRF protection or OAuth `state` required by their actual GIS/OAuth transport. A nonce is verified only when a flow establishes an expected nonce; authorization-code flows retain their own one-time code redemption semantics. Apple-specific nonce and replay requirements must be determined for Apple's chosen flow. Facebook remains discovery/optional until its current official credential flow is verified.
 
 ### 5. Session contract
 
@@ -123,9 +123,9 @@ The current Rails password endpoint signs an HS256 JWT containing `user_id` and 
 
 ### 6. Link and unlink
 
-Linking requires an authenticated Binblog user, appropriate recent authentication or re-authentication, and a newly verified provider credential. Unlinking requires re-authentication and must be rejected if it removes the final usable authentication method. Identity-management endpoints must not reveal another user's identity information.
+Linking requires an authenticated Binblog user, appropriate recent authentication or re-authentication, and a currently valid provider credential verified by Rails for each Link request. For the current Google endpoint, the authenticated user's current password supplies re-authentication; verification during this request does not require that Google issued the token immediately before it. Link must preserve the authenticated principal and reject an identity owned by another user. Unlinking requires re-authentication and must be rejected if it removes the final usable authentication method. Identity-management endpoints must not reveal another user's identity information.
 
-If a client loses the response after a link/unlink mutation, it must not blindly replay the write. Reconcile authoritative identity/session state or restart the provider flow as appropriate. Consumed authorization codes and nonces must not be reused automatically.
+If a client loses the response after a link/unlink mutation, it must not blindly replay the write. Reconcile authoritative identity/session state or restart the provider flow as appropriate. Consumed authorization codes and nonces must not be reused automatically in flows that use them.
 
 ### 7. Cross-platform semantics
 
@@ -206,7 +206,7 @@ Provider/client feature flags may control rollout. Preserve password authenticat
 - Test User A attempting to link an identity owned by User B: reject the request, leave identity ownership unchanged, keep User A authenticated, issue no User B JWT/session, and disclose no User B information.
 - Test identity already linked to User A returns a safe/idempotent result without changing the principal.
 - Test concurrent claims of an unused provider identity: database uniqueness and transaction handling leave exactly one owner.
-- Test returning identity login, transactional signup, verified-email conflict requiring explicit linking, provider UID already owned, missing/unverified email, Apple private relay handling, invalid signature, wrong issuer/audience, expired credential, nonce/state mismatch, and replay rejection.
+- Test returning identity login, transactional signup, verified-email conflict requiring explicit linking, provider UID already owned, missing/unverified email, and Apple private relay handling. For Google mobile ID tokens, test invalid signature, wrong issuer/audience, expiry, missing subject, and repeated use of the same still-valid token resolving to the same owner without duplicate accounts or identities. Test same-owner repeated Link as idempotent and cross-owner Link as a safe conflict. Test nonce/state mismatch and code reuse only for provider/transports that use those mechanisms.
 - Test uniqueness under concurrent link/signup attempts and ensure failed transactions create no partial user or identity.
 - Test social-signup username collection/generation satisfies presence and uniqueness constraints, including deterministic collision handling or retry behavior when generation collides.
 - Test link/unlink authorization, re-authentication, no cross-user identity disclosure, and refusal to remove the final usable auth method.
@@ -226,7 +226,7 @@ The following are not fixed by this architecture decision and must be checked du
 
 - Current official Google, Apple, and Meta provider SDK/API credential flows and platform requirements.
 - Provider client IDs, audiences, redirect/callback configuration, key/JWKS rotation behavior, and production app registration.
-- The exact Google/Apple token or authorization-code contract per client and provider, including nonce/state and replay controls.
+- The Google mobile ID-token exchange contract is settled above. Verify each client SDK/version and configuration during integration. Determine the exact Apple and future Google Web token or authorization-code flows, including their applicable nonce/state and replay controls.
 - Facebook supportability and current official credential verification; implementation remains optional until discovery concludes.
 - The safest representation of a usable local/password authentication method after examining Devise password/reset behavior and real account data.
 - How social signup will satisfy the current required, unique `users.username` constraint without collisions; verify any username prompt or assignment policy alongside the email/user-data audit.
@@ -245,3 +245,41 @@ The following are not fixed by this architecture decision and must be checked du
 - Backend Identity Foundation settles social-signup username assignment/collision behavior before Google signup work.
 - Swift and Flutter share consistent auth outcomes while keeping provider integration out of device repositories.
 - Rollout and task dependencies are documented; provider/version/data questions remain explicit for implementation-time verification.
+
+## Account recovery and reauthentication contract
+
+Social-only users are active Binblog accounts. Their blank Devise password is
+not a usable authentication method. A provider identity is usable only while it
+is enabled by server policy and `disabled_at` is null. Recovery codes are
+recovery factors and never count toward the last-authentication-method rule.
+
+Sensitive API mutations use a five-minute `ReauthenticationGrant`. Rails stores
+only digests of the random grant and exact bearer-JWT binding. A grant is bound
+to its user and one enumerated purpose and is consumed in the same transaction
+as the mutation. Password reauthentication verifies the existing Devise
+password. Google reauthentication verifies a newly issued ID token whose
+provider UID belongs to an enabled identity of the current user. The verified
+Google `iat` supplies freshness; a client timestamp is never accepted.
+
+The account-management API is:
+
+- `GET /api/auth/methods` for the current authoritative method projection.
+- `POST /api/auth/reauthentications` for password or Google proof.
+- `PUT /api/auth/password` to establish the first password only.
+- `POST /api/auth/recovery_codes` to rotate recovery codes after reauthentication.
+- `POST /api/auth/password_recovery` for a non-enumerating recovery request.
+- `PUT /api/auth/password_recovery` to complete password or social-only recovery.
+
+Ordinary Devise reset remains available to accounts with a usable password. It
+cannot establish the first password for a social-only account, including with a
+reset token issued before the guard. Social-only recovery requires both an
+encrypted, expiring email challenge and one unused high-entropy recovery code.
+Successful recovery establishes the password, invalidates all recovery codes,
+preserves provider identities, issues no JWT, and requires explicit sign-in.
+
+API Link and Unlink prefer purpose-bound reauthentication grants. The legacy
+`current_password` parameter remains accepted during rollout. Unlink recomputes
+usable methods under the user lock before consuming the grant and deleting the
+identity. An ambiguous client result must be reconciled through
+`GET /api/auth/methods`; clients do not replay a consumed grant or retained
+provider credential.
