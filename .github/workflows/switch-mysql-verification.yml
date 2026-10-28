@@ -1,0 +1,113 @@
+name: Switch MySQL verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/switch-mysql-verification.yml'
+      - 'script/*switch*'
+      - 'app/**'
+      - 'config/**'
+      - 'db/**'
+      - 'spec/**'
+      - 'Gemfile*'
+      - 'package.json'
+      - 'yarn.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mysql:
+    name: MySQL 8 / ${{ matrix.timezone }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        timezone: [UTC, Asia/Ho_Chi_Minh]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: switch-test-only
+          MYSQL_DATABASE: binblog_switch_api_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pswitch-test-only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      RAILS_ENV: test
+      TZ: ${{ matrix.timezone }}
+      DATABASE_URL: mysql2://root:switch-test-only@127.0.0.1:3306/binblog_switch_api_test?pool=10
+      SECRET_KEY_BASE: isolated-switch-ci-test-key-never-use-in-production
+      BUNDLE_GEMFILE: ${{ github.workspace }}/tmp/switch-ci.Gemfile
+      BUNDLE_PATH: vendor/bundle
+      RUBYOPT: -ruri
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Native test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmysqlclient-dev libsqlite3-dev libvips42
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1.2'
+          bundler: '2.4.3'
+          bundler-cache: false
+      - name: Prepare isolated validation lock
+        # The original ffi 1.17.0 platform artifacts are unavailable. Preserve
+        # repository dependency files; use the same version compiled from source.
+        run: |
+          mkdir -p tmp
+          cp Gemfile tmp/switch-ci.Gemfile
+          python3 - <<'PY'
+          from pathlib import Path
+          lock = Path('Gemfile.lock').read_text()
+          old = '    ffi (1.17.0-x86_64-darwin)\n    ffi (1.17.0-x86_64-linux)\n'
+          assert lock.count(old) == 1, 'Reassess the CI lock workaround after dependency changes'
+          Path('tmp/switch-ci.Gemfile.lock').write_text(lock.replace(old, '    ffi (1.17.0)\n'))
+          PY
+          bundle install --jobs 4 --retry 3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build assets needed by request views
+        run: |
+          npm install --no-package-lock
+          npm run build
+          npm run build:css
+      - name: Load disposable MySQL schema
+        run: bundle exec ruby -r ./script/switch_verification_no_mqtt.rb bin/rails db:schema:load
+      - name: MySQL migration, timezone and concurrency evidence
+        run: |
+          set -o pipefail
+          bundle exec ruby script/verify_switch_mysql.rb 2>&1 | tee tmp/switch-mysql-evidence.log
+      - name: Focused request, service, web and OpenAPI tests on MySQL
+        run: |
+          set -o pipefail
+          bundle exec rspec --require ./script/switch_verification_no_mqtt.rb \
+            spec/requests/api/switches_spec.rb \
+            spec/services/switch_api_publisher_spec.rb \
+            spec/requests/switch_relay_statistics_spec.rb \
+            spec/requests/api/switches_swagger_spec.rb \
+            --format progress 2>&1 | tee tmp/switch-mysql-rspec.log
+      - name: Preserve dependency files and check whitespace
+        run: |
+          git diff --exit-code -- Gemfile Gemfile.lock package.json yarn.lock db/schema.rb swagger/v1/swagger.yaml
+          git diff --check
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: switch-mysql-${{ strategy.job-index }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            tmp/switch-mysql-evidence.log
+            tmp/switch-mysql-rspec.log
+          if-no-files-found: warn

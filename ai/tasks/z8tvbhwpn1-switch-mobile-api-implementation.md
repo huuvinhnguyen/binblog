@@ -5,6 +5,55 @@ Branch: `feature/z8tvbhwpn1-switch-mobile-api`
 Integration base: `main@47b6ca0` (merged handoff PR #119 verified).
 Date: 2026-10-27. No commit/push or deployment claimed by this report.
 
+## Verification checkpoint continuation
+
+The original phase-1 implementation was subsequently published at the owner's
+request as Draft PR #120, commit `e05c4ac9a8878e8acb9d5df2d349e93fb0e383ab`.
+The original final gate remains **BLOCKED — INSUFFICIENT EVIDENCE**, because
+the MySQL checks below have not yet executed. Historical delivery/authorization
+statements below describe the initial handoff, not the current PR state.
+
+The follow-up adds only a MySQL verification checkpoint: a GitHub Actions job,
+an isolated runner and a live-MQTT connection guard. No application behavior,
+scheduler, reminder readiness or production configuration changes are included.
+The job uses a disposable MySQL 8 service, Ruby 3.1.2, read-only token permissions,
+no production secrets, and two process timezones (UTC and Asia/Ho_Chi_Minh).
+The existing temporary source-built ffi workaround is explicit; repository
+dependency files remain unchanged.
+
+The runner requires an explicit test environment and local database named
+`binblog_switch_api_test`. It checks migration down/up, ordered index and row
+preservation; scoped/empty/31-day counts and midnight boundaries under two MySQL
+session timezones; bounded metadata-lock contention; and two command connections
+waiting on an actual InnoDB row lock. Publishers are fake and assert that the
+database transaction has finished. CI also runs the focused request/service/web/
+OpenAPI examples and uploads logs for independent verification. This proves
+neither production DDL timing nor hardware acceptance.
+
+Local checkpoint checks: Ruby syntax and fail-closed environment/database guards
+**EXECUTED / PASSED**; workflow YAML and actionlint **EXECUTED / PASSED**.
+MySQL execution and CI outcome are **NOT RUN** at checkpoint authoring. Publishing
+this test checkpoint to collect evidence must not be reported as the application's
+Final Verification passing or permission to merge/release. Keep PR Draft and the
+backend task open until the appropriate gates actually pass.
+
+To reproduce on a disposable local MySQL database after loading `db/schema.rb`,
+set `RAILS_ENV=test`, `TZ=UTC` (then `Asia/Ho_Chi_Minh`), an explicit
+`DATABASE_URL=mysql2://<test-user>:<test-password>@127.0.0.1/binblog_switch_api_test?pool=10`,
+and a non-production `SECRET_KEY_BASE`. Run:
+
+```bash
+bundle exec ruby script/verify_switch_mysql.rb
+bundle exec rspec --require ./script/switch_verification_no_mqtt.rb \
+  spec/requests/api/switches_spec.rb spec/services/switch_api_publisher_spec.rb \
+  spec/requests/switch_relay_statistics_spec.rb spec/requests/api/switches_swagger_spec.rb
+```
+
+Use the guard for schema loading as shown in the workflow, too. Never point this
+runner or a schema-load command at a shared or production database. MySQL's
+`PROCESS` privilege is required to observe the worker transactions during this
+disposable test; this is not a request to grant it to the application user.
+
 ## Result
 
 Implemented the approved phase-1 Bearer-only JSON facade, scoped device reads,
@@ -109,6 +158,9 @@ The following list includes this report and every tracked/untracked deliverable;
 ignored validation runtimes, DBs, compiled assets and logs are not deliverables.
 
 - `ai/tasks/z8tvbhwpn1-switch-mobile-api-implementation.md`
+- `.github/workflows/switch-mysql-verification.yml`
+- `script/verify_switch_mysql.rb`
+- `script/switch_verification_no_mqtt.rb`
 - `app/controllers/api/devices_controller.rb`
 - `app/controllers/api/switches_controller.rb`
 - `app/controllers/devices_controller.rb`
