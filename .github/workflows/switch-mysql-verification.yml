@@ -85,12 +85,14 @@ jobs:
           npm run build
           npm run build:css
       - name: Load disposable MySQL schema
+        id: mysql_schema
         run: bundle exec ruby -r ./script/switch_verification_no_mqtt.rb bin/rails db:schema:load
       - name: MySQL migration, timezone and concurrency evidence
         run: |
           set -o pipefail
           bundle exec ruby script/verify_switch_mysql.rb 2>&1 | tee tmp/switch-mysql-evidence.log
       - name: Focused request, service, web and OpenAPI tests on MySQL
+        if: ${{ !cancelled() && steps.mysql_schema.outcome == 'success' }}
         run: |
           set -o pipefail
           bundle exec rspec --require ./script/switch_verification_no_mqtt.rb \

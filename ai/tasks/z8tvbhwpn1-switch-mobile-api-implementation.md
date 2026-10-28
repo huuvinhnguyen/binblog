@@ -53,6 +53,18 @@ loaded successfully and rejected `MQTT::Client.new.connect` before any network
 attempt: **EXECUTED / PASSED**. This was a dependency/guard check, not Rails or
 MySQL application execution.
 
+Run `40729613915` reached MySQL 8.0.46 and passed migration round-trip/index/
+row-preservation, scoped midnight counts under both database session timezones,
+31-day bounds, and metadata-lock timeout checks. The runner then timed out while
+observing command row-lock waits. Cleanup also exposed that association
+`relay_logs.delete_all` nullifies its foreign key by default; the runner now
+explicitly deletes only its own synthetic RelayLog rows through a scoped relation.
+Lock observation now queries MySQL 8's Performance Schema without the Rails query
+cache and reports thread/transaction diagnostics on timeout. The two-waiter
+assertion remains mandatory. Focused API specs run after successful schema load
+even if the separate lock probe fails, so CI can collect both kinds of evidence.
+This partial run is not a passing application verification gate.
+
 To reproduce on a disposable local MySQL database after loading `db/schema.rb`,
 set `RAILS_ENV=test`, `TZ=UTC` (then `Asia/Ho_Chi_Minh`), an explicit
 `DATABASE_URL=mysql2://<test-user>:<test-password>@127.0.0.1/binblog_switch_api_test?pool=10`,

@@ -1,4 +1,5 @@
 require 'uri'
+$stdout.sync = true
 
 # This runner intentionally refuses normal application database configuration.
 abort 'RAILS_ENV must explicitly be test' unless ENV['RAILS_ENV'] == 'test'
@@ -143,14 +144,28 @@ begin
   end
   threads.concat(workers)
   ids = Timeout.timeout(8) { 2.times.map { started.pop } }
-  Timeout.timeout(8) do
-    loop do
-      waiting = connection.select_value("SELECT COUNT(*) FROM information_schema.innodb_trx WHERE trx_state = 'LOCK WAIT' AND trx_mysql_thread_id IN (#{ids.join(',')})").to_i
-      break if waiting == 2
+  begin
+    Timeout.timeout(8) do
+      loop do
+        waiting = ActiveRecord::Base.uncached do
+          connection.select_value(<<~SQL).to_i
+            SELECT COUNT(DISTINCT threads.PROCESSLIST_ID)
+            FROM performance_schema.data_lock_waits AS waits
+            JOIN performance_schema.threads AS threads
+              ON threads.THREAD_ID = waits.REQUESTING_THREAD_ID
+            WHERE threads.PROCESSLIST_ID IN (#{ids.join(',')})
+          SQL
+        end
+        break if waiting == 2
 
-      workers.each { |worker| worker.value unless worker.alive? }
-      sleep 0.05
+        workers.each { |worker| worker.value unless worker.alive? }
+        sleep 0.05
+      end
     end
+  rescue Timeout::Error
+    puts "Observed transactions: #{connection.select_all("SELECT trx_mysql_thread_id, trx_state FROM information_schema.innodb_trx WHERE trx_mysql_thread_id IN (#{ids.join(',')})").to_a.inspect}"
+    workers.each_with_index { |worker, index| puts "Worker #{ids[index]}: #{worker.status}; #{worker.backtrace&.first(5)&.join('; ')}" }
+    raise
   end
   verify!(published.empty?, 'both commands wait on the device row lock before publishing')
   release << true
@@ -172,7 +187,7 @@ ensure
     thread.join
   end
   [device, foreign].compact.each do |row|
-    row.relay_logs.delete_all
+    RelayLog.where(device_id: row.id).delete_all
     row.users.clear
     row.destroy!
   end
