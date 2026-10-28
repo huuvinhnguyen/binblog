@@ -3,6 +3,13 @@
 require 'swagger_helper'
 
 RSpec.describe 'API Devices', type: :request do
+  let(:user) do
+    User.create!(username: "devices_swagger_#{SecureRandom.hex(4)}", password: 'password123',
+                 email: "#{SecureRandom.hex(4)}@example.com")
+  end
+  let(:Authorization) do
+    "Bearer #{JWT.encode({ user_id: user.id, exp: 1.hour.from_now.to_i }, Rails.application.secret_key_base, 'HS256')}"
+  end
   path '/api/devices' do
     get 'List all devices for the authenticated user' do
       tags 'Devices'
@@ -40,6 +47,7 @@ RSpec.describe 'API Devices', type: :request do
       end
 
       response '401', 'unauthorized' do
+        let(:Authorization) { 'Bearer invalid' }
         run_test!
       end
     end

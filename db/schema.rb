@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_04_090200) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_27_000000) do
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.bigint "employee_id"
     t.date "date"
@@ -204,6 +204,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_04_090200) do
     t.datetime "confirmed_turn_on_at"
     t.datetime "confirmed_turn_off_at"
     t.index ["device_id", "relay_index"], name: "index_relay_logs_on_device_id_and_relay_index"
+    t.index ["device_id", "relay_index", "created_at"], name: "index_relay_logs_for_switch_statistics"
     t.index ["device_id"], name: "index_relay_logs_on_device_id"
     t.index ["user_id"], name: "index_relay_logs_on_user_id"
   end

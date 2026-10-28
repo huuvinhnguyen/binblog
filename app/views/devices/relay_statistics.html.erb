@@ -1,4 +1,30 @@
-
-<div>
-    <canvas id="myChart" width="400" height="200"></canvas>
-</div>
+<section class="switch-relay-statistics">
+  <h1>Thống kê bản ghi relay</h1>
+  <p>Số bản ghi lịch sử trên hệ thống, không phải số lần bật hoặc thời gian thiết bị chạy thực tế.</p>
+  <% if @statistics_error %>
+    <p role="alert">Không tải được thống kê. Kiểm tra relay và khoảng ngày (tối đa 31 ngày).</p>
+  <% else %>
+    <p>Múi giờ: <%= @relay_statistics[:timezone] %></p>
+    <%= form_with url: relay_statistics_path, method: :get, local: true do |form| %>
+      <%= hidden_field_tag :chip_id, @switch.chip_id %>
+      <%= hidden_field_tag :relay_index, params[:relay_index] %>
+      <%= form.label :from, 'Từ ngày' %>
+      <%= form.date_field :from, value: @relay_statistics[:from] %>
+      <%= form.label :to, 'Đến ngày' %>
+      <%= form.date_field :to, value: @relay_statistics[:to] %>
+      <%= form.submit 'Xem thống kê' %>
+    <% end %>
+    <p>Tổng số bản ghi: <%= @relay_statistics[:total_records] %></p>
+    <table class="table">
+      <thead><tr><th scope="col">Ngày</th><th scope="col">Số bản ghi</th></tr></thead>
+      <tbody>
+        <% @relay_statistics[:days].each do |day| %>
+          <tr><th scope="row"><%= day[:date] %></th><td><%= day[:count] %></td></tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @relay_statistics[:total_records].zero? %>
+      <p>Không có bản ghi trong khoảng ngày đã chọn.</p>
+    <% end %>
+  <% end %>
+</section>
