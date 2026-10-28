@@ -56,11 +56,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libmysqlclient-dev libsqlite3-dev libvips42
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1.2'
-          bundler: '2.4.3'
-          bundler-cache: false
       - name: Prepare isolated validation lock
         # The original ffi 1.17.0 platform artifacts are unavailable. Preserve
         # repository dependency files; use the same version compiled from source.
@@ -74,7 +69,13 @@ jobs:
           assert lock.count(old) == 1, 'Reassess the CI lock workaround after dependency changes'
           Path('tmp/switch-ci.Gemfile.lock').write_text(lock.replace(old, '    ffi (1.17.0)\n'))
           PY
-          bundle install --jobs 4 --retry 3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1.2'
+          bundler: '2.4.3'
+          bundler-cache: false
+      - name: Install validation gems
+        run: bundle install --jobs 4 --retry 3
       - uses: actions/setup-node@v4
         with:
           node-version: '20'

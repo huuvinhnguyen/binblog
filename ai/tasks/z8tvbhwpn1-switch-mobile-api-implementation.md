@@ -37,6 +37,11 @@ this test checkpoint to collect evidence must not be reported as the application
 Final Verification passing or permission to merge/release. Keep PR Draft and the
 backend task open until the appropriate gates actually pass.
 
+The first CI run (`40715427890`) failed before application checks: setup-ruby
+requires the configured temporary Gemfile to exist even with bundler caching off.
+The workflow now prepares that file/lock before setup-ruby, then installs gems.
+This is a CI setup fix, not evidence of a MySQL application test passing.
+
 To reproduce on a disposable local MySQL database after loading `db/schema.rb`,
 set `RAILS_ENV=test`, `TZ=UTC` (then `Asia/Ho_Chi_Minh`), an explicit
 `DATABASE_URL=mysql2://<test-user>:<test-password>@127.0.0.1/binblog_switch_api_test?pool=10`,
