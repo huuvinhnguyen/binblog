@@ -42,6 +42,17 @@ requires the configured temporary Gemfile to exist even with bundler caching off
 The workflow now prepares that file/lock before setup-ruby, then installs gems.
 This is a CI setup fix, not evidence of a MySQL application test passing.
 
+Run `40728396117` passed gem installation and asset builds, then stopped before
+schema loading: the early MQTT guard could not resolve the git-sourced MQTT gem.
+The guard now explicitly loads `bundler/setup` before requiring dependencies,
+so it is self-contained when Ruby preloads it ahead of Rails boot. Application
+MySQL checks still have no passing execution evidence at this point.
+A minimal local reproduction with Ruby 3.1.2, Bundler 2.4.3 and the locked
+MQTT git revision reproduced the old guard's LoadError. The revised guard
+loaded successfully and rejected `MQTT::Client.new.connect` before any network
+attempt: **EXECUTED / PASSED**. This was a dependency/guard check, not Rails or
+MySQL application execution.
+
 To reproduce on a disposable local MySQL database after loading `db/schema.rb`,
 set `RAILS_ENV=test`, `TZ=UTC` (then `Asia/Ho_Chi_Minh`), an explicit
 `DATABASE_URL=mysql2://<test-user>:<test-password>@127.0.0.1/binblog_switch_api_test?pool=10`,
