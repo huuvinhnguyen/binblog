@@ -3,14 +3,39 @@
 Task: https://app.clickup.com/t/z8tvbhwpn1
 Branch: `feature/z8tvbhwpn1-switch-mobile-api`
 Integration base: `main@47b6ca0` (merged handoff PR #119 verified).
-Date: 2026-10-27. No commit/push or deployment claimed by this report.
+Original handoff date: 2026-10-27. Publication and subsequent evidence follow.
+
+## Current MySQL evidence
+
+CI run [40730794280](https://github.com/huuvinhnguyen/binblog/actions/runs/40730794280)
+completed **EXECUTED / PASSED** on commit
+`50c44871c0f94dc0bdfd0c5fa2a608dcdee488aa`, using Ruby 3.1.2, Rails 7.0.8.4
+and MySQL 8.0.46. Both independent process-timezone jobs (UTC and
+Asia/Ho_Chi_Minh) passed the full standalone verification runner and the focused
+request/service/web/OpenAPI suite: **75 examples, 0 failures per job**.
+
+Executed evidence includes schema loading; index down/up with ordered columns
+and preserved rows; scoped midnight/empty/31-day statistics under session
+timezones +00:00 and +07:00; bounded metadata-lock timeout; two commands observed
+waiting on real InnoDB row locks; one fake publish per command outside the DB
+transaction; unchanged device snapshots; and both requested/result audits.
+Dependency-file preservation and asset builds passed in both jobs. Logs were
+uploaded as CI artifacts. The final observer used uncached Performance Schema;
+the earlier information_schema observer timeout remains a failed historical
+probe, not an application defect diagnosis.
+
+This closes the missing MySQL execution-evidence item for review. The independent
+Final Verifier still owns the application gate decision. Production DDL sizing,
+deployment, real browser/hardware acceptance and reminder execution remain
+unverified; reminder writes remain hard-disabled and the task remains open.
 
 ## Verification checkpoint continuation
 
 The original phase-1 implementation was subsequently published at the owner's
 request as Draft PR #120, commit `e05c4ac9a8878e8acb9d5df2d349e93fb0e383ab`.
-The original final gate remains **BLOCKED — INSUFFICIENT EVIDENCE**, because
-the MySQL checks below have not yet executed. Historical delivery/authorization
+At checkpoint authoring, the original final gate was **BLOCKED — INSUFFICIENT
+EVIDENCE**, because the MySQL checks had not executed. Current results above
+supersede that missing-evidence state. Historical delivery/authorization
 statements below describe the initial handoff, not the current PR state.
 
 The follow-up adds only a MySQL verification checkpoint: a GitHub Actions job,
@@ -104,10 +129,11 @@ API/rollout details: `docs/SWITCH_MOBILE_API.md`; synthetic consumer examples:
 
 ## Verification evidence
 
-All Rails commands below used **RAILS_ENV=test** and a dedicated SQLite database
+Original local Rails commands used **RAILS_ENV=test** and a dedicated SQLite database
 under `/tmp`, never the tracked development/production database configuration.
 MQTT was faked in feature tests. The wider generation run additionally loaded
 an external test-only guard that rejects every live MQTT client connect.
+The later CI MySQL execution is qualified separately above.
 
 | Check | Result |
 | --- | --- |
@@ -119,7 +145,7 @@ an external test-only guard that rejects every live MQTT client connect.
 | `rails assets:precompile`, test environment | EXECUTED / PASSED — compiled assets only, no browser/deployment proof |
 | `rails routes -g switches` | EXECUTED / PASSED — all nine routes and namespace fallback present |
 | Diff/whitespace checks including new files | EXECUTED / PASSED at Developer handoff |
-| MySQL adapter/index migration and query verification | NOT TESTED — local MariaDB startup blocked by UNIX socket EPERM |
+| MySQL adapter/index migration, queries and command locking | EXECUTED / PASSED — MySQL 8.0.46, CI run 40730794280, UTC and Asia/Ho_Chi_Minh; 75 focused examples per job |
 | Actual browser interaction / physical relay / reminder execution | NOT TESTED |
 | Production API, migration, deployment, hardware MQTT | NOT TESTED |
 
@@ -166,8 +192,9 @@ documentation-only delivery does not authorize code delivery.
 
 ## Open acceptance gates / release notes
 
-- MySQL-compatible index migration still needs target-engine verification and
-  operational DDL/locking assessment. SQLite success is not MySQL acceptance.
+- MySQL 8.0.46 migration/query/locking semantics passed in isolated CI. Production
+  engine/version confirmation, data-size and operational DDL/locking assessment
+  remain rollout requirements; the small synthetic test is not that assessment.
 - Reminder execution-owner gate in architecture section 8 is unresolved. No new
   scheduler was added; reminder writes stay unavailable and full mobile integration
   remains blocked. The backend task must remain open.
