@@ -5,6 +5,64 @@ Branch: `feature/z8tvbhwpn1-switch-mobile-api`
 Integration base: `main@47b6ca0` (merged handoff PR #119 verified).
 Original handoff date: 2026-10-27. Publication and subsequent evidence follow.
 
+## Review fix pass — 2026-10-29
+
+Base: PR #120 at `3c8ef389520fc696260df2a27d7e76e0de7dbd03`, clean task branch.
+A subsequent Reviewer found two confirmed defects despite the earlier green CI:
+
+- **P2 MQTT error mapping:** the locked gem's `MQTT::Exception` inherits directly
+  from `Exception`. Publisher rescues now explicitly cover that hierarchy as well
+  as StandardError, including cleanup, while preserving not-attempted versus
+  unknown outcomes. There is no blanket rescue of process interrupts.
+- **P3 heartbeat calendar validation:** validate the ISO date component before
+  `Time.iso8601` can normalize an impossible date such as February 30. Invalid
+  metadata returns null; valid leap dates, Z/offsets and fractions remain accepted.
+
+Changed files in this fix pass (five, all already part of the PR):
+
+- `app/services/switch_api/publisher.rb`
+- `app/services/switch_detail_query.rb`
+- `spec/services/switch_api_publisher_spec.rb`
+- `spec/requests/api/switches_spec.rb`
+- `ai/tasks/z8tvbhwpn1-switch-mobile-api-implementation.md`
+
+Regression coverage uses the actual locked MQTT exception classes for connect,
+publish and cleanup failures, double connect/cleanup failure, normal-cleanup
+Interrupt propagation, JSON 503/502 and result audits, no replay or leaked error
+details, impossible ISO dates, valid leap/Z/fraction values and unchanged metadata.
+
+| Fix-pass check | Result |
+| --- | --- |
+| Isolated publisher/parser reproduction with fake client and locked MQTT classes | EXECUTED / PASSED — 8 cases, no network |
+| Focused Rails request/service/web/OpenAPI suite | EXECUTED / PASSED — 82 examples, 0 failures, isolated SQLite |
+| Full executed Rswag request-spec generation, RSWAG_DRY_RUN=0 | EXECUTED / PASSED — 369 examples, 0 failures, 12 pre-existing Post scaffold pending cases |
+| Regenerated Swagger and repository dependency-file comparison | EXECUTED / PASSED — byte-identical, no public schema/dependency change |
+| Ruby syntax and diff hygiene | EXECUTED / PASSED at Developer fix handoff |
+| Fresh MySQL CI on the fix | NOT RUN at this handoff; prior MySQL results below predate these fixes |
+| Production, live MQTT, browser/hardware | NOT TESTED |
+
+Local validation used isolated Ruby 3.1.2, Rails 7.0.8.4, an explicit SQLite test
+DATABASE_URL, the existing temporary source-built ffi 1.17.0 lock qualification,
+and the live-MQTT guard. Native library/Bundler relocation setup issues were
+resolved only in `/tmp`; repository runtime/dependency files were not changed.
+RSpec and Rake were invoked through their Ruby entrypoints to avoid the isolated
+runtime's CLI exec-load/default-Bundler collision:
+
+```bash
+bundle exec ruby -r ./script/switch_verification_no_mqtt.rb \
+  /tmp/switch-fix-bundle/ruby/3.1.0/gems/rspec-core-3.13.3/exe/rspec \
+  spec/services/switch_api_publisher_spec.rb spec/requests/api/switches_spec.rb \
+  spec/requests/switch_relay_statistics_spec.rb spec/requests/api/switches_swagger_spec.rb --format progress
+RSWAG_DRY_RUN=0 ADDITIONAL_RSPEC_OPTS='--require ./script/switch_verification_no_mqtt.rb' \
+  bundle exec ruby -r ./script/switch_verification_no_mqtt.rb \
+  /tmp/switch-fix-bundle/ruby/3.1.0/gems/rake-13.2.1/exe/rake rswag:specs:swaggerize
+```
+
+No MQTT payload, HTTP schema, migration, assets, scheduler or reminder gate was
+changed. Reminder writes remain hard-disabled. This fix handoff requires targeted
+Reviewer re-review and Final Verification before authorized commit/push, then
+fresh remote CI. The earlier readiness statements below are historical evidence.
+
 ## Current MySQL evidence
 
 CI run [40730794280](https://github.com/huuvinhnguyen/binblog/actions/runs/40730794280)

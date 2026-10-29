@@ -29,4 +29,38 @@ RSpec.describe SwitchApi::Publisher do
     allow(client).to receive(:disconnect).and_raise(IOError)
     expect { described_class.new.call(topic: 'test', payload: {}) }.to raise_error(described_class::OutcomeUnknown)
   end
+
+  it 'maps the MQTT library protocol exception before publish and still cleans up' do
+    expect(MQTT::ProtocolException.ancestors).not_to include(StandardError)
+    allow(client).to receive(:connect).and_raise(MQTT::ProtocolException, 'synthetic CONNACK refusal')
+    expect { described_class.new.call(topic: 'test', payload: {}) }.to raise_error(described_class::Unavailable)
+    expect(client).not_to have_received(:publish)
+    expect(client).to have_received(:disconnect).with(false).once
+  end
+
+  it 'maps the MQTT library disconnected publish exception to an unknown outcome without retry' do
+    allow(client).to receive(:publish).and_raise(MQTT::NotConnectedException)
+    expect { described_class.new.call(topic: 'test', payload: {}) }.to raise_error(described_class::OutcomeUnknown)
+    expect(client).to have_received(:publish).once
+    expect(client).to have_received(:disconnect).with(false).once
+  end
+
+  it 'maps MQTT cleanup errors after publish to an unknown outcome' do
+    allow(client).to receive(:disconnect).and_raise(MQTT::ProtocolException)
+    expect { described_class.new.call(topic: 'test', payload: {}) }.to raise_error(described_class::OutcomeUnknown)
+    expect(client).to have_received(:publish).once
+  end
+
+  it 'keeps the not-attempted outcome when MQTT connect and cleanup both fail' do
+    allow(client).to receive(:connect).and_raise(MQTT::ProtocolException)
+    allow(client).to receive(:disconnect).and_raise(MQTT::NotConnectedException)
+    expect { described_class.new.call(topic: 'test', payload: {}) }.to raise_error(described_class::Unavailable)
+    expect(client).not_to have_received(:publish)
+  end
+
+  it 'does not swallow process interrupts' do
+    allow(client).to receive(:publish).and_raise(Interrupt)
+    expect { described_class.new.call(topic: 'test', payload: {}) }.to raise_error(Interrupt)
+    expect(client).to have_received(:disconnect).with(false).once
+  end
 end

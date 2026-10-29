@@ -20,14 +20,14 @@ module SwitchApi
           attempted = true
           client.publish(topic, payload.to_json, false, 0)
         end
-      rescue StandardError => e
+      rescue MQTT::Exception, StandardError => e
         Rails.logger.warn("Switch MQTT operation failed: #{e.class}")
         raise(attempted ? OutcomeUnknown : Unavailable)
       ensure
         if client
           begin
             Timeout.timeout(TIMEOUT_SECONDS) { client.disconnect(false) }
-          rescue StandardError => e
+          rescue MQTT::Exception, StandardError => e
             Rails.logger.warn("Switch MQTT cleanup failed: #{e.class}")
             raise OutcomeUnknown if attempted
           end

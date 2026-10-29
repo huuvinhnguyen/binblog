@@ -98,6 +98,48 @@ RSpec.describe 'Switch JSON facade', type: :request do
     end
   end
 
+  it 'rejects impossible ISO8601 calendar dates without normalizing heartbeat metadata' do
+    ['2026-02-30T08:00:00+07:00', '2026-02-29T01:00:00Z', '2026-04-31T08:00:00+07:00'].each do |value|
+      device.update!(meta_info: { last_seen: value }.to_json)
+      get base, headers: headers
+      expect(response.status).to eq(200)
+      expect(json.dig('switch', 'last_seen')).to be_nil
+      expect(device.reload.meta_info).to eq({ last_seen: value }.to_json)
+    end
+    { '2024-02-29T01:02:03Z' => '2024-02-29T08:02:03+07:00',
+      '2024-02-29T08:02:03.123+07:00' => '2024-02-29T08:02:03+07:00' }.each do |value, expected|
+      device.update!(meta_info: { last_seen: value }.to_json)
+      get base, headers: headers
+      expect(json.dig('switch', 'last_seen')).to eq(expected)
+    end
+  end
+
+  it 'returns JSON outcomes and result audits for actual MQTT exception classes' do
+    allow(SwitchApi::Publisher).to receive(:new).and_call_original
+    client = instance_double(MQTT::Client, connect: nil, publish: nil, disconnect: nil)
+    allow(MQTT::Client).to receive(:new).and_return(client)
+    allow(Rails.application).to receive(:config_for).with(:mqtt).and_return(host: 'test.invalid', port: 1883)
+    allow(client).to receive(:connect).and_raise(MQTT::ProtocolException, 'synthetic private broker detail')
+
+    post "#{base}/refresh", headers: headers
+    expect(response.status).to eq(503)
+    expect(json).to include('code' => 'command_unavailable', 'outcome' => 'not_attempted')
+    expect(response.body).not_to include('synthetic private broker detail')
+    expect(device.device_events.order(:id).last.payload['outcome']).to eq('not_attempted')
+    expect(client).not_to have_received(:publish)
+
+    allow(client).to receive(:connect).and_return(nil)
+    allow(client).to receive(:publish).and_raise(MQTT::NotConnectedException)
+    post "#{base}/relays/0/state", params: '{"switch_value":1}', headers: headers
+    expect(response.status).to eq(502)
+    expect(json).to include('code' => 'command_outcome_unknown', 'outcome' => 'unknown')
+    expect(device.device_events.order(:id).last.payload['outcome']).to eq('unknown')
+    expect(device.device_events.group(:event_type).count).to eq(
+      'switch_command_requested' => 2, 'switch_command_result' => 2
+    )
+    expect(client).to have_received(:publish).once
+  end
+
   it 'keeps the feature disabled by default and fails closed on malformed values' do
     allow(SwitchApi::Features).to receive(:enabled?).and_call_original
     original = ENV['SWITCH_MOBILE_API_ENABLED']

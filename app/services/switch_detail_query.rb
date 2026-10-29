@@ -37,6 +37,8 @@ class SwitchDetailQuery
 
                time
              elsif /\A\d{4}-\d{2}-\d{2}T.+(?:Z|[+-]\d{2}:\d{2})\z/.match?(value)
+               # Time.iso8601 normalizes impossible calendar dates (e.g. Feb 30).
+               Date.iso8601(value[0, 10])
                Time.iso8601(value)
              end
     parsed&.in_time_zone('Asia/Ho_Chi_Minh')&.iso8601
