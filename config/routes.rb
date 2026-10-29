@@ -16,6 +16,17 @@ Rails.application.routes.draw do
   mount Sidekiq::Web => '/sidekiq'
 
   namespace :api do
+    get 'switches/:id', to: 'switches#show'
+    post 'switches/:id/refresh', to: 'switches#refresh'
+    post 'switches/:id/relays/:relay_index/state', to: 'switches#state'
+    post 'switches/:id/relays/:relay_index/pulse', to: 'switches#pulse'
+    get 'switches/:id/relays/:relay_index/reminders', to: 'switches#reminders'
+    post 'switches/:id/relays/:relay_index/reminders', to: 'switches#reminder_write'
+    delete 'switches/:id/relays/:relay_index/reminders/:reminder_id', to: 'switches#reminder_write'
+    put 'switches/:id/relays/:relay_index/reminders-active', to: 'switches#reminder_write'
+    get 'switches/:id/relays/:relay_index/statistics', to: 'switches#statistics'
+    match 'switches(/*path)', to: 'switches#not_found', via: :all
+
     post 'login', to: 'sessions#create'
     namespace :auth do
       post 'social_sessions', to: '/api/social_sessions#create'

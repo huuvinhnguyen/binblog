@@ -3655,6 +3655,1560 @@ paths:
                   type: string
                   format: password
                   description: Legacy compatibility reauthentication.
+  "/api/switches/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Database Device ID, not chip_id.
+      schema:
+        type: string
+    get:
+      summary: Read switch snapshot (not confirmed hardware state)
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: 'success (Cache-Control: no-store)'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - switch
+                - server_time
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  server_time:
+                    type: string
+                    format: date-time
+                  switch:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - id
+                    - chip_id
+                    - name
+                    - device_type
+                    - timezone
+                    - last_seen
+                    - online
+                    - state_source
+                    - physical_state_verified
+                    - capabilities
+                    - limits
+                    - relays
+                    properties:
+                      id:
+                        type: string
+                      chip_id:
+                        type: string
+                      name:
+                        type: string
+                      device_type:
+                        type: string
+                        enum:
+                        - switch
+                      timezone:
+                        type: string
+                        enum:
+                        - Asia/Ho_Chi_Minh
+                      last_seen:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      online:
+                        type: boolean
+                        nullable: true
+                      state_source:
+                        type: string
+                        enum:
+                        - server_snapshot
+                      physical_state_verified:
+                        type: boolean
+                        enum:
+                        - false
+                      capabilities:
+                        type: object
+                        additionalProperties: false
+                        required:
+                        - manual_switch
+                        - pulse
+                        - reminders
+                        - statistics
+                        - refresh
+                        properties:
+                          manual_switch:
+                            type: boolean
+                          pulse:
+                            type: boolean
+                          reminders:
+                            type: boolean
+                          statistics:
+                            type: boolean
+                          refresh:
+                            type: boolean
+                      limits:
+                        type: object
+                        required:
+                        - duration_min_ms
+                        - duration_max_ms
+                        - reminder_limit_per_relay
+                        properties:
+                          duration_min_ms:
+                            type: integer
+                            enum:
+                            - 1000
+                          duration_max_ms:
+                            type: integer
+                            enum:
+                            - 86400000
+                          reminder_limit_per_relay:
+                            type: integer
+                            enum:
+                            - 100
+                      relays:
+                        type: array
+                        maxItems: 32
+                        items:
+                          type: object
+                          required:
+                          - index
+                          - switch_value
+                          - duration_ms
+                          - reminders_active
+                          additionalProperties: false
+                          properties:
+                            index:
+                              type: integer
+                              minimum: 0
+                            switch_value:
+                              type: integer
+                              nullable: true
+                              enum:
+                              - 0
+                              - 1
+                              -
+                            duration_ms:
+                              type: integer
+                              nullable: true
+                            reminders_active:
+                              type: boolean
+                              nullable: true
+        '401':
+          description: Bearer authentication required; no session fallback
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '404':
+          description: Switch inaccessible, missing or wrong type
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '503':
+          description: Facade disabled by default
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '422':
+          description: Invalid stored configuration or request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+  "/api/switches/{id}/relays/{relay_index}/reminders":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: relay_index
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Read persisted reminders; writes remain disabled
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: after_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        minimum: 1
+        maximum: 100
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: 'success (Cache-Control: no-store)'
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                - status
+                - reminders
+                - next_after_id
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  reminders:
+                    type: array
+                    maxItems: 100
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                      - id
+                      - device_id
+                      - relay_index
+                      - start_time
+                      - duration_ms
+                      - repeat_type
+                      - enabled
+                      - configuration_valid
+                      properties:
+                        id:
+                          type: string
+                        device_id:
+                          type: string
+                        relay_index:
+                          type: integer
+                        start_time:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        duration_ms:
+                          type: integer
+                          nullable: true
+                        repeat_type:
+                          type: string
+                        enabled:
+                          type: boolean
+                        configuration_valid:
+                          type: boolean
+                  next_after_id:
+                    type: string
+                    nullable: true
+        '401':
+          description: Bearer authentication required; no session fallback
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '404':
+          description: Switch inaccessible, missing or wrong type
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '503':
+          description: Facade disabled by default
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '422':
+          description: Invalid stored configuration or request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+    post:
+      summary: Reminder write reserved; execution-owner gate unresolved, no writes
+        performed
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '503':
+          description: Reminder execution unavailable (writes remain hard-disabled)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '403':
+          description: Reminder capability explicitly denied
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/switches/{id}/relays/{relay_index}/statistics":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Database Device ID, not chip_id.
+      schema:
+        type: string
+    - name: relay_index
+      in: path
+      minimum: 0
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Count persisted relay log records (not physical runtime)
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: from
+        in: query
+        format: date
+        required: false
+        description: Inclusive +07 local date; provide both from/to, maximum 31 days,
+          no future dates.
+        schema:
+          type: string
+      - name: to
+        in: query
+        format: date
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 'success (Cache-Control: no-store)'
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                - status
+                - timezone
+                - from
+                - to
+                - metric
+                - total_records
+                - days
+                - physical_runtime_seconds
+                - physical_runtime_verified
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - success
+                  timezone:
+                    type: string
+                  from:
+                    type: string
+                    format: date
+                  to:
+                    type: string
+                    format: date
+                  metric:
+                    type: string
+                    enum:
+                    - log_records
+                  total_records:
+                    type: integer
+                    minimum: 0
+                  days:
+                    type: array
+                    minItems: 1
+                    maxItems: 31
+                    items:
+                      type: object
+                      required:
+                      - date
+                      - count
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                          minimum: 0
+                  physical_runtime_seconds:
+                    type: integer
+                    nullable: true
+                  physical_runtime_verified:
+                    type: boolean
+                    enum:
+                    - false
+        '401':
+          description: Bearer authentication required; no session fallback
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '404':
+          description: Switch inaccessible, missing or wrong type
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '503':
+          description: Facade disabled by default
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '422':
+          description: Invalid stored configuration or request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+  "/api/switches/{id}/relays/{relay_index}/state":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: relay_index
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Send a new command intent; never automatically retry on timeout
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: Publish call returned; no broker or physical ACK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                - status
+                - outcome
+                - acknowledgement
+                - request_id
+                - event_id
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - accepted
+                  outcome:
+                    type: string
+                    enum:
+                    - publish_returned
+                  acknowledgement:
+                    type: string
+                    enum:
+                    - none
+                  request_id:
+                    type: string
+                  event_id:
+                    type: string
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '404':
+          description: Switch inaccessible, missing or wrong type
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '422':
+          description: Invalid input; no side effect
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '400':
+          description: Malformed JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '415':
+          description: Nonempty body requires application/json
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '502':
+          description: Publish outcome unknown; no automatic replay
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '503':
+          description: Dependency unavailable before publish
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - switch_value
+              properties:
+                switch_value:
+                  type: integer
+                  enum:
+                  - 0
+                  - 1
+        required: true
+  "/api/switches/{id}/relays/{relay_index}/pulse":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: relay_index
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Send a new command intent; never automatically retry on timeout
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: Publish call returned; no broker or physical ACK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                - status
+                - outcome
+                - acknowledgement
+                - request_id
+                - event_id
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - accepted
+                  outcome:
+                    type: string
+                    enum:
+                    - publish_returned
+                  acknowledgement:
+                    type: string
+                    enum:
+                    - none
+                  request_id:
+                    type: string
+                  event_id:
+                    type: string
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '404':
+          description: Switch inaccessible, missing or wrong type
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '422':
+          description: Invalid input; no side effect
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '400':
+          description: Malformed JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '415':
+          description: Nonempty body requires application/json
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '502':
+          description: Publish outcome unknown; no automatic replay
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '503':
+          description: Dependency unavailable before publish
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - duration_ms
+              properties:
+                duration_ms:
+                  type: integer
+                  minimum: 1000
+                  maximum: 86400000
+                  multipleOf: 1000
+        required: true
+  "/api/switches/{id}/refresh":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Send a new command intent; never automatically retry on timeout
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: Publish call returned; no broker or physical ACK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                - status
+                - outcome
+                - acknowledgement
+                - request_id
+                - event_id
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - accepted
+                  outcome:
+                    type: string
+                    enum:
+                    - publish_returned
+                  acknowledgement:
+                    type: string
+                    enum:
+                    - none
+                  request_id:
+                    type: string
+                  event_id:
+                    type: string
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '404':
+          description: Switch inaccessible, missing or wrong type
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '422':
+          description: Invalid input; no side effect
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '400':
+          description: Malformed JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '415':
+          description: Nonempty body requires application/json
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '502':
+          description: Publish outcome unknown; no automatic replay
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '503':
+          description: Dependency unavailable before publish
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: []
+              properties: {}
+  "/api/switches/{id}/relays/{relay_index}/reminders/{reminder_id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: relay_index
+      in: path
+      required: true
+      schema:
+        type: integer
+    - name: reminder_id
+      in: path
+      required: true
+      schema:
+        type: string
+    delete:
+      summary: Reminder write reserved; execution-owner gate unresolved, no writes
+        performed
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      responses:
+        '503':
+          description: Reminder execution unavailable (writes remain hard-disabled)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '403':
+          description: Reminder capability explicitly denied
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+  "/api/switches/{id}/relays/{relay_index}/reminders-active":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: relay_index
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      summary: Reminder write reserved; execution-owner gate unresolved, no writes
+        performed
+      tags:
+      - Switches
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '503':
+          description: Reminder execution unavailable (writes remain hard-disabled)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+        '403':
+          description: Reminder capability explicitly denied
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                - code
+                - request_id
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - error
+                  code:
+                    type: string
+                  request_id:
+                    type: string
+                  outcome:
+                    type: string
+                    enum:
+                    - not_attempted
+                    - unknown
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
   "/devices/notify":
     post:
       summary: Send a device notification to Slack

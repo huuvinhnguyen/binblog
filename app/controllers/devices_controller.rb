@@ -19,6 +19,15 @@ class DevicesController < ApplicationController
   end
 
   def relay_statistics
+    @switch = current_user.devices_for_current_user.find_by(chip_id: params[:chip_id], device_type: 'switch')
+    return head :not_found unless @switch
+
+    @relay_statistics = SwitchRelayStatisticsQuery.new(
+      device: @switch, relay_index: params[:relay_index], from: params[:from], to: params[:to]
+    ).call
+  rescue SwitchApi::Error => e
+    @statistics_error = e.code
+    render :relay_statistics, status: :unprocessable_entity
   end
 
   def connect

@@ -1,0 +1,35 @@
+{
+  "status": "success",
+  "server_time": "2026-10-27T10:00:00+07:00",
+  "switch": {
+    "id": "1",
+    "chip_id": "example_switch",
+    "name": "Example switch",
+    "device_type": "switch",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "last_seen": null,
+    "online": null,
+    "state_source": "server_snapshot",
+    "physical_state_verified": false,
+    "capabilities": {
+      "manual_switch": true,
+      "pulse": true,
+      "refresh": true,
+      "statistics": true,
+      "reminders": false
+    },
+    "limits": {
+      "duration_min_ms": 1000,
+      "duration_max_ms": 86400000,
+      "reminder_limit_per_relay": 100
+    },
+    "relays": [
+      {
+        "index": 0,
+        "switch_value": null,
+        "duration_ms": 1000,
+        "reminders_active": true
+      }
+    ]
+  }
+}

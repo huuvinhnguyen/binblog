@@ -10,6 +10,8 @@ class DeviceEvent < ActiveRecord::Base
     buzzer_started
     buzzer_finished
     buzzer_test_requested
+    switch_command_requested
+    switch_command_result
     device_online
     device_offline
   ].freeze

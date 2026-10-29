@@ -1,0 +1,6 @@
+{
+  "status": "error",
+  "code": "reminder_execution_unavailable",
+  "request_id": "synthetic-request",
+  "outcome": "not_attempted"
+}

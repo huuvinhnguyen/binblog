@@ -137,7 +137,7 @@
                 </td>
                 <td>
                   <%= case reminder.repeat_type
-                      when 'none' then 'Không lặp lại'
+                      when 'none', 'once' then 'Không lặp lại'
                       when 'daily' then 'Hằng ngày'
                       when 'weekly' then 'Hằng tuần'
                       when 'monthly' then 'Hằng tháng'

@@ -175,7 +175,7 @@ module Api
         relay_index: params[:relay_index],
         start_time: start_time,
         duration: params[:duration],
-        repeat_type: params[:repeat_type],
+        repeat_type: params[:repeat_type] == 'none' ? 'once' : params[:repeat_type],
         enabled: is_reminders_active
       )
 
